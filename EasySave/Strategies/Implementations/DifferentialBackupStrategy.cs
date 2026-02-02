@@ -1,6 +1,6 @@
 using EasySave.Models;
 using EasySave.Strategies.Interfaces;
-using EasyLog_DLL.Interfaces;
+using EasySave.Interfaces;
 using System;
 using System.Diagnostics;
 using System.IO;

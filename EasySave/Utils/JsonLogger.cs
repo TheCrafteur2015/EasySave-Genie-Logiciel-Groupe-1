@@ -1,12 +1,12 @@
-using EasyLog_DLL.Interfaces;
-using EasyLog_DLL.Models;
+using EasySave.Interfaces;
+using EasySave.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace EasyLog_DLL.Implementations
+namespace EasySave.Utils
 {
     /// <summary>
     /// JSON implementation of the logger

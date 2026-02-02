@@ -1,6 +1,6 @@
 using System;
 
-namespace EasyLog_DLL.Models
+namespace EasySave.Models
 {
     /// <summary>
     /// Represents a log entry for backup operations

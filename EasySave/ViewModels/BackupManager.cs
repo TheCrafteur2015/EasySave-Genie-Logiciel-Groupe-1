@@ -1,8 +1,7 @@
 using EasySave.Models;
 using EasySave.Strategies;
 using EasySave.Utils;
-using EasyLog_DLL.Implementations;
-using EasyLog_DLL.Interfaces;
+using EasySave.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;

@@ -1,7 +1,7 @@
 using EasySave.Models;
 using EasySave.Strategies.Implementations;
 using EasySave.Strategies.Interfaces;
-using EasyLog_DLL.Interfaces;
+using EasySave.Interfaces;
 
 namespace EasySave.Strategies
 {

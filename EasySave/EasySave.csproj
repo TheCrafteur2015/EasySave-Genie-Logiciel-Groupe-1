@@ -10,9 +10,5 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\EasyLog_DLL\EasyLog_DLL.csproj" />
-  </ItemGroup>
-
+	
 </Project>

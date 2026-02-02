@@ -1,4 +1,4 @@
-namespace EasyLog_DLL.Interfaces
+namespace EasySave.Interfaces
 {
     /// <summary>
     /// Interface for logging implementations

@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "xXqE10LVa5g=",
+  "success": true,
+  "projectFilePath": "C:\\FISA_A3\\Bloc_Génie_Logiciel\\Livrable_1\\EasySave_V1.0\\EasyLog_DLL\\EasyLog_DLL.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\frede\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

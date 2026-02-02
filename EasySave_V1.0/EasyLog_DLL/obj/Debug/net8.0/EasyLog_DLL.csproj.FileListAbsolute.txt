@@ -1,0 +1,12 @@
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\bin\Debug\net8.0\EasyLog_DLL.deps.json
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\bin\Debug\net8.0\EasyLog_DLL.dll
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\bin\Debug\net8.0\EasyLog_DLL.pdb
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\obj\Debug\net8.0\EasyLog_DLL.csproj.AssemblyReference.cache
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\obj\Debug\net8.0\EasyLog_DLL.GeneratedMSBuildEditorConfig.editorconfig
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\obj\Debug\net8.0\EasyLog_DLL.AssemblyInfoInputs.cache
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\obj\Debug\net8.0\EasyLog_DLL.AssemblyInfo.cs
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\obj\Debug\net8.0\EasyLog_DLL.csproj.CoreCompileInputs.cache
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\obj\Debug\net8.0\EasyLog_DLL.dll
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\obj\Debug\net8.0\refint\EasyLog_DLL.dll
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\obj\Debug\net8.0\EasyLog_DLL.pdb
+C:\FISA_A3\Bloc_Génie_Logiciel\Livrable_1\EasySave_V1.0\EasyLog_DLL\obj\Debug\net8.0\ref\EasyLog_DLL.dll

@@ -1,3 +1,4 @@
+using EasySave.Backup;
 using EasySave.Views;
 
 namespace EasySave
@@ -10,7 +11,14 @@ namespace EasySave
         static void Main(string[] args)
         {
             var view = new ConsoleView();
-            view.Run(args);
+            try
+            {
+                view.Run(args);
+            }
+            catch (Exception e)
+            {
+                BackupManager.GetLogger().LogError(e);
+            }
         }
     }
 }

@@ -1,22 +1,20 @@
+using EasySave.Backup;
 using EasySave.Models;
-using EasySave.ViewModels;
 using EasySave.Views.Localization;
 using System;
 using System.Linq;
 
 namespace EasySave.Views
 {
-    /// <summary>
-    /// Console View - Handles user interface (View in MVVM)
-    /// </summary>
-    public class ConsoleView
+	/// <summary>
+	/// Console View - Handles user interface (View in MVVM)
+	/// </summary>
+	public class ConsoleView
     {
-        private readonly BackupManager _backupManager;
         private readonly LocalizationService _localization;
 
         public ConsoleView()
         {
-            _backupManager = BackupManager.GetInstance();
             _localization = new LocalizationService();
         }
 
@@ -34,8 +32,8 @@ namespace EasySave.Views
             while (running)
             {
                 DisplayMenu();
+				_ = BackupManager.GetBM();
                 string? choice = Console.ReadLine();
-
                 switch (choice)
                 {
                     case "1":
@@ -86,7 +84,7 @@ namespace EasySave.Views
                     if (parts.Length == 2 && int.TryParse(parts[0], out int start) && int.TryParse(parts[1], out int end))
                     {
                         Console.WriteLine($"Executing backup jobs {start} to {end}...");
-                        _backupManager.ExecuteJobRange(start, end, DisplayProgress);
+						BackupManager.GetBM().ExecuteJobRange(start, end, DisplayProgress);
                         Console.WriteLine("Execution completed!");
                     }
                 }
@@ -99,7 +97,7 @@ namespace EasySave.Views
                     if (ids.Length > 0)
                     {
                         Console.WriteLine($"Executing backup jobs: {string.Join(", ", ids)}...");
-                        _backupManager.ExecuteJobList(ids, DisplayProgress);
+						BackupManager.GetBM().ExecuteJobList(ids, DisplayProgress);
                         Console.WriteLine("Execution completed!");
                     }
                 }
@@ -107,7 +105,7 @@ namespace EasySave.Views
                 {
                     // Single job
                     Console.WriteLine($"Executing backup job {singleId}...");
-                    _backupManager.ExecuteJob(singleId, DisplayProgress);
+                    BackupManager.GetBM().ExecuteJob(singleId, DisplayProgress);
                     Console.WriteLine("Execution completed!");
                 }
             }
@@ -152,7 +150,7 @@ namespace EasySave.Views
 
             if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(source) && !string.IsNullOrEmpty(target))
             {
-                bool success = _backupManager.AddJob(name, source, target, type);
+                bool success = BackupManager.GetBM().AddJob(name, source, target, type);
                 if (success)
                 {
                     Console.WriteLine($"\n{_localization.GetString("create_success")}");
@@ -174,7 +172,7 @@ namespace EasySave.Views
             {
                 try
                 {
-                    _backupManager.ExecuteJob(id, DisplayProgress);
+					BackupManager.GetBM().ExecuteJob(id, DisplayProgress);
                     Console.WriteLine($"\n{_localization.GetString("execute_success")}");
                 }
                 catch (Exception ex)
@@ -191,7 +189,7 @@ namespace EasySave.Views
             
             try
             {
-                _backupManager.ExecuteAllJobs(DisplayProgress);
+				BackupManager.GetBM().ExecuteAllJobs(DisplayProgress);
                 Console.WriteLine($"\n{_localization.GetString("execute_success")}");
             }
             catch (Exception ex)
@@ -204,7 +202,7 @@ namespace EasySave.Views
         {
             Console.WriteLine(_localization.GetString("list_title"));
             
-            var jobs = _backupManager.GetAllJobs();
+            var jobs = BackupManager.GetBM().GetAllJobs();
             
             if (!jobs.Any())
             {
@@ -220,7 +218,7 @@ namespace EasySave.Views
                 Console.WriteLine($"{_localization.GetString("list_target")}{job.TargetDirectory}");
                 Console.WriteLine($"{_localization.GetString("list_type")}{GetBackupTypeString(job.Type)}");
                 Console.WriteLine($"{_localization.GetString("list_state")}{GetBackupStateString(job.State)}");
-                Console.WriteLine($"{_localization.GetString("list_last_exec")}{(job.LastExecution?.ToString("yyyy-MM-dd HH:mm:ss") ?? _localization.GetString("never"))}");
+                Console.WriteLine($"{_localization.GetString("list_last_exec")}{(job.LastExecution.ToString("yyyy-MM-dd HH:mm:ss") ?? _localization.GetString("never"))}");
             }
         }
 
@@ -232,7 +230,7 @@ namespace EasySave.Views
             
             if (int.TryParse(Console.ReadLine(), out int id))
             {
-                bool success = _backupManager.DeleteJob(id);
+                bool success = BackupManager.GetBM().DeleteJob(id);
                 if (success)
                 {
                     Console.WriteLine($"\n{_localization.GetString("delete_success")}");
@@ -287,13 +285,13 @@ namespace EasySave.Views
                 : _localization.GetString("type_differential");
         }
 
-        private string GetBackupStateString(BackupState state)
+        private string GetBackupStateString(State state)
         {
             return state switch
             {
-                BackupState.Active => _localization.GetString("state_active"),
-                BackupState.Completed => _localization.GetString("state_completed"),
-                BackupState.Error => _localization.GetString("state_error"),
+                State.Active => _localization.GetString("state_active"),
+                State.Completed => _localization.GetString("state_completed"),
+                State.Error => _localization.GetString("state_error"),
                 _ => _localization.GetString("state_inactive")
             };
         }

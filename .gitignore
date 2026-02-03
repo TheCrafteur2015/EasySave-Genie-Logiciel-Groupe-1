@@ -89,7 +89,4 @@ ServiceFabricBackup/
 # Mac
 .DS_Store
 
-# Application specific
-Config/
-Logs/
-State/
+publish/

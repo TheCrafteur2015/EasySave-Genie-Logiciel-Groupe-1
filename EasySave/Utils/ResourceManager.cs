@@ -10,8 +10,9 @@ namespace EasySave.Utils
 		public static string ReadResourceFile(string resourceName)
         {
 			var assembly = Assembly.GetExecutingAssembly();
-			string validatedResourceName = "EasySave." + resourceName;
-			using Stream? stream = assembly.GetManifestResourceStream(validatedResourceName) ?? throw new FileNotFoundException($"Unavailable resource: {validatedResourceName}");
+			if (!resourceName.StartsWith("EasySave."))
+				resourceName = "EasySave." + resourceName;
+			using Stream? stream = assembly.GetManifestResourceStream(resourceName) ?? throw new FileNotFoundException($"Unavailable resource: {resourceName}");
             using var reader = new StreamReader(stream);
 			return reader.ReadToEnd();
 		}

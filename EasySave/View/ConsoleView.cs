@@ -1,4 +1,6 @@
 using EasySave.Backup;
+using EasySave.Extensions;
+using EasySave.View.Command;
 using EasySave.View.Localization;
 
 namespace EasySave.View
@@ -22,54 +24,34 @@ namespace EasySave.View
 			// Check for command line arguments
 			if (args.Length > 0)
 			{
-				ProcessCommandLine(args);
+                ProcessCommandLine(args);
 				return;
 			}
 
-			// Interactive menu mode
-			bool running = true;
-			while (running)
-			{
-				DisplayMenu();
-				_ = BackupManager.GetBM();
-				string? choice = Console.ReadLine();
-				switch (choice)
-				{
-					case "1":
-						CreateBackupJob();
-						break;
-					case "2":
-						ExecuteBackupJob();
-						break;
-					case "3":
-						ExecuteAllBackupJobs();
-						break;
-					case "4":
-						ListBackupJobs();
-						break;
-					case "5":
-						DeleteBackupJob();
-						break;
-					case "6":
-						ChangeLanguage();
-						break;
-					case "7":
-						running = false;
-						break;
-					default:
-						Console.WriteLine(I18n.Instance.GetString("invalid_choice"));
-						break;
-				}
+			var context = CommandContext.Instance;
 
-				if (running)
+			// Interactive menu mode
+			while (true)
+			{
+				BackupManager.GetBM().TransmitSignal(Signal.Continue);
+				context.DisplayCommands();
+				int choice = ConsoleExt.ReadDec();
+				if (!context.ExecuteCommand(choice))
+					Console.WriteLine(I18n.Instance.GetString("invalid_choice"));
+				Console.WriteLine($"\n{I18n.Instance.GetString("press_enter")}");
+				_ = Console.ReadLine();
+
+				if (BackupManager.GetBM().LatestSignal == Signal.None)
+					throw new InvalidOperationException("Oops! This should not happen!");
+
+				if (BackupManager.GetBM().LatestSignal == Signal.Exit)
 				{
-					Console.WriteLine($"\n{I18n.Instance.GetString("press_enter")}");
-					Console.ReadLine();
+					break;
 				}
 			}
 		}
 
-		public void ProcessCommandLine(string[] args)
+		public static void ProcessCommandLine(string[] args)
 		{
 			try
 			{
@@ -114,162 +96,6 @@ namespace EasySave.View
 			}
 		}
 
-		public void DisplayMenu()
-		{
-			Console.Clear();
-			Console.WriteLine(I18n.Instance.GetString("menu_title"));
-			Console.WriteLine();
-			Console.WriteLine(I18n.Instance.GetString("menu_create"));
-			Console.WriteLine(I18n.Instance.GetString("menu_execute"));
-			Console.WriteLine(I18n.Instance.GetString("menu_execute_all"));
-			Console.WriteLine(I18n.Instance.GetString("menu_list"));
-			Console.WriteLine(I18n.Instance.GetString("menu_delete"));
-			Console.WriteLine(I18n.Instance.GetString("menu_language"));
-			Console.WriteLine(I18n.Instance.GetString("menu_exit"));
-			Console.WriteLine();
-			Console.Write(I18n.Instance.GetString("menu_choice"));
-		}
-
-		private void CreateBackupJob()
-		{
-			Console.Clear();
-			Console.Write(I18n.Instance.GetString("create_name"));
-			string? name = Console.ReadLine();
-
-			Console.Write(I18n.Instance.GetString("create_source"));
-			string? source = Console.ReadLine();
-
-			Console.Write(I18n.Instance.GetString("create_target"));
-			string? target = Console.ReadLine();
-
-			Console.Write(I18n.Instance.GetString("create_type"));
-			string? typeChoice = Console.ReadLine();
-
-			BackupType type = typeChoice == "2" ? BackupType.Differential : BackupType.Complete;
-
-			if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(source) && !string.IsNullOrEmpty(target))
-			{
-				bool success = BackupManager.GetBM().AddJob(name, source, target, type);
-				if (success)
-				{
-					Console.WriteLine($"\n{I18n.Instance.GetString("create_success")}");
-				}
-				else
-				{
-					Console.WriteLine($"\n{I18n.Instance.GetString("create_failure")}");
-				}
-			}
-		}
-
-		private void ExecuteBackupJob()
-		{
-			Console.Clear();
-			ListBackupJobs();
-			Console.Write($"\n{I18n.Instance.GetString("execute_id")}");
-			
-			if (int.TryParse(Console.ReadLine(), out int id))
-			{
-				try
-				{
-					BackupManager.GetBM().ExecuteJob(id, DisplayProgress);
-					Console.WriteLine($"\n{I18n.Instance.GetString("execute_success")}");
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine($"\n{I18n.Instance.GetString("execute_failure")}{ex.Message}");
-				}
-			}
-		}
-
-		private void ExecuteAllBackupJobs()
-		{
-			Console.Clear();
-			Console.WriteLine(I18n.Instance.GetString("execute_all_start"));
-			
-			try
-			{
-				BackupManager.GetBM().ExecuteAllJobs(DisplayProgress);
-				Console.WriteLine($"\n{I18n.Instance.GetString("execute_success")}");
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"\n{I18n.Instance.GetString("execute_failure")}{ex.Message}");
-			}
-		}
-
-		private void ListBackupJobs()
-		{
-			Console.WriteLine(I18n.Instance.GetString("list_title"));
-			
-			var jobs = BackupManager.GetBM().GetAllJobs();
-			
-			if (!jobs.Any())
-			{
-				Console.WriteLine(I18n.Instance.GetString("list_empty"));
-				return;
-			}
-
-			foreach (var job in jobs)
-			{
-				Console.WriteLine($"\n{I18n.Instance.GetString("list_id")}{job.Id}");
-				Console.WriteLine($"{I18n.Instance.GetString("list_name")}{job.Name}");
-				Console.WriteLine($"{I18n.Instance.GetString("list_source")}{job.SourceDirectory}");
-				Console.WriteLine($"{I18n.Instance.GetString("list_target")}{job.TargetDirectory}");
-				Console.WriteLine($"{I18n.Instance.GetString("list_type")}{GetBackupTypeString(job.Type)}");
-				Console.WriteLine($"{I18n.Instance.GetString("list_state")}{GetBackupStateString(job.State)}");
-				Console.WriteLine($"{I18n.Instance.GetString("list_last_exec")}{(job.LastExecution.ToString("yyyy-MM-dd HH:mm:ss") ?? I18n.Instance.GetString("never"))}");
-			}
-		}
-
-		private void DeleteBackupJob()
-		{
-			Console.Clear();
-			ListBackupJobs();
-			Console.Write($"\n{I18n.Instance.GetString("delete_id")}");
-			
-			if (int.TryParse(Console.ReadLine(), out int id))
-			{
-				bool success = BackupManager.GetBM().DeleteJob(id);
-				if (success)
-				{
-					Console.WriteLine($"\n{I18n.Instance.GetString("delete_success")}");
-				}
-				else
-				{
-					Console.WriteLine($"\n{I18n.Instance.GetString("delete_failure")}");
-				}
-			}
-		}
-
-		private void ChangeLanguage()
-		{
-			Console.Clear();
-			Console.WriteLine(I18n.Instance.GetString("language_select"));
-			var langProperties = I18n.Instance.LoadLanguagesProperties();
-			int i = 0;
-			foreach (var lang in langProperties)
-			{
-				Console.WriteLine("{0} - {1}", ++i, lang.Value["@language_name"]);
-			}
-			var choice = Console.Read();
-			
-			if (choice.GetTypeCode() == TypeCode.Int32)
-			{
-				i = 0;
-				foreach (var lang in langProperties)
-				{
-					i++;
-					if (48 + i == choice)
-					{
-						I18n.Instance.SetLanguage(lang.Key);
-						Console.WriteLine(I18n.Instance.GetString("language_changed"));
-						break;
-					}
-				}
-			}
-			_ = Console.ReadKey();
-		}
-
 		public static void DisplayProgress(ProgressState state)
 		{
 			Console.WriteLine($"\n{I18n.Instance.GetString("progress_active")}");
@@ -286,23 +112,6 @@ namespace EasySave.View
 					Path.GetFileName(state.CurrentSourceFile)));
 			}
 		}
-
-		private string GetBackupTypeString(BackupType type)
-		{
-			return type == BackupType.Complete 
-				? I18n.Instance.GetString("type_complete") 
-				: I18n.Instance.GetString("type_differential");
-		}
-
-		private string GetBackupStateString(State state)
-		{
-			return state switch
-			{
-				State.Active => I18n.Instance.GetString("state_active"),
-				State.Completed => I18n.Instance.GetString("state_completed"),
-				State.Error => I18n.Instance.GetString("state_error"),
-				_ => I18n.Instance.GetString("state_inactive")
-			};
-		}
+		
 	}
 }

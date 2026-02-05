@@ -26,6 +26,8 @@ namespace EasySave.Backup
 		public readonly int MaxBackupJobs;
 		private readonly string appData;
 
+		public Signal LatestSignal { get; private set; }
+
 		private BackupManager()
 		{
 			// Initialize paths
@@ -42,6 +44,8 @@ namespace EasySave.Backup
 
 			// Load existing jobs
 			_backupJobs = ConfigManager.LoadBackupJobs();
+
+			LatestSignal = Signal.None;
 		}
 
 		public static BackupManager GetBM()
@@ -55,7 +59,6 @@ namespace EasySave.Backup
 			}
 			return _instance;
 		}
-
 		
 		public static ILogger GetLogger()
 		{
@@ -69,7 +72,6 @@ namespace EasySave.Backup
 			return _logger;
 		}
 		
-
 		public List<BackupJob> GetAllJobs() => [.. _backupJobs];
 
 		public bool AddJob(string? name, string? sourceDir, string? targetDir, BackupType type)
@@ -173,5 +175,11 @@ namespace EasySave.Backup
 				_stateWriter.RemoveState(job.Name);
 			}
 		}
+
+		public void TransmitSignal(Signal signal)
+		{
+			LatestSignal = signal;
+		}
+
 	}
 }

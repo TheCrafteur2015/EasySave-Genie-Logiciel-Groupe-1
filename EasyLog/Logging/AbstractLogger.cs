@@ -16,28 +16,16 @@ namespace EasyLog.Logging
 	public abstract class AbstractLogger : ILogger
 	{
 
-		/// <summary>
-		/// Gets the file system path associated with this instance.
-		/// </summary>
-		public string Path { get; private set; }
+		private string path { get; set; }
 
-		/// <summary>
-		/// Initializes a new instance of the AbstractLogger class using the specified file path.
-		/// </summary>
-		/// <param name="path">The file system path where log entries will be written. Cannot be null or empty.</param>
+		public string LogFile { get; private set; }
+
 		public AbstractLogger(string path)
 		{
-			Path = path;
-			Init();
-		}
-
-		/// <summary>
-		/// Initializes the required directory structure if it does not already exist.
-		/// </summary>
-		private void Init()
-		{
-			if (!Directory.Exists(Path))
-				Directory.CreateDirectory(Path);
+			this.path = path;
+			if (!Directory.Exists(path))
+				Directory.CreateDirectory(path);
+			LogFile = this.GetFile();
 		}
 
 		/// <summary>

@@ -1,0 +1,45 @@
+﻿using EasySave.Extensions;
+using EasySave.View.Command;
+using EasySave.View.Localization;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace EasySave.View.Commands
+{
+	public class ChangeLanguageCommand : ICommand
+	{
+
+		public string GetI18nKey() => "menu_language";
+
+		public int GetID() => 6;
+		
+		public void Execute()
+		{
+			Console.Clear();
+			Console.WriteLine(I18n.Instance.GetString("language_select"));
+			var langProperties = I18n.Instance.LoadLanguagesProperties();
+			int i = 0;
+			foreach (var lang in langProperties)
+			{
+				Console.WriteLine("{0} - {1}", ++i, lang.Value["@language_name"]);
+			}
+			var choice = ConsoleExt.ReadDec();
+
+			i = 0;
+			foreach (var lang in langProperties)
+			{
+				i++;
+				if (i == choice)
+				{
+					I18n.Instance.SetLanguage(lang.Key);
+					Console.WriteLine(I18n.Instance.GetString("language_changed"));
+					break;
+				}
+			}
+			//_ = Console.ReadKey();
+		}
+	}
+}

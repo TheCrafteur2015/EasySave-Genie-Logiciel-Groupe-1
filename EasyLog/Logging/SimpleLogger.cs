@@ -23,7 +23,7 @@
         {
             lock (_lock)
             {
-				File.AppendAllText(Path, $"[{DateTime.Now:G}] {level}: {message}\n");
+				File.AppendAllText(LogFile, $"[{DateTime.Now:G}] {level}: {message}\n");
 			}
         }
 
@@ -37,8 +37,8 @@
         {
 			lock (_lock)
             {
-				File.AppendAllText(Path, $"[{DateTime.Now:G}] {Level.Error}: {e.Message}\n");
-				File.AppendAllText(Path, $"[{DateTime.Now:G}] {Level.Error}: Stacktrace: {e.StackTrace}\n");
+				File.AppendAllText(LogFile, $"[{DateTime.Now:G}] {Level.Error}: {e.Message}\n");
+				File.AppendAllText(LogFile, $"[{DateTime.Now:G}] {Level.Error}: Stacktrace: {e.StackTrace}\n");
 			}
 		}
 

@@ -26,7 +26,10 @@ namespace EasySave.Backup
 		public readonly int MaxBackupJobs;
 		private readonly string appData;
 
-		/// <summary>
+
+		public Signal LatestSignal { get; private set; }
+    
+    /// <summary>
 		/// Initializes a new instance of the BackupManager class and sets up required components and configuration.
 		/// </summary>
 		/// <remarks>This constructor is private and is intended to restrict instantiation of the BackupManager class
@@ -47,6 +50,8 @@ namespace EasySave.Backup
 
 			// Load existing jobs
 			_backupJobs = ConfigManager.LoadBackupJobs();
+
+			LatestSignal = Signal.None;
 		}
 
 		/// <summary>
@@ -66,7 +71,6 @@ namespace EasySave.Backup
 			}
 			return _instance;
 		}
-
 		
 		public static ILogger GetLogger()
 		{
@@ -118,7 +122,7 @@ namespace EasySave.Backup
 				return false;
 			}
 
-			int newId = _backupJobs.Any() ? _backupJobs.Max(j => j.Id) + 1 : 1;
+			int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
 
 			var job = new BackupJob(newId, name, sourceDir, targetDir, type);
 			_backupJobs.Add(job);
@@ -242,5 +246,11 @@ namespace EasySave.Backup
 				_stateWriter.RemoveState(job.Name);
 			}
 		}
+
+		public void TransmitSignal(Signal signal)
+		{
+			LatestSignal = signal;
+		}
+
 	}
 }

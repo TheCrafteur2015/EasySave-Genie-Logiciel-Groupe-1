@@ -20,6 +20,8 @@ namespace EasySave.View.Localization
 
 		private Dictionary<string, string> translations;
 
+		private Dictionary<string, Dictionary<string, string>> properties;
+
 		public string Language { get; private set; } = string.Empty;
 
 		private static I18n? _instance;
@@ -43,7 +45,8 @@ namespace EasySave.View.Localization
 		/// intended for internal use and is not accessible outside the class.</remarks>
 		private I18n() {
 			availableLanguages = [];
-			translations = [];
+			translations       = [];
+			properties         = [];
 			var langs = Assembly.GetExecutingAssembly()
 				.GetManifestResourceNames()
 				.Where(e => e.Contains(".i18n."));
@@ -96,13 +99,15 @@ namespace EasySave.View.Localization
 		/// properties. Only properties with keys that start with '@' are included.</returns>
 		public Dictionary<string, Dictionary<string, string>> LoadLanguagesProperties()
 		{
-			var properties = new Dictionary<string, Dictionary<string, string>>();
-			foreach (var pair in availableLanguages)
+			if (properties.Count == 0)
 			{
-				properties[pair.Key] = JsonConvert
-					.DeserializeObject<Dictionary<string, string>>(ResourceManager.ReadResourceFile(pair.Value))
-					.Where(p => p.Key.StartsWith("@"))
-					.ToDictionary<string, string>();
+				foreach (var pair in availableLanguages)
+				{
+					properties[pair.Key] = JsonConvert
+						.DeserializeObject<Dictionary<string, string>>(ResourceManager.ReadResourceFile(pair.Value))
+						.Where(p => p.Key.StartsWith("@"))
+						.ToDictionary<string, string>();
+				}
 			}
 			return properties;
 		}

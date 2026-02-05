@@ -91,7 +91,7 @@ namespace EasySave.Backup
 				return false;
 			}
 
-			int newId = _backupJobs.Any() ? _backupJobs.Max(j => j.Id) + 1 : 1;
+			int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
 
 			var job = new BackupJob(newId, name, sourceDir, targetDir, type);
 			_backupJobs.Add(job);

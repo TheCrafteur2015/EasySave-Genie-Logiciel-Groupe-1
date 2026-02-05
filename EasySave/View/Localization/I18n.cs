@@ -6,6 +6,14 @@ using System.Text.RegularExpressions;
 
 namespace EasySave.View.Localization
 {
+	/// <summary>
+	/// Provides internationalization (i18n) support by managing available languages and retrieving localized strings for
+	/// the application.
+	/// </summary>
+	/// <remarks>This class implements a singleton pattern to ensure a single instance manages language resources
+	/// throughout the application. It allows switching between supported languages at runtime and retrieving localized
+	/// strings based on the current language. The class loads language resources embedded in the assembly and exposes
+	/// methods to access translations and language metadata.</remarks>
 	internal partial class I18n
 	{
 		private readonly Dictionary<string, string> availableLanguages;
@@ -27,6 +35,12 @@ namespace EasySave.View.Localization
 
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the I18n class and loads available language resources from the executing assembly.
+		/// </summary>
+		/// <remarks>This constructor scans the assembly for embedded language resources and prepares the internal
+		/// language mapping. The default language is set to English ("en_us") upon initialization. This constructor is
+		/// intended for internal use and is not accessible outside the class.</remarks>
 		private I18n() {
 			availableLanguages = [];
 			translations = [];
@@ -45,6 +59,13 @@ namespace EasySave.View.Localization
 			SetLanguage("en_us");
 		}
 
+		/// <summary>
+		/// Sets the current language for translations using the specified language name.
+		/// </summary>
+		/// <remarks>Calling this method updates the active translations to those associated with the specified
+		/// language. Any subsequent translation lookups will use the newly set language.</remarks>
+		/// <param name="languageName">The name of the language to set as the current language. Must correspond to an available language.</param>
+		/// <exception cref="ArgumentException">Thrown if the specified language name does not exist in the available languages.</exception>
 		public void SetLanguage(string languageName)
 		{
 			if (!availableLanguages.ContainsKey(languageName))
@@ -54,6 +75,11 @@ namespace EasySave.View.Localization
 			translations = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent);
 		}
 
+		/// <summary>
+		/// Retrieves the localized string associated with the specified key.
+		/// </summary>
+		/// <param name="key">The key that identifies the localized string to retrieve. Cannot be null.</param>
+		/// <returns>The localized string corresponding to the specified key if found; otherwise, the key itself.</returns>
 		public string GetString(string key)
 		{
 			if (translations.TryGetValue(key, out string? value))
@@ -61,6 +87,13 @@ namespace EasySave.View.Localization
 			return key;
 		}
 
+		/// <summary>
+		/// Loads the language property dictionaries for all available languages.
+		/// </summary>
+		/// <remarks>Use this method to retrieve all language-specific properties that are marked with a leading '@'
+		/// in their keys. The returned structure allows access to these properties by language.</remarks>
+		/// <returns>A dictionary where each key is a language identifier and each value is a dictionary containing the language's
+		/// properties. Only properties with keys that start with '@' are included.</returns>
 		public Dictionary<string, Dictionary<string, string>> LoadLanguagesProperties()
 		{
 			var properties = new Dictionary<string, Dictionary<string, string>>();

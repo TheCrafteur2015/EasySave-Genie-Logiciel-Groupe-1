@@ -8,6 +8,13 @@ namespace EasySave.Backup
 
 		private BackupStrategyFactory() {}
 
+		/// <summary>
+		/// Creates a backup strategy instance based on the specified backup type.
+		/// </summary>
+		/// <param name="type">The type of backup for which to create a strategy. Must be a defined value of the BackupType enumeration.</param>
+		/// <returns>An instance of a class that implements the IBackupStrategy interface corresponding to the specified backup type.</returns>
+		/// <exception cref="NotImplementedException">Thrown if the specified backup type is Incremental, which is not currently supported.</exception>
+		/// <exception cref="ArgumentException">Thrown if the specified backup type is not recognized.</exception>
 		public static IBackupStrategy CreateStrategy(BackupType type)
 		{
 			return type switch

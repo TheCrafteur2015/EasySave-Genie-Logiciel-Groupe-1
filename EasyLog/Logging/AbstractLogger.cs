@@ -9,21 +9,19 @@ namespace EasyLog.Logging
 	public abstract class AbstractLogger : ILogger
 	{
 
-		public string Path { get; private set; }
+		private string path { get; set; }
+
+		public string LogFile { get; private set; }
 
 		public AbstractLogger(string path)
 		{
-			Path = path;
-			Init();
+			this.path = path;
+			if (!Directory.Exists(path))
+				Directory.CreateDirectory(path);
+			LogFile = this.GetFile();
 		}
 
-		private void Init()
-		{
-			if (!Directory.Exists(Path))
-				Directory.CreateDirectory(Path);
-		}
-
-		public string GetFile() => System.IO.Path.Combine(Path, $"{DateTime.Now:yyyy-MM-dd}.log");
+		public string GetFile() => System.IO.Path.Combine(path, $"{DateTime.Now:yyyy-MM-dd}.log");
 
         public abstract void Log(Level level, string message);
 

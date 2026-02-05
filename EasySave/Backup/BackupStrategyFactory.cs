@@ -12,8 +12,9 @@ namespace EasySave.Backup
 		{
 			return type switch
 			{
-				BackupType.Complete => new CompleteBackupStrategy(),
+				BackupType.Complete     => new CompleteBackupStrategy(),
 				BackupType.Differential => new DifferentialBackupStrategy(),
+				BackupType.Incremental  => throw new NotImplementedException("This backup type is not yet implemented!"),
 				_ => throw new ArgumentException($"Unknown backup type: {type}")
 			};
 		}

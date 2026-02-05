@@ -1,7 +1,6 @@
 using EasySave.Logger;
-using EasySave.Models;
 using EasySave.Utils;
-using EasySave.Views.Localization;
+using EasySave.View.Localization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -40,7 +39,6 @@ namespace EasySave.Backup
 			ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
 
 			MaxBackupJobs = ConfigManager.ConfigValues["MaxBackupJobs"];
-			_ = new I18n();
 
 			// Load existing jobs
 			_backupJobs = ConfigManager.LoadBackupJobs();
@@ -72,7 +70,7 @@ namespace EasySave.Backup
 
 		public List<BackupJob> GetAllJobs() => [.. _backupJobs];
 
-		public bool AddJob(string name, string sourceDir, string targetDir, BackupType type)
+		public bool AddJob(string? name, string? sourceDir, string? targetDir, BackupType type)
 		{
 			if (_backupJobs.Count >= MaxBackupJobs)
 				return false;
@@ -80,6 +78,13 @@ namespace EasySave.Backup
 			if (string.IsNullOrWhiteSpace(name) ||
 				string.IsNullOrWhiteSpace(sourceDir) ||
 				string.IsNullOrWhiteSpace(targetDir))
+			{
+				return false;
+			}
+
+			if (string.IsNullOrEmpty(name) ||
+				string.IsNullOrEmpty(sourceDir) ||
+				string.IsNullOrEmpty(targetDir))
 			{
 				return false;
 			}

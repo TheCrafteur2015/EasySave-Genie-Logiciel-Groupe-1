@@ -1,4 +1,6 @@
-﻿namespace EasySave.Backup
+﻿using EasySave.View.Localization;
+
+namespace EasySave.Backup
 {
 	/// <summary>
 	/// Backup job types
@@ -6,6 +8,7 @@
 	public enum BackupType
 	{
 		Complete,
-		Differential
+		Differential,
+		Incremental
 	}
 }

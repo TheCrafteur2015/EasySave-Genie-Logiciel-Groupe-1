@@ -1,7 +1,6 @@
-using EasySave.Logger;
-using EasySave.Models;
+using EasyLog.Logging;
 using EasySave.Utils;
-using EasySave.Views.Localization;
+using EasySave.View.Localization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -27,6 +26,8 @@ namespace EasySave.Backup
 		public readonly int MaxBackupJobs;
 		private readonly string appData;
 
+		public Signal LatestSignal { get; private set; }
+
 		private BackupManager()
 		{
 			// Initialize paths
@@ -40,10 +41,11 @@ namespace EasySave.Backup
 			ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
 
 			MaxBackupJobs = ConfigManager.ConfigValues["MaxBackupJobs"];
-			_ = new I18n();
 
 			// Load existing jobs
 			_backupJobs = ConfigManager.LoadBackupJobs();
+
+			LatestSignal = Signal.None;
 		}
 
 		public static BackupManager GetBM()
@@ -57,7 +59,7 @@ namespace EasySave.Backup
 			}
 			return _instance;
 		}
-
+		
 		public static ILogger GetLogger()
 		{
 			if (_logger == null)
@@ -69,10 +71,10 @@ namespace EasySave.Backup
 			}
 			return _logger;
 		}
-
+		
 		public List<BackupJob> GetAllJobs() => [.. _backupJobs];
 
-		public bool AddJob(string name, string sourceDir, string targetDir, BackupType type)
+		public bool AddJob(string? name, string? sourceDir, string? targetDir, BackupType type)
 		{
 			if (_backupJobs.Count >= MaxBackupJobs)
 				return false;
@@ -84,7 +86,14 @@ namespace EasySave.Backup
 				return false;
 			}
 
-			int newId = _backupJobs.Any() ? _backupJobs.Max(j => j.Id) + 1 : 1;
+			if (string.IsNullOrEmpty(name) ||
+				string.IsNullOrEmpty(sourceDir) ||
+				string.IsNullOrEmpty(targetDir))
+			{
+				return false;
+			}
+
+			int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
 
 			var job = new BackupJob(newId, name, sourceDir, targetDir, type);
 			_backupJobs.Add(job);
@@ -166,5 +175,11 @@ namespace EasySave.Backup
 				_stateWriter.RemoveState(job.Name);
 			}
 		}
+
+		public void TransmitSignal(Signal signal)
+		{
+			LatestSignal = signal;
+		}
+
 	}
 }

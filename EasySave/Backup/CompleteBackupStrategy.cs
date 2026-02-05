@@ -1,8 +1,5 @@
-using EasySave.Models;
-using System;
 using System.Diagnostics;
-using System.IO;
-using EasySave.Logger;
+using EasyLog.Logging;
 
 namespace EasySave.Backup
 {

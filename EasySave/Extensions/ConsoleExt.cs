@@ -6,14 +6,15 @@ using System.Threading.Tasks;
 
 namespace EasySave.Extensions
 {
-    public class ConsoleExt
-    {
-        private ConsoleExt() { }
+	public static class ConsoleExt
+	{
 
-        public static int ReadDec()
-        {
-            return Console.Read() - 48;
-        }
+		public static int ReadDec()
+		{
+			if (int.TryParse(Console.ReadLine(), out int dec))
+				return dec;
+			throw new FormatException("Not an int!");
+		}
 
-    }
+	}
 }

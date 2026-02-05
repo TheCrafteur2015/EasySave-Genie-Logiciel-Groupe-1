@@ -1,4 +1,4 @@
-using EasySave.Models;
+using EasySave.Backup;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -12,8 +12,8 @@ namespace EasySave.Utils
     public class StateWriter
     {
         private readonly string _stateFilePath;
-        private readonly object _lockObject = new object();
-        private Dictionary<string, ProgressState> _currentStates = new Dictionary<string, ProgressState>();
+        private readonly object _lockObject = new();
+        private Dictionary<string, ProgressState> _currentStates = [];
 
         public StateWriter(string stateDirectory)
         {

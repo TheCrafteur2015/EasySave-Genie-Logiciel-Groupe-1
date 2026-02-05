@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace EasySave.Extensions
 {
-    public class ConsoleExt
+    public static class ConsoleExt
     {
-        private ConsoleExt() { }
 
         public static int ReadDec()
         {

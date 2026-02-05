@@ -1,5 +1,5 @@
 using EasySave.Backup;
-using EasySave.Views;
+using EasySave.View;
 
 namespace EasySave
 {

@@ -1,7 +1,5 @@
 using EasySave.Backup;
 using EasySave.View.Localization;
-using System;
-using System.Linq;
 
 namespace EasySave.View
 {

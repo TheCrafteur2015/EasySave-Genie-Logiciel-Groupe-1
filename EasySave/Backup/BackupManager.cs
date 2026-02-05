@@ -1,4 +1,4 @@
-using EasySave.Logger;
+using EasyLog.Logging;
 using EasySave.Utils;
 using EasySave.View.Localization;
 using System;
@@ -56,6 +56,7 @@ namespace EasySave.Backup
 			return _instance;
 		}
 
+		
 		public static ILogger GetLogger()
 		{
 			if (_logger == null)
@@ -67,6 +68,7 @@ namespace EasySave.Backup
 			}
 			return _logger;
 		}
+		
 
 		public List<BackupJob> GetAllJobs() => [.. _backupJobs];
 

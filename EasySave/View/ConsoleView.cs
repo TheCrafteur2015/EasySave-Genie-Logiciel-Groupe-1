@@ -7,11 +7,18 @@ namespace EasySave.View
 {
 	/// <summary>
 	/// Console View - Handles user interface (View in MVVM)
+	/// <para>
+	/// The ConsoleView class act like the View in your software architecture.
+	/// It is responsible of menu displaying and get user input.
+	/// </para>
 	/// </summary>
 	public class ConsoleView
 	{
-
-		public ConsoleView()
+        /// <summary>
+        /// Initialization of the new instance for the console view.
+		/// Load the unique instance needed for the functioning of the application system.
+        /// </summary>
+        public ConsoleView()
 		{
 			// Initialization of Singleton instances
 			_ = BackupManager.GetBM();
@@ -19,7 +26,11 @@ namespace EasySave.View
 			_ = I18n.Instance;
 		}
 
-		public void Run(string[] args)
+        /// <summary>
+        /// Start the application system in console mode.
+        /// </summary>
+        /// <param name="args">Arguments input from the command line when the application is launched.</param>
+        public void Run(string[] args)
 		{
 			// Check for command line arguments
 			if (args.Length > 0)
@@ -51,6 +62,19 @@ namespace EasySave.View
 			}
 		}
 
+		/// <summary>
+		/// Parses and processes command-line arguments to execute one or more backup jobs based on the specified input
+		/// format.
+		/// </summary>
+		/// <remarks>The method supports three input formats for specifying backup jobs: a single integer for one job,
+		/// a hyphen-separated range for multiple jobs, or a semicolon-separated list for specific jobs. If the input does not
+		/// match any of these formats or is invalid, no jobs are executed. Any exceptions encountered during processing are
+		/// caught and an error message is displayed.</remarks>
+		/// <param name="args">An array of command-line arguments.
+		/// <item><description>"1-3" : range of ID </description></item>
+		/// <item><description>"1;3" : list of ID</description></item>
+		/// <item><description>"1" : unique ID</description></item>
+		/// </param>
 		public static void ProcessCommandLine(string[] args)
 		{
 			try

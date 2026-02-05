@@ -9,6 +9,19 @@ namespace EasySave.Backup
 	public class DifferentialBackupStrategy : IBackupStrategy
 	{
 
+		/// <summary>
+		/// Executes the specified backup job, copying files from the source directory to the target directory and reporting
+		/// progress through a callback.
+		/// </summary>
+		/// <remarks>The method performs a differential backup, copying only files that are new or have changed since
+		/// the last backup. The target directory is created if it does not exist. The progress callback is invoked multiple
+		/// times during execution, including a final call when the backup is complete. This method is not
+		/// thread-safe.</remarks>
+		/// <param name="job">The backup job to execute. Specifies the source and target directories, as well as job metadata.</param>
+		/// <param name="progressCallback">A callback that receives progress updates as the backup operation proceeds. The callback is invoked with a <see
+		/// cref="ProgressState"/> object representing the current state of the backup. Can be <see langword="null"/> if
+		/// progress updates are not required.</param>
+		/// <exception cref="DirectoryNotFoundException">Thrown if the source directory specified in <paramref name="job"/> does not exist.</exception>
 		public void Execute(BackupJob job, Action<ProgressState> progressCallback)
 		{
 			if (!Directory.Exists(job.SourceDirectory))

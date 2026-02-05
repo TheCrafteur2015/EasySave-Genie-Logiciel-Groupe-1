@@ -15,5 +15,11 @@
 		<EmbeddedResource Include="default.json" />
 		<EmbeddedResource Include="i18n/*.json" />
 	</ItemGroup>
+	
+	<ItemGroup>
+	  <Reference Include="EasyLog">
+	    <HintPath>..\EasyLog\bin\Debug\net8.0\EasyLog.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
 
 </Project>

@@ -1,7 +1,6 @@
 using System;
-using EasySave.Backup;
 
-namespace EasySave.Models
+namespace EasySave.Backup
 {
     /// <summary>
     /// Represents the current state of a backup operation

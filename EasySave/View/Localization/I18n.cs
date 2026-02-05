@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-namespace EasySave.Views.Localization
+namespace EasySave.View.Localization
 {
 	internal partial class I18n
 	{
@@ -14,7 +14,20 @@ namespace EasySave.Views.Localization
 
 		public string Language { get; private set; } = string.Empty;
 
-		public I18n() {
+		private static I18n? _instance;
+
+		public static I18n Instance
+		{
+
+			get
+			{
+				_instance ??= new I18n();
+				return _instance;
+			}
+
+		}
+
+		private I18n() {
 			availableLanguages = [];
 			translations = [];
 			var langs = Assembly.GetExecutingAssembly()

@@ -5,11 +5,18 @@ namespace EasySave.View
 {
 	/// <summary>
 	/// Console View - Handles user interface (View in MVVM)
+	/// <para>
+	/// The ConsoleView class act like the View in your software architecture.
+	/// It is responsible of menu displaying and get user input.
+	/// </para>
 	/// </summary>
 	public class ConsoleView
 	{
-
-		public ConsoleView()
+        /// <summary>
+        /// Initialization of the new instance for the console view.
+		/// Load the unique instance needed for the functioning of the application system.
+        /// </summary>
+        public ConsoleView()
 		{
 			// Initialization of Singleton instances
 			_ = BackupManager.GetBM();
@@ -17,7 +24,11 @@ namespace EasySave.View
 			_ = I18n.Instance;
 		}
 
-		public void Run(string[] args)
+        /// <summary>
+        /// Start the application system in console mode.
+        /// </summary>
+        /// <param name="args">Arguments input from the command line when the application is launched.</param>
+        public void Run(string[] args)
 		{
 			// Check for command line arguments
 			if (args.Length > 0)
@@ -69,6 +80,19 @@ namespace EasySave.View
 			}
 		}
 
+		/// <summary>
+		/// Parses and processes command-line arguments to execute one or more backup jobs based on the specified input
+		/// format.
+		/// </summary>
+		/// <remarks>The method supports three input formats for specifying backup jobs: a single integer for one job,
+		/// a hyphen-separated range for multiple jobs, or a semicolon-separated list for specific jobs. If the input does not
+		/// match any of these formats or is invalid, no jobs are executed. Any exceptions encountered during processing are
+		/// caught and an error message is displayed.</remarks>
+		/// <param name="args">An array of command-line arguments.
+		/// <item><description>"1-3" : range of ID </description></item>
+		/// <item><description>"1;3" : list of ID</description></item>
+		/// <item><description>"1" : unique ID</description></item>
+		/// </param>
 		public void ProcessCommandLine(string[] args)
 		{
 			try
@@ -114,7 +138,12 @@ namespace EasySave.View
 			}
 		}
 
-		public void DisplayMenu()
+        /// <summary>
+        /// Displays the main application menu to the console; the user has to select an option.
+        /// </summary>
+        /// <remarks>The menu text is localized based on the current language settings. This method clears the console
+        /// before displaying the menu options.</remarks>
+        public void DisplayMenu()
 		{
 			Console.Clear();
 			Console.WriteLine(I18n.Instance.GetString("menu_title"));
@@ -130,6 +159,13 @@ namespace EasySave.View
 			Console.Write(I18n.Instance.GetString("menu_choice"));
 		}
 
+		/// <summary>
+		/// Prompts the user to create a new backup job by entering the required information and adds the job to the backup
+		/// manager.
+		/// </summary>
+		/// <remarks>This method interacts with the user via the console to collect the backup job's name, source,
+		/// target, and type. The job is only created if all required fields are provided. Success or failure messages are
+		/// displayed to the user based on the outcome.</remarks>
 		private void CreateBackupJob()
 		{
 			Console.Clear();
@@ -161,6 +197,12 @@ namespace EasySave.View
 			}
 		}
 
+		/// <summary>
+		/// Prompts the user to select and execute a backup job by its ID.
+		/// </summary>
+		/// <remarks>Displays a list of available backup jobs and requests the user to enter the identifier of the job
+		/// to execute. Provides feedback on the success or failure of the operation. This method is intended for interactive
+		/// console use and does not return a value.</remarks>
 		private void ExecuteBackupJob()
 		{
 			Console.Clear();
@@ -181,6 +223,12 @@ namespace EasySave.View
 			}
 		}
 
+		/// <summary>
+		/// Executes all configured backup jobs and displays progress and status messages to the console.
+		/// </summary>
+		/// <remarks>This method clears the console before starting execution and provides user feedback on the
+		/// outcome of the backup operations. It is intended for use in interactive console applications and should not be
+		/// called from non-interactive contexts.</remarks>
 		private void ExecuteAllBackupJobs()
 		{
 			Console.Clear();
@@ -197,6 +245,12 @@ namespace EasySave.View
 			}
 		}
 
+		/// <summary>
+		/// Displays a list of all configured backup jobs and their details to the console.
+		/// </summary>
+		/// <remarks>If no backup jobs are configured, a message indicating that the list is empty is displayed. The
+		/// output includes each job's identifier, name, source and target directories, backup type, current state, and the
+		/// time of the last execution. All output is localized based on the current language settings.</remarks>
 		private void ListBackupJobs()
 		{
 			Console.WriteLine(I18n.Instance.GetString("list_title"));
@@ -221,6 +275,12 @@ namespace EasySave.View
 			}
 		}
 
+		/// <summary>
+		/// Prompts the user to select and delete a backup job from the list of available backup jobs.
+		/// </summary>
+		/// <remarks>This method displays all existing backup jobs, requests the user to enter the identifier of the
+		/// job to delete, and attempts to remove the specified job. A confirmation or error message is displayed based on the
+		/// outcome. The method expects user input from the console and does not return a value.</remarks>
 		private void DeleteBackupJob()
 		{
 			Console.Clear();
@@ -240,6 +300,13 @@ namespace EasySave.View
 				}
 			}
 		}
+		/// <summary>
+		/// Prompts the user to select a language and updates the application's language setting based on the user's choice.
+		/// </summary>
+		/// <remarks>This method clears the console, displays a list of available languages, and waits for the user to
+		/// select one. The application's language is changed immediately after a valid selection. The method pauses for a key
+		/// press before returning. This method is intended for interactive console applications and should be called from the
+		/// main user interface thread.</remarks>
 
 		private void ChangeLanguage()
 		{
@@ -270,6 +337,14 @@ namespace EasySave.View
 			_ = Console.ReadKey();
 		}
 
+		/// <summary>
+		/// Displays the current progress of an operation to the console using localized messages.
+		/// </summary>
+		/// <remarks>This method outputs progress details such as the number of files processed, total size,
+		/// percentage completed, and the name of the current file, if available. All messages are localized using the
+		/// application's internationalization resources. Intended for use in console applications.</remarks>
+		/// <param name="state">The current progress state containing information about files, size, percentage completed, and the current file
+		/// being processed. Cannot be null.</param>
 		public static void DisplayProgress(ProgressState state)
 		{
 			Console.WriteLine($"\n{I18n.Instance.GetString("progress_active")}");
@@ -287,6 +362,11 @@ namespace EasySave.View
 			}
 		}
 
+		/// <summary>
+		/// Returns the localized string representation of the specified backup type.
+		/// </summary>
+		/// <param name="type">The type of backup to convert to a localized string.</param>
+		/// <returns>A localized string that describes the specified backup type.</returns>
 		private string GetBackupTypeString(BackupType type)
 		{
 			return type == BackupType.Complete 
@@ -294,6 +374,13 @@ namespace EasySave.View
 				: I18n.Instance.GetString("type_differential");
 		}
 
+		/// <summary>
+		/// Returns a localized string that describes the specified backup state.
+		/// </summary>
+		/// <remarks>The returned string is localized based on the application's current language settings. If the
+		/// specified state is not recognized, a string representing the inactive state is returned.</remarks>
+		/// <param name="state">The backup state for which to retrieve the localized description.</param>
+		/// <returns>A localized string representing the specified backup state.</returns>
 		private string GetBackupStateString(State state)
 		{
 			return state switch

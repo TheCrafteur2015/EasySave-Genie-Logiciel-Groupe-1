@@ -1,6 +1,6 @@
 ﻿namespace EasyLog.Logging
 {
-	class SimpleLogger(string path) : AbstractLogger(path)
+	public class SimpleLogger(string path) : AbstractLogger(path)
 	{
 
         private readonly object _lock = new();

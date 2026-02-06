@@ -1,11 +1,5 @@
 ﻿using EasySave.View.Commands;
 using EasySave.View.Localization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EasySave.View.Command
 {
@@ -62,14 +56,14 @@ namespace EasySave.View.Command
 		public void DisplayCommands()
 		{
 			Console.Clear();
-			Console.WriteLine(I18n.Instance.GetString("menu_title"));
+			Console.WriteLine("=== {0} ===", I18n.Instance.GetString("menu_title"));
 			Console.WriteLine();
 
 			foreach (var command in this.commandList)
 				Console.WriteLine("{0}. {1}", command.Key, I18n.Instance.GetString(command.Value.GetI18nKey()));
 
 			Console.WriteLine();
-			Console.Write(I18n.Instance.GetString("menu_choice"));
+			Console.Write("{0}: ", I18n.Instance.GetString("menu_choice"));
 		}
 
 	}

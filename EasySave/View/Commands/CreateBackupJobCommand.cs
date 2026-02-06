@@ -2,11 +2,6 @@
 using EasySave.Extensions;
 using EasySave.View.Command;
 using EasySave.View.Localization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EasySave.View.Commands
 {
@@ -18,16 +13,16 @@ namespace EasySave.View.Commands
 		public void Execute()
 		{
 			Console.Clear();
-			Console.Write(I18n.Instance.GetString("create_name"));
+			Console.Write("{0}: ", I18n.Instance.GetString("create_name"));
 			string? name = Console.ReadLine();
 
-			Console.Write(I18n.Instance.GetString("create_source"));
+			Console.Write("{0}: ", I18n.Instance.GetString("create_source"));
 			string? source = Console.ReadLine();
 
-			Console.Write(I18n.Instance.GetString("create_target"));
+			Console.Write("{0}: ", I18n.Instance.GetString("create_target"));
 			string? target = Console.ReadLine();
 
-			Console.Write(I18n.Instance.GetString("create_type"));
+			Console.Write("{0}: ", I18n.Instance.GetString("create_type"));
 			int typeChoice = ConsoleExt.ReadDec();
 
 			BackupType type = typeChoice == 2 ? BackupType.Differential : BackupType.Complete;

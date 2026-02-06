@@ -1,4 +1,4 @@
-namespace EasySave.Logger
+namespace EasyLog.Logging
 {
 	/// <summary>
 	/// Interface for logging implementations

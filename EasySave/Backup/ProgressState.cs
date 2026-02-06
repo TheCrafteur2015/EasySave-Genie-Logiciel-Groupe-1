@@ -1,7 +1,4 @@
-using System;
-using EasySave.Backup;
-
-namespace EasySave.Models
+namespace EasySave.Backup
 {
     /// <summary>
     /// Represents the current state of a backup operation
@@ -19,6 +16,12 @@ namespace EasySave.Models
         public string CurrentTargetFile { get; set; }
         public double ProgressPercentage { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the ProgressState class with default values.
+        /// </summary>
+        /// <remarks>The default constructor sets all string properties to empty strings, the timestamp to
+        /// the current date and time, and the state to Inactive. This ensures the object starts in a consistent,
+        /// inactive state before any progress tracking begins.</remarks>
         public ProgressState()
         {
             BackupName        = string.Empty;

@@ -1,8 +1,5 @@
-using EasySave.Models;
-using System;
 using System.Diagnostics;
-using System.IO;
-using EasySave.Logger;
+using EasyLog.Logging;
 
 namespace EasySave.Backup
 {
@@ -12,6 +9,17 @@ namespace EasySave.Backup
 	public class CompleteBackupStrategy : IBackupStrategy
 	{
 
+		/// <summary>
+		/// Executes the specified backup job, copying all files from the source directory to the target directory and
+		/// reporting progress through a callback.
+		/// </summary>
+		/// <remarks>The method creates the target directory if it does not already exist. The progress callback is
+		/// invoked periodically with the current progress state, including after the operation completes. If an error occurs
+		/// while copying a file, the method logs the error and continues processing the remaining files.</remarks>
+		/// <param name="job">The backup job to execute. Specifies the source and target directories, as well as backup metadata.</param>
+		/// <param name="progressCallback">A callback method that receives progress updates as the backup operation proceeds. Can be null if progress
+		/// reporting is not required.</param>
+		/// <exception cref="DirectoryNotFoundException">Thrown if the source directory specified in the backup job does not exist.</exception>
 		public void Execute(BackupJob job, Action<ProgressState> progressCallback)
 		{
 			if (!Directory.Exists(job.SourceDirectory))

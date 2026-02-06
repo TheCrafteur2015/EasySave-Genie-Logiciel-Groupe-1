@@ -90,9 +90,9 @@ namespace EasySave.View
 					Console.WriteLine("Execution completed!");
 				}
 			}
-			catch (Exception ex)
+			catch (Exception e)
 			{
-				Console.WriteLine($"{I18n.Instance.GetString("error")}{ex.Message}");
+				Console.WriteLine("{0}: {1}", I18n.Instance.GetString("error"), e.Message);
 			}
 		}
 

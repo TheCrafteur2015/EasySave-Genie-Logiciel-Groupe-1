@@ -18,7 +18,7 @@ namespace EasySave.View.Commands
 			// Afficher la liste des processus de sauvegarde
 			CommandContext.Instance.ExecuteCommand(4);
 
-			Console.Write(I18n.Instance.GetString("delete_id"));
+			Console.Write("{0}: ", I18n.Instance.GetString("delete_id"));
 
 			if (int.TryParse(Console.ReadLine(), out int id))
 			{

@@ -19,7 +19,7 @@ namespace EasySave.View.Commands
 		public void Execute()
 		{
 			Console.Clear();
-			Console.WriteLine(I18n.Instance.GetString("language_select"));
+			Console.WriteLine("{0}: ", I18n.Instance.GetString("language_select"));
 			var langProperties = I18n.Instance.LoadLanguagesProperties();
 			int i = 0;
 			foreach (var lang in langProperties)

@@ -22,7 +22,7 @@ namespace EasySave.View.Commands
 			// Afficher la liste des processus de sauvegarde
 			CommandContext.Instance.ExecuteCommand(4);
 			
-			Console.Write(I18n.Instance.GetString("execute_id"));
+			Console.Write("{0}: ", I18n.Instance.GetString("execute_id"));
 
 			int id = ConsoleExt.ReadDec();
 
@@ -36,7 +36,7 @@ namespace EasySave.View.Commands
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine(I18n.Instance.GetString("execute_failure") + e.Message);
+				Console.WriteLine("{0}: ", I18n.Instance.GetString("execute_failure") + e.Message);
 			}
 		}
 

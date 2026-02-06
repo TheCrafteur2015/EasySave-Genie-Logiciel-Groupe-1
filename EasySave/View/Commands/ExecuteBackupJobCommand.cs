@@ -2,11 +2,6 @@
 using EasySave.Extensions;
 using EasySave.View.Command;
 using EasySave.View.Localization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EasySave.View.Commands
 {

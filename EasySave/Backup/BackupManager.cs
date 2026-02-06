@@ -1,11 +1,5 @@
 using EasyLog.Logging;
 using EasySave.Utils;
-using EasySave.View.Localization;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 
 namespace EasySave.Backup
 {

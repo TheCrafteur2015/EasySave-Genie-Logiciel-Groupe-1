@@ -32,7 +32,7 @@ namespace EasyLog.Logging
 		/// Generates the full file path for the log file corresponding to the current date.
 		/// </summary>
 		/// <returns>A string containing the absolute path to the log file for today, with the file name formatted as "yyyy-MM-dd.log".</returns>
-		public string GetFile() => System.IO.Path.Combine(Path, $"{DateTime.Now:yyyy-MM-dd}.log");
+		public string GetFile() => Path.Combine(path, $"{DateTime.Now:yyyy-MM-dd}.log");
 
 		/// <summary>
 		/// Writes a log entry with the specified severity level and message.

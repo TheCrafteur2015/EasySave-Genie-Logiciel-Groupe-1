@@ -7,10 +7,12 @@
     /// timestamp, log level, and message. This logger is suitable for basic logging needs where structured or
     /// asynchronous logging is not required.</remarks>
     /// <param name="path">The file path where log entries will be written. If the file does not exist, it will be created.</param>
-	public class SimpleLogger(string path) : AbstractLogger(path)
+	public class SimpleLogger(string path) : AbstractLogger<string>(path)
 	{
 
         private readonly object _lock = new();
+
+        public override string GetExtension() => "log";
 
         /// <summary>
         /// Writes a log entry with the specified severity level and message to the log file.

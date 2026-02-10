@@ -13,16 +13,16 @@ namespace EasyLog.Logging
 	/// initialization and file path management. Derived classes must implement the logging methods to specify how log
 	/// entries are written. This class is not intended to be used directly; instead, inherit from it to create a custom
 	/// logger.</remarks>
-	public abstract class AbstractLogger : ILogger
+	public abstract class AbstractLogger<T> : ILogger<T>
 	{
 
-		private string path { get; set; }
+		private readonly string _path;
 
 		public string LogFile { get; private set; }
 
 		public AbstractLogger(string path)
 		{
-			this.path = path;
+			this._path = path;
 			if (!Directory.Exists(path))
 				Directory.CreateDirectory(path);
 			LogFile = this.GetFile();
@@ -32,14 +32,16 @@ namespace EasyLog.Logging
 		/// Generates the full file path for the log file corresponding to the current date.
 		/// </summary>
 		/// <returns>A string containing the absolute path to the log file for today, with the file name formatted as "yyyy-MM-dd.log".</returns>
-		public string GetFile() => Path.Combine(path, $"{DateTime.Now:yyyy-MM-dd}.log");
+		public string GetFile() => Path.Combine(_path, $"{DateTime.Now:yyyy-MM-dd}." + GetExtension());
+
+		public abstract string GetExtension();
 
 		/// <summary>
 		/// Writes a log entry with the specified severity level and message.
 		/// </summary>
 		/// <param name="level">The severity level of the log entry. Determines the importance and filtering of the log message.</param>
 		/// <param name="message">The message to log. Cannot be null.</param>
-        public abstract void Log(Level level, string message);
+        public abstract void Log(Level level, T message);
 
 		/// <summary>
 		/// Logs the specified exception as an error entry.

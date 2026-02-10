@@ -3,12 +3,12 @@ namespace EasyLog.Logging
 	/// <summary>
 	/// Interface for logging implementations
 	/// </summary>
-	public interface ILogger
+	public interface ILogger<T>
 	{
 		/// <summary>
 		/// Logs a transfer operation
 		/// </summary>
-		void Log(Level level, string message);
+		void Log(Level level, T message);
 
 		/// <summary>
 		/// Logs an error during backup

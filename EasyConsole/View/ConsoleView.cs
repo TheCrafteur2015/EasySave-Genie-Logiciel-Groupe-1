@@ -53,6 +53,7 @@ namespace EasyConsole.View
 				} catch(FormatException)
 				{
 					Console.WriteLine(I18n.Instance.GetString("invalid_choice"));
+					_ = Console.ReadLine();
 					continue;
 				}
 				if (!context.ExecuteCommand(choice))

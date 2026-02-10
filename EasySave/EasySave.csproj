@@ -17,9 +17,15 @@
 	</ItemGroup>
 	
 	<ItemGroup>
+	  <ProjectReference Include="..\EasyLog\EasyLog.csproj" />
+	</ItemGroup>
+	
+<!--
+	<ItemGroup>
 	  <Reference Include="EasyLog">
 	    <HintPath>..\EasyLog\bin\Debug\net8.0\EasyLog.dll</HintPath>
 	  </Reference>
 	</ItemGroup>
+-->
 
 </Project>

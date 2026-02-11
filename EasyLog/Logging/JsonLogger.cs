@@ -1,6 +1,4 @@
 ﻿using System.Text.Json;
-using System.IO;
-using System.Text;
 using EasyLog.Data;
 
 namespace EasyLog.Logging

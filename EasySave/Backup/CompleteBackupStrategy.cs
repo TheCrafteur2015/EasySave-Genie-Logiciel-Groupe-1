@@ -25,7 +25,7 @@ namespace EasySave.Backup
 		{
 			if (!Directory.Exists(job.SourceDirectory))
 			{
-				BackupManager.GetLogger().Log(Level.Warning, $"{job.Name} - Source directory does not exist: {job.SourceDirectory}");
+				BackupManager.GetLogger().Log(new LogEntry { Level = Level.Warning, Message = $"{job.Name} - Source directory does not exist: {job.SourceDirectory}" });
 				throw new DirectoryNotFoundException($"Source directory not found: {job.SourceDirectory}");
 			}
 
@@ -81,7 +81,7 @@ namespace EasySave.Backup
 					File.Copy(sourceFile, targetFile, true);
 					stopwatch.Stop();
 					//$"Backup name: {job.Name}, Source: {sourceFile}, Destination: {targetFile}, Size: {fileSize}, ElapsedTime: {stopwatch.ElapsedMilliseconds}"
-					BackupManager.GetLogger().Log(Level.Info, new LogEntry {
+					BackupManager.GetLogger().Log(new LogEntry {
 						Name        = job.Name,
 						SourceFile  = sourceFile,
 						TargetFile  = targetFile,
@@ -92,7 +92,7 @@ namespace EasySave.Backup
 				catch (Exception e)
 				{
 					stopwatch.Stop();
-					BackupManager.GetLogger().Log(Level.Error, new LogEntry { Message = $"An exception occured while saving file: {sourceFile}" });
+					BackupManager.GetLogger().Log(new LogEntry { Level = Level.Error, Message = $"An exception occured while saving file: {sourceFile}" });
 					BackupManager.GetLogger().LogError(e);
 				}
 

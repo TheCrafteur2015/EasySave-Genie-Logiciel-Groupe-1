@@ -1,11 +1,13 @@
-﻿namespace EasyLog.Data
+﻿using EasyLog.Logging;
+
+namespace EasyLog.Data
 {
 	//public record LogEntry(int Timestamp, string Name, string Source, string Target, long Size, long ElapsedTime) {}
 	public class LogEntry
 	{
 		public string Timestamp { get; } = DateTime.Now.ToString();
 
-		public string Level { get; set; } = Logging.Level.Info.ToString();
+		public Level Level { get; set; } = Level.Info;
 
 		public string? Message { get; set; }
 
@@ -28,10 +30,19 @@
 
         public override string ToString()
         {
+			string body = string.Empty;
 			if (Name != null && SourceFile != null && TargetFile != null && FileSize != null && ElapsedTime != null)
-				return ToBackupString();
-			return Message ?? string.Empty;
-        }
+				body = ToBackupString();
+			else if (Message != null && Stacktrace != null)
+			{
+				Level = Level.Error;
+				body = Message + "\n";
+				body += $"[{Timestamp}] {Level}: Stacktrace: {Stacktrace}";
+			}
+			else
+				body = Message ?? string.Empty;
+			return $"[{Timestamp}] {Level}: {body}";
+		}
 
 	}
 }

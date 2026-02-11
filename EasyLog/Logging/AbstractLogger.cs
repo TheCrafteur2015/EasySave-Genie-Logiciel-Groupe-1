@@ -49,5 +49,22 @@ namespace EasyLog.Logging
 		/// <param name="e">The exception to log. Cannot be null.</param>
         public abstract void LogError(Exception e);
 
-    }
+		public virtual void Log(Level level, object message) => Log(level, (T) message);
+
+		public Type? GetGenericType()
+		{
+			Type type = this.GetType();
+
+			foreach (Type interfaceType in type.GetInterfaces())
+			{
+				if (interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == typeof(ILogger<>))
+				{
+					return interfaceType.GetGenericArguments()[0];
+				}
+			}
+			return null;
+		}
+
+
+	}
 }

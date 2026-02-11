@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using EasyLog.Data;
 using EasyLog.Logging;
 
 namespace EasySave.Backup
@@ -79,13 +80,19 @@ namespace EasySave.Backup
 				{
 					File.Copy(sourceFile, targetFile, true);
 					stopwatch.Stop();
-
-					BackupManager.GetLogger().Log(Level.Info, $"Backup name: {job.Name}, Source: {sourceFile}, Destination: {targetFile}, Size: {fileSize}, ElapsedTime: {stopwatch.ElapsedMilliseconds}");
+					//$"Backup name: {job.Name}, Source: {sourceFile}, Destination: {targetFile}, Size: {fileSize}, ElapsedTime: {stopwatch.ElapsedMilliseconds}"
+					BackupManager.GetLogger().Log(Level.Info, new LogEntry {
+						Name        = job.Name,
+						SourceFile  = sourceFile,
+						TargetFile  = targetFile,
+						FileSize    = fileSize,
+						ElapsedTime = stopwatch.ElapsedMilliseconds
+					});
 				}
 				catch (Exception e)
 				{
 					stopwatch.Stop();
-					BackupManager.GetLogger().Log(Level.Error, $"An exception occured while saving file: {sourceFile}");
+					BackupManager.GetLogger().Log(Level.Error, new LogEntry { Message = $"An exception occured while saving file: {sourceFile}" });
 					BackupManager.GetLogger().LogError(e);
 				}
 

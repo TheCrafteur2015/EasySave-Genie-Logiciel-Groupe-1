@@ -29,6 +29,8 @@
 			}
         }
 
+        public override void Log(Level level, object message) => Log(level, message.ToString() ?? string.Empty);
+
         /// <summary>
         /// Logs the specified exception as an error entry to the log file.
         /// </summary>

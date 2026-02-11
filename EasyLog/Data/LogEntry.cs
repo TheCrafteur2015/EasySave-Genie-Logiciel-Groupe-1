@@ -1,4 +1,26 @@
-﻿namespace EasyLog.Data
+﻿using EasyLog.Logging;
+
+namespace EasyLog.Data
 {
-	public record LogEntry(int Timestamp, string Name, string Source, string Target, long Size, long ElapsedTime) {}
+	//public record LogEntry(int Timestamp, string Name, string Source, string Target, long Size, long ElapsedTime) {}
+	public class LogEntry
+	{
+		public string Timestamp { get; } = DateTime.Now.ToString();
+
+		public string Level { get; set; } = Logging.Level.Info.ToString();
+
+		public string? Message { get; set; }
+
+		public string? Stacktrace { get; set; }
+
+		public string? Name { get; set; }
+		
+		public string? SourceFile { get; set; }
+		
+		public string? TargetFile { get; set; }
+		
+		public long? FileSize { get; set; }
+		
+		public long? ElapsedTime { get; set; }
+	}
 }

@@ -13,17 +13,26 @@ namespace EasyLog.Logging
 
         public override void Log(Level level, LogEntry message)
         {
-            string jsonLine = JsonSerializer.Serialize(message, new JsonSerializerOptions { WriteIndented = true });
-
+            List<LogEntry> logs = new List<LogEntry>();
+            if (File.Exists(LogFile))
+            {
+                string existingContent = File.ReadAllText(LogFile);
+                if (!string.IsNullOrWhiteSpace(existingContent))
+                {
+                    logs = JsonSerializer.Deserialize<List<LogEntry>>(existingContent) ?? new List<LogEntry>();
+                }
+            }
+            logs.Add(message);
             lock (_lock)
             {
-                File.AppendAllText(path, jsonLine + Environment.NewLine);
+                File.WriteAllText(LogFile, JsonSerializer.Serialize(logs, new JsonSerializerOptions { WriteIndented = true }));
             }
         }
 
         public override void LogError(Exception e)
         {
-            throw new NotImplementedException();
+            LogEntry errorEntry = new LogEntry(0,e.Message ?? string.Empty,e.StackTrace ?? string.Empty,"",0,0);
+            Log(Level.Error, errorEntry);
         }
     }
 }

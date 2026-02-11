@@ -1,13 +1,25 @@
-EasySave - Version 1.1
+# EasySave - Version 1.1
 
-Projet de programmation système - Cesi École d'Ingénieurs (Groupe 1)
+**Projet de programmation système - Cesi École d'Ingénieurs (Groupe 1)**
 
-EasySave est un logiciel de gestion de sauvegarde développé pour l'entreprise ProSoft. Cette application console permet de configurer et d'exécuter des travaux de sauvegarde de manière séquentielle, tout en assurant un suivi précis via des journaux d'activité (Logs) et un état en temps réel.
+EasySave est un logiciel de gestion de sauvegarde développé pour l'entreprise **ProSoft**. Cette application console permet de configurer et d'exécuter des travaux de sauvegarde de manière séquentielle, tout en assurant un suivi précis via des journaux d'activité (Logs) et un état en temps réel.
 
-🚀 Nouveautés de la version 1.1
+## 🚀 Nouveautés de la version 1.1
 
-Cette version introduit une fonctionnalité majeure demandée par les clients :
+Cette version introduit une fonctionnalité majeure demandée par les clients tout en conservant la stabilité de la version 1.0 :
+* **Choix du format des Logs :** L'utilisateur peut désormais configurer le format des fichiers journaux journaliers en **JSON** ou en **XML** via le fichier de configuration.
 
-    Choix du format des Logs : L'utilisateur peut désormais configurer le format des fichiers journaux journaliers en JSON ou en XML.
+## 📋 Fonctionnalités Principales
 
-    Compatibilité maintenue avec les fonctionnalités de la v1.0 (Sauvegardes complètes/différentielles, Multilingue).
+* **Mode Console :** Interface textuelle légère et performante.
+* **Multilingue :** Support complet du **Français** et de l'**Anglais**.
+* **Travaux de sauvegarde :** Gestion jusqu'à **5 travaux** de sauvegarde configurables.
+* **Types de sauvegarde :**
+    * *Complète* : Copie intégrale des fichiers sources.
+    * *Différentielle* : Copie uniquement des fichiers modifiés depuis la dernière sauvegarde.
+* **Exécution :**
+    * Lancement individuel d'un travail.
+    * Exécution séquentielle de tous les travaux ou d'une sélection personnalisée.
+* **Monitoring :**
+    * Fichier d'état en temps réel (`state.json`) pour suivre la progression.
+    * Fichier de Log journalier (Format configurable : JSON ou XML) géré par la bibliothèque `EasyLog`.

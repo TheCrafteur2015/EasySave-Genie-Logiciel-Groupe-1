@@ -29,3 +29,21 @@ Cette version introduit une fonctionnalité majeure demandée par les clients to
 * **Système d'exploitation :** Windows (x64), Linux (x64) ou macOS (x64).
 * **Framework :** .NET 8.0 SDK ou Runtime.
 * **Droits :** Droits d'écriture requis sur les dossiers source, cible et le dossier de configuration (`AppData` ou équivalent).
+
+## 📦 Installation et Compilation
+
+Le projet fournit des scripts automatisés pour la compilation et le déploiement.
+
+### Depuis les sources
+
+1.  Clonez le dépôt :
+    ```bash
+    git clone <url_du_repo>
+    cd EasySave
+    ```
+
+2.  Utilisez le script de build correspondant à votre OS :
+    * **Windows** : Exécutez `build.bat` depuis l'invite de commande.
+    * **Linux / macOS** : Exécutez `build.sh` (assurez-vous que le script est exécutable : `chmod +x build.sh`).
+
+3.  Les binaires seront générés dans le dossier `./publish/`.

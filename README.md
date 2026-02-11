@@ -23,3 +23,9 @@ Cette version introduit une fonctionnalité majeure demandée par les clients to
 * **Monitoring :**
     * Fichier d'état en temps réel (`state.json`) pour suivre la progression.
     * Fichier de Log journalier (Format configurable : JSON ou XML) géré par la bibliothèque `EasyLog`.
+
+## 🛠 Prérequis Techniques
+
+* **Système d'exploitation :** Windows (x64), Linux (x64) ou macOS (x64).
+* **Framework :** .NET 8.0 SDK ou Runtime.
+* **Droits :** Droits d'écriture requis sur les dossiers source, cible et le dossier de configuration (`AppData` ou équivalent).

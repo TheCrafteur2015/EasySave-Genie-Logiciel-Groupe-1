@@ -78,3 +78,24 @@ EasySave peut être piloté via des arguments au lancement pour l'automatisation
     EasySave.exe 1;3;5
     # Exécute uniquement les travaux 1, 3 et 5
     ```
+
+## ⚙️ Configuration
+
+Les fichiers de configuration sont stockés par défaut dans le dossier `AppData/Roaming/EasySave` (sur Windows) ou le dossier utilisateur équivalent (`$HOME/.config/EasySave` sur Linux/macOS).
+
+### Structure des fichiers
+* `config.json` : Paramètres globaux de l'application.
+* `backups.json` : Liste des travaux de sauvegarde enregistrés.
+* `state.json` : État d'avancement en temps réel (utilisé par les IHM déportées).
+* `logs/` : Dossier contenant les fichiers journaux journaliers.
+
+### Changer le format des Logs (Nouveauté v1.1)
+Pour changer le format des logs entre JSON et XML, modifiez le fichier `config.json`. Si la clé n'existe pas, elle sera initialisée à "JSON" par défaut.
+
+Exemple de `config.json` pour activer le XML :
+```json
+{
+  "Version": "1.1.0",
+  "MaxBackupJobs": 5,
+  "LogFormat": "XML"
+}

@@ -47,3 +47,34 @@ Le projet fournit des scripts automatisés pour la compilation et le déploiemen
     * **Linux / macOS** : Exécutez `build.sh` (assurez-vous que le script est exécutable : `chmod +x build.sh`).
 
 3.  Les binaires seront générés dans le dossier `./publish/`.
+
+## 💻 Utilisation
+
+### Mode Interactif (Menu)
+Lancez l'exécutable `EasySave.exe` (ou `./EasySave`) pour accéder au menu principal :
+
+1.  **Créer un travail :** Définir le nom, la source, la cible et le type (Complet/Différentiel).
+2.  **Exécuter un travail :** Lancer une sauvegarde spécifique par son ID.
+3.  **Exécuter tout :** Lancer tous les travaux séquentiellement.
+4.  **Lister les travaux :** Voir la configuration actuelle des travaux.
+5.  **Supprimer un travail :** Retirer une configuration existante.
+6.  **Langue :** Basculer l'interface entre Français et Anglais.
+7.  **Quitter**
+
+### Mode Ligne de Commande
+EasySave peut être piloté via des arguments au lancement pour l'automatisation (tâches planifiées, scripts) :
+
+* **Sauvegarde unique (ID) :**
+    ```bash
+    EasySave.exe 1
+    ```
+* **Plage de sauvegardes (Range) :**
+    ```bash
+    EasySave.exe 1-3
+    # Exécute les travaux 1, 2 et 3 à la suite
+    ```
+* **Liste de sauvegardes (List) :**
+    ```bash
+    EasySave.exe 1;3;5
+    # Exécute uniquement les travaux 1, 3 et 5
+    ```

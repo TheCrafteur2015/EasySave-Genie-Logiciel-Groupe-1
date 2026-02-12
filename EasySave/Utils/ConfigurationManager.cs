@@ -68,8 +68,9 @@ namespace EasySave.Utils
 				var jobs = JsonConvert.DeserializeObject<List<BackupJob>>(jsonContent);
 				return jobs ?? [];
 			}
-			catch (Exception)
+			catch (Exception e)
 			{
+				BackupManager.GetLogger().LogError(e);
 				return [];
 			}
 		}

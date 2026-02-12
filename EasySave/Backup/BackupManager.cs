@@ -1,5 +1,6 @@
 using EasyLog.Logging;
 using EasySave.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace EasySave.Backup
 {
@@ -41,7 +42,8 @@ namespace EasySave.Backup
 			ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
 
 			MaxBackupJobs = ConfigManager.GetConfig("MaxBackupJobs");
-			if (!ConfigManager.GetConfig("UseBackupJobLimit"))
+			var useBackupJobLimit = ConfigManager.GetConfig("UseBackupJobLimit") as JValue;
+			if (useBackupJobLimit?.Value is bool val && val == false)
 				MaxBackupJobs = -1;
 
 			// Load existing jobs
@@ -73,9 +75,10 @@ namespace EasySave.Backup
 			if (_logger == null)
 			{
 				var BM = GetBM();
+				var format = BM.ConfigManager.GetConfig("LoggerFormat");
 				lock (_lock)
 				{
-					_logger = LoggerFactory.CreateLogger(BM.ConfigManager.GetConfig("LoggerFormat"), Path.Combine(BM.appData, "Logs"));
+					_logger = LoggerFactory.CreateLogger(format?.Value as string ?? "text", Path.Combine(BM.appData, "Logs"));
 				}
 			}
 			return _logger;

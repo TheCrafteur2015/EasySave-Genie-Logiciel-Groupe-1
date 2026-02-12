@@ -3,18 +3,36 @@
         xmlns:vm="using:EasyGUI.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
         x:Class="EasyGUI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="EasyGUI">
+        Title="EasyGUI"
+        >
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <Grid>
+        <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <Grid Margin="10">
+            <Button Content="Dark theme" 
+                    HorizontalAlignment="Left" 
+                    VerticalAlignment="Top"
+                    Command="{Binding SwitchThemeCommand}"
+                    CommandParameter="Dark"
+                    IsVisible="{Binding $parent[Window].ActualThemeVariant, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static ThemeVariant.Light}}">
+            </Button>
+            <Button Content="Light theme" 
+                    HorizontalAlignment="Left" 
+                    VerticalAlignment="Top"
+                    Command="{Binding SwitchThemeCommand}"
+                    CommandParameter="Light"
+                    IsVisible="{Binding $parent[Window].ActualThemeVariant, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static ThemeVariant.Dark}}">
+            </Button>
+        </Grid>
+    </Grid>
 
 </Window>

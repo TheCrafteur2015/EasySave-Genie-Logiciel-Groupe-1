@@ -131,15 +131,7 @@ namespace EasyConsole.View
 
 		public static void DisplayProgress(ProgressState state)
 		{
-            if (!string.IsNullOrEmpty(state.Message))
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"\n >> {state.Message}");
-                Console.ResetColor();
-                if (state.State == State.Error) return;
-            }
-
-            Console.WriteLine($"\n{I18n.Instance.GetString("progress_active")}");
+			Console.WriteLine($"\n{I18n.Instance.GetString("progress_active")}");
 			Console.WriteLine(string.Format(I18n.Instance.GetString("progress_files"), 
 				state.TotalFiles - state.FilesRemaining, state.TotalFiles));
 			Console.WriteLine(string.Format(I18n.Instance.GetString("progress_size"), 

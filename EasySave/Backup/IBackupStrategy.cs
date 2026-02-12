@@ -8,6 +8,6 @@ namespace EasySave.Backup
 		/// <summary>
 		/// Executes the backup strategy
 		/// </summary>
-		void Execute(BackupJob job, string BusinessSoftware, Action<ProgressState> progressCallback);
+		void Execute(BackupJob job, Action<ProgressState> progressCallback);
 	}
 }

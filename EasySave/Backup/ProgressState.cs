@@ -16,6 +16,8 @@ namespace EasySave.Backup
         public string CurrentTargetFile { get; set; }
         public double ProgressPercentage { get; set; }
 
+        public string Message { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the ProgressState class with default values.
         /// </summary>
@@ -29,6 +31,7 @@ namespace EasySave.Backup
             State             = State.Inactive;
             CurrentSourceFile = string.Empty;
             CurrentTargetFile = string.Empty;
+            Message = string.Empty;
         }
     }
 }

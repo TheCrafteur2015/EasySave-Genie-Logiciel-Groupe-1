@@ -105,7 +105,7 @@ namespace EasySave.Backup
 		/// jobs has been reached or if any parameter is invalid.</returns>
 		public bool AddJob(string? name, string? sourceDir, string? targetDir, BackupType type)
 		{
-			if (_backupJobs.Count >= MaxBackupJobs)
+			if (_backupJobs.Count >= MaxBackupJobs && MaxBackupJobs != -1)
 				return false;
 
 			if (string.IsNullOrWhiteSpace(name) ||

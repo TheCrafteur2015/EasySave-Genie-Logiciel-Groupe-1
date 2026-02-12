@@ -4,19 +4,18 @@ using System.Text.Json.Serialization;
 
 namespace EasyLog
 {
-	public class Program
-	{
-		public static void Main(string[] args)
-		{
-			//LogEntry[]? logs = JsonSerializer.Deserialize<LogEntry[]>(File.ReadAllText(@"C:\Users\Gabriel Roche\Projets\test.json"));
-			//if (logs != null)
-			//    foreach (LogEntry log in logs)
-			//        Console.WriteLine(log.Name);
+    /// <summary>
+    /// Main entry point of the EasyLog application.
+    /// </summary>
+    public class Program
+    {
+        /// <summary>
+        /// Main method of the project executed at the launch of the application.
+        /// </summary>
+        /// <param name="args">Array of arguments passed on the command line at the start of the application.</param>
+        public static void Main(string[] args)
+        {
 
-			Console.WriteLine(JsonSerializer.Serialize(
-				new LogEntry(),
-				new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull }
-			 ));
-		}
-	}
+        }
+    }
 }

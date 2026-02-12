@@ -42,16 +42,11 @@ namespace EasySave.Backup
 		/// <param name="progressCallback">A callback method that receives progress updates as a <see cref="ProgressState"/> object. Cannot be null.</param>
 		public void Execute(Action<ProgressState> progressCallback)
 		{
-			string BusinessSoftware = BackupManager.GetBM().ConfigManager.GetConfig("BusinessSoftware");
 			State = State.Active;
-            Strategy.Execute(this, BusinessSoftware, progressCallback);
-
-            if (State != State.Error)
-            {
-                LastExecution = DateTime.Now;
-                State = State.Completed;
-            }
-        }
+			Strategy.Execute(this, progressCallback);
+			LastExecution = DateTime.Now;
+			State = State.Completed;
+		}
 
 		/// <summary>
 		/// Transitions the current state to indicate an error has occurred.	

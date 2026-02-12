@@ -23,10 +23,12 @@ namespace EasyLog.Data
 		
 		public long? ElapsedTime { get; set; }
 
-		public string ToBackupString()
+        public int EncryptionTime { get; set; } = 0;
+
+        public string ToBackupString()
 		{
-			return $"Backup name: {Name}, Source: {SourceFile}, Destination: {TargetFile}, Size: {FileSize}, ElapsedTime: {ElapsedTime}";
-		}
+            return $"Backup name: {Name}, Source: {SourceFile}, Destination: {TargetFile}, Size: {FileSize}, ElapsedTime: {ElapsedTime}ms, EncryptionTime: {EncryptionTime}ms";
+        }
 
         public override string ToString()
         {

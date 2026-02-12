@@ -54,7 +54,51 @@ namespace EasySave.Utils
 			}
 			string jsonContent = File.ReadAllText(_configFilePath);
 			ConfigValues = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonContent);
+
+		// Migrate configuration if needed
+		MigrateConfigurationIfNeeded();
+	}
+
+	/// <summary>
+	/// Migrates the configuration file to the latest version by merging existing values
+	/// with new default values for any missing keys.
+	/// </summary>
+	private void MigrateConfigurationIfNeeded()
+	{
+		var defaultConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JObject>(
+			ResourceManager.ReadResourceFile("default.json"));
+		
+		if (defaultConfig == null) return;
+
+		var currentConfig = ConfigValues as Newtonsoft.Json.Linq.JObject;
+		if (currentConfig == null) return;
+
+		bool configUpdated = false;
+
+		// Add any missing keys from default config
+		foreach (var property in defaultConfig.Properties())
+		{
+			if (currentConfig[property.Name] == null)
+			{
+				currentConfig[property.Name] = property.Value;
+				configUpdated = true;
+			}
 		}
+
+		// Update version if configuration was migrated
+		if (configUpdated)
+		{
+			var defaultVersion = defaultConfig["Version"];
+			if (defaultVersion != null)
+			{
+				currentConfig["Version"] = defaultVersion;
+			}
+
+			// Save the updated configuration
+			File.WriteAllText(_configFilePath, currentConfig.ToString(Newtonsoft.Json.Formatting.Indented));
+			ConfigValues = currentConfig;
+		}
+	}
 
 		public dynamic GetConfig(string key)
 		{

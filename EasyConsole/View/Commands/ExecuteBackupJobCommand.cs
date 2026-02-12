@@ -25,9 +25,13 @@ namespace EasyConsole.View.Commands
 			{
 				if (id > 0)
 				{
-					BackupManager.GetBM().ExecuteJob(id, ConsoleView.DisplayProgress);
-					Console.WriteLine(I18n.Instance.GetString("execute_success"));
-				}
+                    bool success = BackupManager.GetBM().ExecuteJob(id, ConsoleView.DisplayProgress);
+
+                    if (success)
+                    {
+                        Console.WriteLine(I18n.Instance.GetString("execute_success"));
+                    }
+                }
 			}
 			catch (Exception e)
 			{

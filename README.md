@@ -92,3 +92,44 @@ L'application se découpe en plusieurs onglets :
 Bien que graphique, l'application conserve une compatibilité avec les arguments de la v1.0 pour l'intégration dans des scripts :
 * `EasySave.exe 1-3` : Lance l'interface et démarre automatiquement les travaux 1 à 3.
 * `EasySave.exe 1;5` : Lance l'interface et démarre les travaux 1 et 5.
+
+---
+
+## ⚙️ Détails des Logs et États
+
+### Fichier Log Journalier
+Le fichier log contient désormais une entrée spécifique pour le chiffrement :
+* `EncryptionTime` :
+    * `0` : Pas de chiffrement.
+    * `> 0` : Temps en ms (cryptage réussi).
+    * `< 0` : Code erreur (échec CryptoSoft).
+
+### Interdiction Métier
+Si le logiciel métier est détecté lors d'une tentative de sauvegarde, l'événement est consigné dans le log journalier et une notification visuelle apparaît dans l'interface (Popup ou message d'état).
+
+---
+
+## 🏗 Architecture Technique
+
+Le projet repose sur l'architecture **MVVM (Model-View-ViewModel)** pour garantir la maintenabilité et la séparation des responsabilités.
+
+* **Model :**
+    * Contient la logique métier pure (Copie de fichier, Appel à CryptoSoft, Gestion des I/O).
+    * Classes : `BackupJob`, `BackupService`, `LogService`.
+* **ViewModel :**
+    * Fait le lien entre la Vue et le Modèle. Il expose les données via `INotifyPropertyChanged` et gère les actions utilisateur via des `ICommand`.
+    * Classes : `MainViewModel`, `SettingsViewModel`, `JobViewModel`.
+* **View :**
+    * Interface utilisateur définie en XAML (Windows Presentation Foundation).
+    * Aucun code métier dans le "Code-Behind" (`.xaml.cs`).
+* **Dépendances :**
+    * `EasyLog.dll` : Gestionnaire de logs (projet externe réutilisé).
+    * `Newtonsoft.Json` : Pour la sérialisation des configurations.
+
+---
+
+## 👥 Auteurs
+
+**Groupe 1 - CESI Rouen**
+Projet réalisé dans le cadre du bloc "Programmation Système / Interface Graphique".
+Code source développé pour l'entité **ProSoft**.

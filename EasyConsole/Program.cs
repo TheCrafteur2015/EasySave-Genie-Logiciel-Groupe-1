@@ -15,6 +15,7 @@ namespace EasyConsole
         /// <param name="args">Array of arguments passed on the command line at the start of the application.</param>
         static void Main(string[] args)
         {
+            // TODO: Retirer la ligne suivante
             var view = new ConsoleView();
             try
             {

@@ -1,4 +1,8 @@
-﻿namespace EasyLog
+﻿using EasyLog.Data;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace EasyLog
 {
     /// <summary>
     /// Main entry point of the EasyLog application.

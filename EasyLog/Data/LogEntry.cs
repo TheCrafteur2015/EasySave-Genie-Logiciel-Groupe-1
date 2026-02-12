@@ -1,14 +1,48 @@
-﻿namespace EasyLog.Data
+﻿using EasyLog.Logging;
+
+namespace EasyLog.Data
 {
-    /// <summary>
-    /// Represents a data record for a single log entry.
-    /// This record holds immutable data regarding a specific file transfer operation during a backup.
-    /// </summary>
-    /// <param name="Timestamp">The timestamp indicating when the operation occurred.</param>
-    /// <param name="Name">The name of the backup job associated with this log entry.</param>
-    /// <param name="Source">The full path of the source file.</param>
-    /// <param name="Target">The full path of the target (destination) file.</param>
-    /// <param name="Size">The size of the transferred file (in bytes).</param>
-    /// <param name="ElapsedTime">The duration of the transfer operation (in milliseconds).</param>
-    public record LogEntry(int Timestamp, string Name, string Source, string Target, long Size, long ElapsedTime) { }
+	//public record LogEntry(int Timestamp, string Name, string Source, string Target, long Size, long ElapsedTime) {}
+	public class LogEntry
+	{
+		public string Timestamp { get; } = DateTime.Now.ToString();
+
+		public Level Level { get; set; } = Level.Info;
+
+		public string? Message { get; set; }
+
+		public string? Stacktrace { get; set; }
+
+		public string? Name { get; set; }
+		
+		public string? SourceFile { get; set; }
+		
+		public string? TargetFile { get; set; }
+		
+		public long? FileSize { get; set; }
+		
+		public long? ElapsedTime { get; set; }
+
+		public string ToBackupString()
+		{
+			return $"Backup name: {Name}, Source: {SourceFile}, Destination: {TargetFile}, Size: {FileSize}, ElapsedTime: {ElapsedTime}";
+		}
+
+        public override string ToString()
+        {
+			string body = string.Empty;
+			if (Name != null && SourceFile != null && TargetFile != null && FileSize != null && ElapsedTime != null)
+				body = ToBackupString();
+			else if (Message != null && Stacktrace != null)
+			{
+				Level = Level.Error;
+				body = Message + "\n";
+				body += $"[{Timestamp}] {Level}: Stacktrace: {Stacktrace}";
+			}
+			else
+				body = Message ?? string.Empty;
+			return $"[{Timestamp}] {Level}: {body}";
+		}
+
+	}
 }

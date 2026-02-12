@@ -42,7 +42,7 @@ namespace EasyLog.Logging
 		/// </summary>
 		/// <param name="level">The severity level of the log entry. Determines the importance and filtering of the log message.</param>
 		/// <param name="message">The message to log. Cannot be null.</param>
-        public abstract void Log(LogEntry message);
+		public abstract void Log(LogEntry message);
 
 	}
 }

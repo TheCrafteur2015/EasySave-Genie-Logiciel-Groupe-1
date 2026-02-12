@@ -122,3 +122,10 @@ Le projet respecte l'architecture **MVVM** (Model-View-ViewModel) adaptée à l'
     * **Rôle :** Projet séparé (DLL) responsable de l'écriture standardisée des logs.
     * **Emplacement :** Projet `EasyLog/`.
     * **Capacité :** Écriture des logs journaliers (Support JSON et XML pour la v1.1).
+
+
+## 👥 Auteurs
+
+**Groupe 1 - CESI Rouen**
+* Projet réalisé dans le cadre du bloc "Programmation Système" (Ingénieur Informatique - 3ème année).
+* Code source développé pour l'entité fictive **ProSoft**.

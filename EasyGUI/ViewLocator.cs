@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using EasyGUI.ViewModels;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -32,7 +32,7 @@ namespace EasyGUI
 
         public bool Match(object? data)
         {
-            return data is ViewModelBase;
+            return data is ObservableObject;
         }
     }
 }

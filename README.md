@@ -16,3 +16,22 @@ Détection de Logiciel Métier : Suspension automatique des sauvegardes si un lo
 Logs Multi-formats : Possibilité de choisir entre le format JSON et XML pour les journaux d'activité.
 
 Interopérabilité : Maintien de la compatibilité avec les commandes CLI de la version 1.0.
+
+🛠 Spécifications Techniques
+Environnement de Développement
+IDE : Visual Studio 2022
+
+Langage : C# 12.0
+
+Framework : .NET 8.0
+
+Architecture : MVVM (Model-View-ViewModel) pour une séparation stricte entre l'interface et la logique.
+
+Librairies : Utilisation de la DLL EasyLog.dll pour la gestion des logs.
+
+Installation & Support
+Emplacement par défaut : %ProgramFiles%\ProSoft\EasySaveV2\
+
+Configuration minimale : Windows 10/11, .NET 8.0 Runtime.
+
+Fichiers de configuration : Situés dans %AppData%\EasySave\, format JSON.

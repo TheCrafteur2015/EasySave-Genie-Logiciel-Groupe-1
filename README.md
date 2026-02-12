@@ -99,3 +99,26 @@ Exemple de `config.json` pour activer le XML :
   "MaxBackupJobs": 5,
   "LogFormat": "XML"
 }
+
+## 🏗 Architecture
+
+Le projet respecte l'architecture **MVVM** (Model-View-ViewModel) adaptée à l'environnement Console. Cette structure découple la logique métier de l'interface utilisateur, facilitant la maintenance et la future migration vers une interface graphique (WPF) prévue pour la version 2.0.
+
+* **Model (Modèle) :**
+    * **Rôle :** Contient la logique métier, les structures de données et les algorithmes de sauvegarde.
+    * **Emplacement :** Dossier `EasySave/Backup/`.
+    * **Composants clés :** `BackupJob` (Entité), `BackupStrategy` (Pattern Strategy pour Complète/Différentielle).
+
+* **View (Vue) :**
+    * **Rôle :** Gère l'affichage dans la console et la récupération des entrées utilisateur.
+    * **Emplacement :** Dossier `EasySave/View/`.
+    * **Composants clés :** `ConsoleView`, Système de menus via le Pattern Command (`CreateBackupJobCommand`, `ExecuteBackupJobCommand`, etc.).
+
+* **ViewModel (Vue-Modèle) :**
+    * **Rôle :** Orchestre les interactions entre la Vue et le Modèle. Il expose les données et les commandes à la Vue.
+    * **Composant clé :** `BackupManager` (Singleton). Il gère la liste des travaux, la configuration et l'exécution des sauvegardes.
+
+* **EasyLog (Bibliothèque externe) :**
+    * **Rôle :** Projet séparé (DLL) responsable de l'écriture standardisée des logs.
+    * **Emplacement :** Projet `EasyLog/`.
+    * **Capacité :** Écriture des logs journaliers (Support JSON et XML pour la v1.1).

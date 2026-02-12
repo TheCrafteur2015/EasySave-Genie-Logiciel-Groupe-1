@@ -99,6 +99,7 @@ Exemple de `config.json` pour activer le XML :
   "MaxBackupJobs": 5,
   "LogFormat": "XML"
 }
+```
 
 ## 🏗 Architecture
 

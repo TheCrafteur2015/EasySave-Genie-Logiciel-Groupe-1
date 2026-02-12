@@ -72,7 +72,7 @@ namespace EasySave.Utils
 			try
 			{
 				string jsonContent = File.ReadAllText(_savedBackupJobPath);
-				var jobs = JsonSerializer.Deserialize<List<BackupJob>>(jsonContent);
+				var jobs = System.Text.Json.JsonSerializer.Deserialize<List<BackupJob>>(jsonContent);
 				return jobs ?? [];
 			}
 			catch (Exception e)
@@ -92,7 +92,7 @@ namespace EasySave.Utils
 			try
 			{
 				//JSON_OPTIONS
-				string jsonContent = JsonSerializer.Serialize(jobs, JSON_OPTIONS);
+				string jsonContent = System.Text.Json.JsonSerializer.Serialize(jobs, JSON_OPTIONS);
 				File.WriteAllText(_savedBackupJobPath, jsonContent);
 			}
 			catch (Exception ex)

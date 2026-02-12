@@ -1,5 +1,3 @@
-using EasySave.Extensions;
-using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace EasySave.Backup

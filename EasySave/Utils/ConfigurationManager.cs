@@ -25,7 +25,7 @@ namespace EasySave.Utils
 		/// </summary>
 		/// <remarks>The returned object provides access to configuration settings whose structure may vary at
 		/// runtime. Use dynamic member access to retrieve specific configuration values as needed.</remarks>
-		public dynamic ConfigValues { get; private set; }
+		private dynamic ConfigValues { get; set; }
 
 		/// <summary>
 		/// Initializes a new instance of the ConfigurationManager class using the specified configuration directory. Ensures
@@ -54,6 +54,11 @@ namespace EasySave.Utils
 			}
 			string jsonContent = File.ReadAllText(_configFilePath);
 			ConfigValues = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonContent);
+		}
+
+		public dynamic GetConfig(string key)
+		{
+			return ConfigValues[key] ?? throw new ArgumentException("This configuration key doesn't exists!");
 		}
 
 		/// <summary>

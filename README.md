@@ -35,3 +35,12 @@ Emplacement par défaut : %ProgramFiles%\ProSoft\EasySaveV2\
 Configuration minimale : Windows 10/11, .NET 8.0 Runtime.
 
 Fichiers de configuration : Situés dans %AppData%\EasySave\, format JSON.
+
+🔒 Sécurité & Chiffrement
+Le chiffrement est géré via CryptoSoft. L'utilisateur définit les extensions à protéger dans les paramètres (ex: .txt, .docx). Le fichier Log journalier inclut désormais :
+
+Le temps de transfert.
+
+Le temps de cryptage (en ms).
+
+[!IMPORTANT] Si un logiciel métier est détecté, la sauvegarde ne démarre pas. Si elle est déjà en cours, elle s'arrête proprement après le fichier actuel pour garantir l'intégrité des données.

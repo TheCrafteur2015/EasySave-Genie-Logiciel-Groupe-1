@@ -51,3 +51,10 @@ Les logs sont générés en temps réel dans deux fichiers distincts :
 Log Journalier : Historique de chaque fichier transféré (Horodatage, Source, Destination, Taille, Temps de transfert, Temps de cryptage).
 
 État Temps Réel (state.json) : Avancement global, pourcentage de progression, et état du travail (Actif/Inactif).
+
+👥 Équipe & Maintenance
+Développeur : Équipe ProSoft (Promotion 2026)
+
+Maintenance : Contrat annuel 5/7 (08h-17h).
+
+Tarif : 200 €HT (Mises à jour incluses via contrat de maintenance de 12%).

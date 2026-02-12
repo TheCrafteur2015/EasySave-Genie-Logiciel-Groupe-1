@@ -154,14 +154,16 @@ namespace EasySave.Backup
 		/// <param name="progressCallback">An optional callback that receives progress updates during job execution. If null, progress updates are not
 		/// reported.</param>
 		/// <exception cref="ArgumentException">Thrown if a backup job with the specified ID does not exist.</exception>
-		public void ExecuteJob(int id, Action<ProgressState>? progressCallback = null)
+		public bool ExecuteJob(int id, Action<ProgressState>? progressCallback = null)
 		{
 			var job = _backupJobs.FirstOrDefault(j => j.Id == id);
 			if (job == null)
 				throw new ArgumentException($"Backup job with ID {id} not found.");
 
 			ExecuteSingleJob(job, progressCallback);
-		}
+
+            return job.State != State.Error;
+        }
 
 		/// <summary>
 		/// Executes all backup jobs with IDs in the specified inclusive range, optionally reporting progress for each job.

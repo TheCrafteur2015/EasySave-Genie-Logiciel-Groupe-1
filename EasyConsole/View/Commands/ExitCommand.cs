@@ -1,7 +1,7 @@
 ﻿using EasySave.Backup;
-using EasySave.View.Command;
+using EasyConsole.View.Command;
 
-namespace EasySave.View.Commands
+namespace EasyConsole.View.Commands
 {
 	public class ExitCommand : ICommand
 	{

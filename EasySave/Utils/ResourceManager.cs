@@ -5,7 +5,7 @@ namespace EasySave.Utils
 	/// <summary>
 	/// Provides methods for reading embedded resource files from the assembly.
 	/// </summary>
-    internal class ResourceManager
+    public class ResourceManager
     {
 		/// <summary>
 		/// Initializes a new instance of the ResourceManager class.

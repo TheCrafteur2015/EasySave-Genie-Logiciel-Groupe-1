@@ -1,9 +1,9 @@
 using EasySave.Backup;
 using EasySave.Extensions;
-using EasySave.View.Command;
+using EasyConsole.View.Command;
 using EasySave.View.Localization;
 
-namespace EasySave.View
+namespace EasyConsole.View
 {
 	/// <summary>
 	/// Console View - Handles user interface (View in MVVM)
@@ -30,7 +30,7 @@ namespace EasySave.View
         /// Start the application system in console mode.
         /// </summary>
         /// <param name="args">Arguments input from the command line when the application is launched.</param>
-        public void Run(string[] args)
+        public static void Run(string[] args)
 		{
 			// Check for command line arguments
 			if (args.Length > 0)
@@ -46,7 +46,16 @@ namespace EasySave.View
 			{
 				BackupManager.GetBM().TransmitSignal(Signal.Continue);
 				context.DisplayCommands();
-				int choice = ConsoleExt.ReadDec();
+                int choice;
+                try
+				{
+					choice = ConsoleExt.ReadDec();
+				} catch(FormatException)
+				{
+					Console.WriteLine(I18n.Instance.GetString("invalid_choice"));
+					_ = Console.ReadLine();
+					continue;
+				}
 				if (!context.ExecuteCommand(choice))
 					Console.WriteLine(I18n.Instance.GetString("invalid_choice"));
 				Console.WriteLine($"\n{I18n.Instance.GetString("press_enter")}");

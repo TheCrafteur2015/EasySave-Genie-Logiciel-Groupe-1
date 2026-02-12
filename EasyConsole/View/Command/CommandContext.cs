@@ -1,7 +1,7 @@
-﻿using EasySave.View.Commands;
+﻿using EasyConsole.View.Commands;
 using EasySave.View.Localization;
 
-namespace EasySave.View.Command
+namespace EasyConsole.View.Command
 {
 	public class CommandContext
 	{

@@ -44,3 +44,10 @@ Le temps de transfert.
 Le temps de cryptage (en ms).
 
 [!IMPORTANT] Si un logiciel métier est détecté, la sauvegarde ne démarre pas. Si elle est déjà en cours, elle s'arrête proprement après le fichier actuel pour garantir l'intégrité des données.
+
+📊 Structure des Logs
+Les logs sont générés en temps réel dans deux fichiers distincts :
+
+Log Journalier : Historique de chaque fichier transféré (Horodatage, Source, Destination, Taille, Temps de transfert, Temps de cryptage).
+
+État Temps Réel (state.json) : Avancement global, pourcentage de progression, et état du travail (Actif/Inactif).

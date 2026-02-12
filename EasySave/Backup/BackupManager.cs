@@ -40,7 +40,9 @@ namespace EasySave.Backup
 			_stateWriter  = new StateWriter(Path.Combine(appData, "State"));
 			ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
 
-			MaxBackupJobs = ConfigManager.ConfigValues["MaxBackupJobs"];
+			MaxBackupJobs = ConfigManager.GetConfig("MaxBackupJobs");
+			if (!ConfigManager.GetConfig("UseBackupJobLimit"))
+				MaxBackupJobs = -1;
 
 			// Load existing jobs
 			_backupJobs = ConfigManager.LoadBackupJobs();
@@ -70,9 +72,10 @@ namespace EasySave.Backup
 		{
 			if (_logger == null)
 			{
+				var BM = GetBM();
 				lock (_lock)
 				{
-					_logger = new SimpleLogger(Path.Combine(GetBM().appData, "Logs"));
+					_logger = LoggerFactory.CreateLogger(BM.ConfigManager.GetConfig("LoggerFormat"), Path.Combine(BM.appData, "Logs"));
 				}
 			}
 			return _logger;

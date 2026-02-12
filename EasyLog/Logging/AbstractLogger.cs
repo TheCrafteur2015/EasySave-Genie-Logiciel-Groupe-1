@@ -16,13 +16,13 @@ namespace EasyLog.Logging
 	public abstract class AbstractLogger : ILogger
 	{
 
-		private string path { get; set; }
+		private readonly string _path;
 
 		public string LogFile { get; private set; }
 
 		public AbstractLogger(string path)
 		{
-			this.path = path;
+			this._path = path;
 			if (!Directory.Exists(path))
 				Directory.CreateDirectory(path);
 			LogFile = this.GetFile();
@@ -32,7 +32,7 @@ namespace EasyLog.Logging
 		/// Generates the full file path for the log file corresponding to the current date.
 		/// </summary>
 		/// <returns>A string containing the absolute path to the log file for today, with the file name formatted as "yyyy-MM-dd.log".</returns>
-		public string GetFile() => Path.Combine(path, $"{DateTime.Now:yyyy-MM-dd}.log");
+		public string GetFile() => Path.Combine(_path, $"{DateTime.Now:yyyy-MM-dd}.log");
 
 		/// <summary>
 		/// Writes a log entry with the specified severity level and message.

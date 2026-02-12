@@ -3,8 +3,8 @@ using EasySave.View.Localization;
 
 namespace EasySave.Extensions
 {
-    public static class BackupTypeExt
-    {
+	public static class BackupTypeExt
+	{
 
 		public static string GetTranslation(this BackupType type)
 		{
@@ -16,5 +16,6 @@ namespace EasySave.Extensions
 				_                       => "not_translated",
 			});
 		}
-    }
+
+	}
 }

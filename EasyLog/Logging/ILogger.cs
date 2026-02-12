@@ -23,5 +23,4 @@ namespace EasyLog.Logging
 		virtual void LogError(Exception e) => Log(new LogEntry { Level = Level.Error, Message = e.Message, Stacktrace = e.StackTrace });
 		
 	}
-
 }

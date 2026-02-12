@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace EasyLog.Logging
+﻿namespace EasyLog.Logging
 {
 	public static class LoggerFactory
 	{
@@ -13,6 +6,8 @@ namespace EasyLog.Logging
 		private static readonly Dictionary<string, Type> _loggers = new()
 		{
 			{ "text", typeof(SimpleLogger) },
+			{ "json", typeof(JsonLogger)   },
+			{ "xml",  typeof(XmlLogger)    },
 		};
 
 		public static ILogger CreateLogger(string type, string path)

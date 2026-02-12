@@ -1,5 +1,6 @@
 using EasySave.Backup;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace EasySave.Utils
 {
@@ -8,6 +9,13 @@ namespace EasySave.Utils
 	/// </summary>
 	public class ConfigurationManager
 	{
+		private static readonly JsonSerializerOptions JSON_OPTIONS = new()
+		{
+			WriteIndented = true,
+			Converters = { new JsonStringEnumConverter() },
+			IncludeFields = true
+		};
+
 		public readonly string _configDirectory;
 		public readonly string _configFilePath;
 		public readonly string _savedBackupJobPath;
@@ -45,7 +53,7 @@ namespace EasySave.Utils
 				File.WriteAllText(_configFilePath, ResourceManager.ReadResourceFile("default.json"));
 			}
 			string jsonContent = File.ReadAllText(_configFilePath);
-			ConfigValues = JsonConvert.DeserializeObject(jsonContent);
+			ConfigValues = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonContent);
 		}
 
 		public dynamic GetConfig(string key)
@@ -70,15 +78,16 @@ namespace EasySave.Utils
 			try
 			{
 				string jsonContent = File.ReadAllText(_savedBackupJobPath);
-				var jobs = JsonConvert.DeserializeObject<List<BackupJob>>(jsonContent);
+				var jobs = JsonSerializer.Deserialize<List<BackupJob>>(jsonContent);
 				return jobs ?? [];
 			}
-			catch (Exception)
+			catch (Exception e)
 			{
+				BackupManager.GetLogger().LogError(e);
 				return [];
 			}
 		}
-
+		
 		/// <summary>
 		/// Saves the specified collection of backup jobs to persistent storage.
 		/// </summary>
@@ -88,7 +97,8 @@ namespace EasySave.Utils
 		{
 			try
 			{
-				string jsonContent = JsonConvert.SerializeObject(jobs, Formatting.Indented);
+				//JSON_OPTIONS
+				string jsonContent = JsonSerializer.Serialize(jobs, JSON_OPTIONS);
 				File.WriteAllText(_savedBackupJobPath, jsonContent);
 			}
 			catch (Exception ex)

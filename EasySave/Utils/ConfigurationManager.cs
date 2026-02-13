@@ -26,7 +26,7 @@ namespace EasySave.Utils
 		/// </summary>
 		/// <remarks>The returned object provides access to configuration settings whose structure may vary at
 		/// runtime. Use dynamic member access to retrieve specific configuration values as needed.</remarks>
-		public dynamic ConfigValues { get; private set; }
+		private dynamic ConfigValues { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the ConfigurationManager class using the specified configuration directory. Ensures
@@ -44,6 +44,65 @@ namespace EasySave.Utils
             {
                 Directory.CreateDirectory(_configDirectory);
             }
+
+            _configFilePath = Path.Combine(_configDirectory, "config.json");
+            _savedBackupJobPath = Path.Combine(_configDirectory, "backups.json");
+            if (!File.Exists(_configFilePath) || new FileInfo(_configFilePath).Length == 0)
+            {
+                File.WriteAllText(_configFilePath, ResourceManager.ReadResourceFile("default.json"));
+            }
+            string jsonContent = File.ReadAllText(_configFilePath);
+            ConfigValues = JsonConvert.DeserializeObject(jsonContent);
+
+        // Migrate configuration if needed
+        MigrateConfigurationIfNeeded();
+	}
+
+	/// <summary>
+	/// Migrates the configuration file to the latest version by merging existing values
+	/// with new default values for any missing keys.
+	/// </summary>
+	private void MigrateConfigurationIfNeeded()
+	{
+		var defaultConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JObject>(
+			ResourceManager.ReadResourceFile("default.json"));
+		
+		if (defaultConfig == null) return;
+
+		var currentConfig = ConfigValues as Newtonsoft.Json.Linq.JObject;
+		if (currentConfig == null) return;
+
+		bool configUpdated = false;
+
+		// Add any missing keys from default config
+		foreach (var property in defaultConfig.Properties())
+		{
+			if (currentConfig[property.Name] == null)
+			{
+				currentConfig[property.Name] = property.Value;
+				configUpdated = true;
+			}
+		}
+
+		// Update version if configuration was migrated
+		if (configUpdated)
+		{
+			var defaultVersion = defaultConfig["Version"];
+			if (defaultVersion != null)
+			{
+				currentConfig["Version"] = defaultVersion;
+			}
+
+			// Save the updated configuration
+			File.WriteAllText(_configFilePath, currentConfig.ToString(Newtonsoft.Json.Formatting.Indented));
+			ConfigValues = currentConfig;
+		}
+	}
+
+		public dynamic GetConfig(string key)
+		{
+			return ConfigValues[key] ?? throw new ArgumentException("This configuration key doesn't exists!");
+		}
 
             _configFilePath = Path.Combine(_configDirectory, "config.json");
             _savedBackupJobPath = Path.Combine(_configDirectory, "backups.json");

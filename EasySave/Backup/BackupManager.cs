@@ -1,5 +1,6 @@
 using EasyLog.Logging;
 using EasySave.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace EasySave.Backup
 {
@@ -40,7 +41,10 @@ namespace EasySave.Backup
 			_stateWriter  = new StateWriter(Path.Combine(appData, "State"));
 			ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
 
-			MaxBackupJobs = ConfigManager.ConfigValues["MaxBackupJobs"];
+			MaxBackupJobs = ConfigManager.GetConfig("MaxBackupJobs");
+			var useBackupJobLimit = ConfigManager.GetConfig("UseBackupJobLimit") as JValue;
+			if (useBackupJobLimit?.Value is bool val && val == false)
+				MaxBackupJobs = -1;
 
 			// Load existing jobs
 			_backupJobs = ConfigManager.LoadBackupJobs();
@@ -70,9 +74,11 @@ namespace EasySave.Backup
 		{
 			if (_logger == null)
 			{
+				var BM = GetBM();
+				var format = BM.ConfigManager.GetConfig("LoggerFormat");
 				lock (_lock)
 				{
-					_logger = new SimpleLogger(Path.Combine(GetBM().appData, "Logs"));
+					_logger = LoggerFactory.CreateLogger(format?.Value as string ?? "text", Path.Combine(BM.appData, "Logs"));
 				}
 			}
 			return _logger;
@@ -99,7 +105,7 @@ namespace EasySave.Backup
 		/// jobs has been reached or if any parameter is invalid.</returns>
 		public bool AddJob(string? name, string? sourceDir, string? targetDir, BackupType type)
 		{
-			if (_backupJobs.Count >= MaxBackupJobs)
+			if (_backupJobs.Count >= MaxBackupJobs && MaxBackupJobs != -1)
 				return false;
 
 			if (string.IsNullOrWhiteSpace(name) ||

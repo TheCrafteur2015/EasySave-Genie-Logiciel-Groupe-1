@@ -1,6 +1,7 @@
-using System.Diagnostics;
 using EasyLog.Data;
 using EasyLog.Logging;
+using Newtonsoft.Json.Linq;
+using System.Diagnostics;
 
 namespace EasySave.Backup
 {
@@ -42,7 +43,13 @@ namespace EasySave.Backup
 				totalSize += fileInfo.Length;
 			}
 
-			int processedFiles = 0;
+            var config = BackupManager.GetBM().ConfigManager;
+            string cryptoPath = config.GetConfig("CryptoSoftPath")?.ToString() ?? "";
+            string cryptoKey = config.GetConfig("CryptoKey")?.ToString() ?? "Key";
+            var extensionsArray = config.GetConfig("PriorityExtensions") as JArray;
+            List<string> extensions = extensionsArray?.ToObject<List<string>>() ?? [];
+
+            int processedFiles = 0;
 			long processedSize = 0;
 
 			foreach (var sourceFile in files)
@@ -75,19 +82,34 @@ namespace EasySave.Backup
 
 				// Copy file and measure time
 				var stopwatch = Stopwatch.StartNew();
+                int encryptionTime = 0;
 
-				try
+                try
 				{
 					File.Copy(sourceFile, targetFile, true);
-					stopwatch.Stop();
+                    string ext = Path.GetExtension(targetFile);
+                    if (File.Exists(cryptoPath) && extensions.Contains(ext))
+                    {
+                        var p = new Process();
+                        p.StartInfo.FileName = cryptoPath;
+                        p.StartInfo.Arguments = $"\"{targetFile}\" \"{cryptoKey}\""; 
+                        p.StartInfo.UseShellExecute = false;
+                        p.StartInfo.CreateNoWindow = true;
+                        p.Start();
+                        p.WaitForExit();
+
+                        encryptionTime = p.ExitCode;
+                    }
+                    stopwatch.Stop();
 					//$"Backup name: {job.Name}, Source: {sourceFile}, Destination: {targetFile}, Size: {fileSize}, ElapsedTime: {stopwatch.ElapsedMilliseconds}"
 					BackupManager.GetLogger().Log(new LogEntry {
 						Name        = job.Name,
 						SourceFile  = sourceFile,
 						TargetFile  = targetFile,
 						FileSize    = fileSize,
-						ElapsedTime = stopwatch.ElapsedMilliseconds
-					});
+						ElapsedTime = stopwatch.ElapsedMilliseconds,
+                        EncryptionTime = encryptionTime
+                    });
 				}
 				catch (Exception e)
 				{

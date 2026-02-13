@@ -13,7 +13,7 @@ namespace EasySave.View.Localization
 	/// throughout the application. It allows switching between supported languages at runtime and retrieving localized
 	/// strings based on the current language. The class loads language resources embedded in the assembly and exposes
 	/// methods to access translations and language metadata.</remarks>
-	internal partial class I18n
+	public partial class I18n
 	{
 		private readonly Dictionary<string, string> availableLanguages;
 
@@ -25,6 +25,12 @@ namespace EasySave.View.Localization
 
 		private static I18n? _instance;
 
+		/// <summary>
+		/// Static singleton getter of I18n class.
+		/// </summary>
+		/// <returns>
+		/// An instance of I18n class.
+		/// </returns>
 		public static I18n Instance
 		{
 

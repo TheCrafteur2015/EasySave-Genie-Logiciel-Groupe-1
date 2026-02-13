@@ -1,9 +1,9 @@
 ﻿using EasySave.Backup;
 using EasySave.Extensions;
-using EasySave.View.Command;
+using EasyConsole.View.Command;
 using EasySave.View.Localization;
 
-namespace EasySave.View.Commands
+namespace EasyConsole.View.Commands
 {
     public class ListBackupJobsCommand : ICommand
     {

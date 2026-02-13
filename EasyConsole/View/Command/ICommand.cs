@@ -1,4 +1,4 @@
-﻿namespace EasySave.View.Command
+﻿namespace EasyConsole.View.Command
 {
     public interface ICommand
     {

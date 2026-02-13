@@ -3,8 +3,8 @@ using EasySave.View.Localization;
 
 namespace EasySave.Extensions
 {
-    public static class StateExt
-    {
+	public static class StateExt
+	{
 
 		public static string GetTranslation(this State state)
 		{

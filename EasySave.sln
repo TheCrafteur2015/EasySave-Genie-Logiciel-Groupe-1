@@ -11,6 +11,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyLog", "EasyLog\EasyLog.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyTest", "EasyTest\EasyTest.csproj", "{AD53995A-45C8-4CDF-A5C7-0A27709BEB59}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyConsole", "EasyConsole\EasyConsole.csproj", "{CED7224B-2F9C-431F-A137-65F324DFD29E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BD14BA82-EF3B-423C-9CF8-9707221DF76F}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +36,10 @@ Global
 		{AD53995A-45C8-4CDF-A5C7-0A27709BEB59}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD53995A-45C8-4CDF-A5C7-0A27709BEB59}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD53995A-45C8-4CDF-A5C7-0A27709BEB59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CED7224B-2F9C-431F-A137-65F324DFD29E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CED7224B-2F9C-431F-A137-65F324DFD29E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CED7224B-2F9C-431F-A137-65F324DFD29E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CED7224B-2F9C-431F-A137-65F324DFD29E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

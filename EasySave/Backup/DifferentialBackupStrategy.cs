@@ -156,6 +156,7 @@ namespace EasySave.Backup
                         }
                         stopwatch.Stop();
 
+                        // Convert paths to UNC before logging
                         string uncSource = PathUtils.ToUnc(sourceFile);
                         string uncTarget = PathUtils.ToUnc(targetFile);
 

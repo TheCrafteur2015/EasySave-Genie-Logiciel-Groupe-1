@@ -1,62 +1,38 @@
-# 🛡️ EasySave V1.1 - Gestionnaire de Sauvegardes
-
-**EasySave** est une solution de sauvegarde de fichiers conçue pour les professionnels. La version 1.1 apporte une mise en conformité stricte avec les exigences de traçabilité (UNC) et une gestion robuste des erreurs de transfert.
-
----
-
-## ✨ Nouveautés de la V1.1
-
-* **Conformité UNC :** Tous les chemins de fichiers dans les journaux sont désormais convertis automatiquement au format UNC (`\\Hostname\C$\...`) pour une identification unique sur le réseau.
-* **Gestion des Erreurs de Transfert :** En cas d'échec (fichier verrouillé, accès refusé), le système consigne désormais une entrée de log spécifique avec un temps d'exécution de `-1ms` pour faciliter le monitoring.
-* **Performance Mesurée :** Utilisation de `Stopwatch` pour une précision millimétrée du temps de transfert des fichiers.
-* **Flexibilité accrue :** Support du nombre illimité de travaux de sauvegarde via la configuration `-1` dans le fichier `default.json`.
-
----
-
-## 🚀 Fonctionnalités Clés
-
-* **Modes de Sauvegarde :** * **Complète :** Duplication intégrale des répertoires.
-    * **Différentielle :** Seuls les fichiers modifiés ou nouveaux sont copiés, optimisant l'espace disque.
-* **Ligne de Commande (CLI) :** Exécution rapide via arguments :
-    * `EasySave.exe 1-5` (Intervalle)
-    * `EasySave.exe 1;3;6` (Liste spécifique)
-* **Multilingue :** Support natif du Français et de l'Anglais via fichiers de ressources JSON.
-
----
-
-## 🏗️ Architecture & Qualité
-
-Le projet suit les principes du **Génie Logiciel** avec l'implémentation de plusieurs Design Patterns :
-* **Strategy :** Isolation des algorithmes de sauvegarde (Complete vs Differential).
-* **Factory :** Création dynamique des stratégies et des loggers (JSON/XML/Text).
-* **Singleton :** Instance unique pour le `BackupManager` et le moteur de traduction `I18n`.
-* **Command :** Découplage des actions utilisateur et de la logique métier (MVVM).
-
----
-
-## 💻 Installation
-
+# 🛡️ EasySave - Logiciel de Gestion de Sauvegardes
+**EasySave** est une application console conçue pour automatiser et sécuriser vos travaux de sauvegarde. Développée en **C# (.NET 8.0)**, elle utilise une architecture modulaire pour offrir une solution flexible, multilingue et performante.
+## ✨ Fonctionnalités
+* **Types de Sauvegarde :**
+    * **Complète :** Copie l'intégralité des fichiers sources vers la destination.
+    * **Différentielle :** Copie uniquement les fichiers modifiés ou nouveaux depuis la dernière sauvegarde.
+* **Interface Bilingue :** Support complet du **Français** :fr: et de l'**Anglais** :uk:.
+* **Suivi en Temps Réel :** État d'avancement des travaux (pourcentage, fichiers restants, taille) exporté dynamiquement dans un fichier `state.json`.
+* **Système de Logs Flexible :** Génération de journaux quotidiens, le format texte est par défaut.
+* **Mode Commande :** Exécution via ligne de commande (ID unique, liste `;` ou intervalle `-`).
+## 🏗️ Architecture Technique
+Le projet repose sur une architecture inspirée du pattern **MVVM** et implémente plusieurs **Design Patterns** pour garantir la qualité logicielle :
+* **Singleton :** Utilisé pour le `BackupManager` et le système de localisation `I18n`.
+* **Strategy :** Pour isoler la logique des algorithmes de sauvegarde (`Complete` vs `Differential`).
+* **Factory :** Pour l'instanciation dynamique des stratégies via `BackupStrategyFactory`.
+* **Command :** Pour encapsuler les actions utilisateur dans l'interface console.
+## 🚀 Installation & Build
 ### Prérequis
-* [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-
+* [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 ### Compilation
-Utilisez les scripts automatisés à la racine :
-* **Windows :** `build.bat`
-* **Linux/macOS :** `./build.sh`
-
----
-
-## 📁 Structure des Données
-
-Les données sont isolées dans le répertoire `AppData` pour respecter les standards OS :
-`%APPDATA%\EasySave\`
-
-* **\Config :** `backups.json` (Liste des travaux) et `config.json`.
-* **\Logs :** Journaux quotidiens (`yyyy-MM-dd.log`) aux formats JSON/XML/Texte.
-* **\State :** `state.json` (État d'avancement temps réel pour les moniteurs externes).
-
----
-
-## 👥 Équipe
-* **Groupe 1** - CESI Rouen
-* Cursus Ingénieur Informatique (3ème année)
+Des scripts d'automatisation sont fournis à la racine du dépôt :
+* **Windows :** Exécuter `build.bat`.
+* **Linux/macOS :** Exécuter `build.sh`.
+Les binaires seront générés dans le dossier `./publish/`.
+## ⚙️ Configuration & Stockage
+L'application centralise ses données dans le répertoire `AppData` de l'utilisateur :  
+`%APPDATA%\EasySave\`.
+| Emplacement | Contenu |
+| :--- | :--- |
+| `/Config` | Configuration globale (`config.json`) et liste des jobs (`backups.json`). |
+| `/Logs` | Journaux quotidiens des transferts nommés par date. |
+| `/State` | État d'avancement temps réel stocké dans `state.json`. |
+## 🛠️ Organisation du Dépôt
+* **EasySave :** Projet principal contenant la logique métier, les modèles et la vue console.
+* **EasyLog :** Librairie dédiée à la journalisation et à la gestion des différents formats de sortie.
+* **EasyTest :** Suite de tests unitaires pour valider les composants critiques.
+## 👥 Auteurs
+**Génie-Logiciel - Groupe 1** *CESI Rouen - 3ème année de cursus Ingénieur Informatique*.

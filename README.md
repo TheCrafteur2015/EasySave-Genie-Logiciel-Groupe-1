@@ -1,132 +1,82 @@
-# EasySave - Version 1.1
+# 🛡️ EasySave - Version 1.1
 
-**Projet de programmation système - Cesi École d'Ingénieurs (Groupe 1)**
+**Solution de gestion de sauvegardes professionnelle** *Projet de programmation système - Cesi École d'Ingénieurs (Groupe 1)*
 
-EasySave est un logiciel de gestion de sauvegarde développé pour l'entreprise **ProSoft**. Cette application console permet de configurer et d'exécuter des travaux de sauvegarde de manière séquentielle, tout en assurant un suivi précis via des journaux d'activité (Logs) et un état en temps réel.
+EasySave est une application console robuste conçue pour automatiser et sécuriser vos travaux de sauvegarde. La version 1.1 introduit une flexibilité accrue pour les administrateurs système et une mise en conformité stricte des journaux d'activité.
 
-## 🚀 Nouveautés de la version 1.1
+---
 
-Cette version introduit une fonctionnalité majeure demandée par les clients tout en conservant la stabilité de la version 1.0 :
-* **Choix du format des Logs :** L'utilisateur peut désormais configurer le format des fichiers journaux journaliers en **JSON** ou en **XML** via le fichier de configuration.
+## ✨ Nouveautés de la Version 1.1
+
+* **Format de Log Configurable :** L'utilisateur peut choisir entre les formats **JSON**, **XML** ou **Texte** via la clé `LoggerFormat` dans le fichier de configuration.
+* **Conformité UNC :** Les chemins de fichiers dans les logs sont convertis au format UNC (`\\Hostname\C$\...`) pour une traçabilité réseau optimale.
+* **Gestion des Erreurs de Transfert :** En cas d'échec de copie, une entrée est générée avec un temps d'exécution de `-1ms` pour signaler l'anomalie.
+* **Travaux Illimités :** Possibilité de désactiver la limite de 5 travaux en réglant `UseBackupJobLimit` à `false` dans la configuration.
+
+---
 
 ## 📋 Fonctionnalités Principales
 
-* **Mode Console :** Interface textuelle légère et performante.
-* **Multilingue :** Support complet du **Français** et de l'**Anglais**.
-* **Travaux de sauvegarde :** Gestion jusqu'à **5 travaux** de sauvegarde configurables.
-* **Types de sauvegarde :**
-    * *Complète* : Copie intégrale des fichiers sources.
-    * *Différentielle* : Copie uniquement des fichiers modifiés depuis la dernière sauvegarde.
-* **Exécution :**
-    * Lancement individuel d'un travail.
-    * Exécution séquentielle de tous les travaux ou d'une sélection personnalisée.
-* **Monitoring :**
-    * Fichier d'état en temps réel (`state.json`) pour suivre la progression.
-    * Fichier de Log journalier (Format configurable : JSON ou XML) géré par la bibliothèque `EasyLog`.
+* **Modes de Sauvegarde :**
+    * **Complète :** Copie l'intégralité des répertoires sources vers la destination.
+    * **Différentielle :** Optimise l'espace en ne copiant que les fichiers modifiés ou nouveaux depuis la dernière exécution.
+* **Modes d'Exécution :**
+    * **Interactif :** Menu complet avec gestion des erreurs de saisie et localisation en temps réel.
+    * **Ligne de Commande (CLI) :** Support des intervalles (`1-3`), des listes (`1;3;5`) ou des IDs uniques (`2`).
+* **Monitoring Temps Réel :** Un fichier `state.json` est mis à jour dynamiquement pour suivre l'avancement (fichiers restants, pourcentage, taille totale).
+* **Multilingue :** Support complet du **Français** et de l'**Anglais** (extensible via fichiers JSON).
 
-## 🛠 Prérequis Techniques
+---
 
-* **Système d'exploitation :** Windows (x64), Linux (x64) ou macOS (x64).
-* **Framework :** .NET 8.0 SDK ou Runtime.
-* **Droits :** Droits d'écriture requis sur les dossiers source, cible et le dossier de configuration (`AppData` ou équivalent).
+## 🏗️ Architecture Logicielle (MVVM)
 
-## 📦 Installation et Compilation
+Le projet utilise une architecture inspirée du pattern **MVVM** pour séparer la logique métier de l'interface utilisateur :
 
-Le projet fournit des scripts automatisés pour la compilation et le déploiement.
+* **Model :** Les entités de données (`BackupJob`) et les stratégies de copie.
+* **View :** L'interface console (`ConsoleView`) gérant les interactions.
+* **ViewModel :** Le `BackupManager` (Singleton) qui orchestre l'exécution et la persistance.
 
-### Depuis les sources
+### Design Patterns Implémentés :
+* **Strategy :** Pour isoler les algorithmes de sauvegarde (`IBackupStrategy`).
+* **Factory :** Pour l'instanciation dynamique des stratégies et des types de loggers.
+* **Command :** Pour encapsuler les actions du menu et faciliter l'extension des fonctionnalités.
+* **Singleton :** Pour garantir l'unicité du `BackupManager` et du moteur `I18n`.
 
-1.  Clonez le dépôt :
-    ```bash
-    git clone <url_du_repo>
-    cd EasySave
-    ```
+---
 
-2.  Utilisez le script de build correspondant à votre OS :
-    * **Windows** : Exécutez `build.bat` depuis l'invite de commande.
-    * **Linux / macOS** : Exécutez `build.sh` (assurez-vous que le script est exécutable : `chmod +x build.sh`).
+## 🚀 Installation et Compilation
 
-3.  Les binaires seront générés dans le dossier `./publish/`.
+### Prérequis
+* **.NET 8.0 SDK**
 
-## 💻 Utilisation
+### Build
+Utilisez les scripts automatisés à la racine du dépôt :
+* **Windows :** Lancer `build.bat`
+* **Linux / macOS :** Lancer `build.sh`
 
-### Mode Interactif (Menu)
-Lancez l'exécutable `EasySave.exe` (ou `./EasySave`) pour accéder au menu principal :
+Les binaires compilés pour chaque plateforme seront disponibles dans le dossier `./publish/`.
 
-1.  **Créer un travail :** Définir le nom, la source, la cible et le type (Complet/Différentiel).
-2.  **Exécuter un travail :** Lancer une sauvegarde spécifique par son ID.
-3.  **Exécuter tout :** Lancer tous les travaux séquentiellement.
-4.  **Lister les travaux :** Voir la configuration actuelle des travaux.
-5.  **Supprimer un travail :** Retirer une configuration existante.
-6.  **Langue :** Basculer l'interface entre Français et Anglais.
-7.  **Quitter**
+---
 
-### Mode Ligne de Commande
-EasySave peut être piloté via des arguments au lancement pour l'automatisation (tâches planifiées, scripts) :
+## ⚙️ Configuration & Logs
 
-* **Sauvegarde unique (ID) :**
-    ```bash
-    EasySave.exe 1
-    ```
-* **Plage de sauvegardes (Range) :**
-    ```bash
-    EasySave.exe 1-3
-    # Exécute les travaux 1, 2 et 3 à la suite
-    ```
-* **Liste de sauvegardes (List) :**
-    ```bash
-    EasySave.exe 1;3;5
-    # Exécute uniquement les travaux 1, 3 et 5
-    ```
+L'application stocke ses paramètres et journaux dans le répertoire `AppData` de l'utilisateur :
+`%APPDATA%\EasySave\`
 
-## ⚙️ Configuration
+* **\Config :** Contient `backups.json` (liste des jobs) et `config.json` (paramètres globaux).
+* **\Logs :** Journaux quotidiens nommés par date (ex: `2026-02-13.json`).
+* **\State :** État d'avancement en temps réel dans `state.json`.
 
-Les fichiers de configuration sont stockés par défaut dans le dossier `AppData/Roaming/EasySave` (sur Windows) ou le dossier utilisateur équivalent (`$HOME/.config/EasySave` sur Linux/macOS).
+---
 
-### Structure des fichiers
-* `config.json` : Paramètres globaux de l'application.
-* `backups.json` : Liste des travaux de sauvegarde enregistrés.
-* `state.json` : État d'avancement en temps réel (utilisé par les IHM déportées).
-* `logs/` : Dossier contenant les fichiers journaux journaliers.
+## 🛠️ Organisation du Dépôt
 
-### Changer le format des Logs (Nouveauté v1.1)
-Pour changer le format des logs entre JSON et XML, modifiez le fichier `config.json`. Si la clé n'existe pas, elle sera initialisée à "JSON" par défaut.
+* **EasySave :** Logique métier, stratégies de sauvegarde et gestionnaires.
+* **EasyConsole :** Point d'entrée de l'application et interface utilisateur.
+* **EasyLog :** Bibliothèque partagée pour la gestion des logs multi-formats (JSON/XML/Texte).
+* **EasyTest :** Tests unitaires validant la sérialisation et les fonctionnalités critiques.
 
-Exemple de `config.json` pour activer le XML :
-```json
-{
-  "Version": "1.1.0",
-  "MaxBackupJobs": 5,
-  "LogFormat": "XML"
-}
-```
-
-## 🏗 Architecture
-
-Le projet respecte l'architecture **MVVM** (Model-View-ViewModel) adaptée à l'environnement Console. Cette structure découple la logique métier de l'interface utilisateur, facilitant la maintenance et la future migration vers une interface graphique (WPF) prévue pour la version 2.0.
-
-* **Model (Modèle) :**
-    * **Rôle :** Contient la logique métier, les structures de données et les algorithmes de sauvegarde.
-    * **Emplacement :** Dossier `EasySave/Backup/`.
-    * **Composants clés :** `BackupJob` (Entité), `BackupStrategy` (Pattern Strategy pour Complète/Différentielle).
-
-* **View (Vue) :**
-    * **Rôle :** Gère l'affichage dans la console et la récupération des entrées utilisateur.
-    * **Emplacement :** Dossier `EasySave/View/`.
-    * **Composants clés :** `ConsoleView`, Système de menus via le Pattern Command (`CreateBackupJobCommand`, `ExecuteBackupJobCommand`, etc.).
-
-* **ViewModel (Vue-Modèle) :**
-    * **Rôle :** Orchestre les interactions entre la Vue et le Modèle. Il expose les données et les commandes à la Vue.
-    * **Composant clé :** `BackupManager` (Singleton). Il gère la liste des travaux, la configuration et l'exécution des sauvegardes.
-
-* **EasyLog (Bibliothèque externe) :**
-    * **Rôle :** Projet séparé (DLL) responsable de l'écriture standardisée des logs.
-    * **Emplacement :** Projet `EasyLog/`.
-    * **Capacité :** Écriture des logs journaliers (Support JSON et XML pour la v1.1).
-
+---
 
 ## 👥 Auteurs
-
-**Groupe 1 - CESI Rouen**
-* Projet réalisé dans le cadre du bloc "Programmation Système" (Ingénieur Informatique - 3ème année).
-* Code source développé pour l'entité fictive **ProSoft**.
+**Groupe 1 - CESI Rouen** *Ingénieur Informatique - 3ème année*

@@ -24,7 +24,7 @@ namespace EasySave.Backup
 		/// cref="ProgressState"/> object representing the current state of the backup. Can be <see langword="null"/> if
 		/// progress updates are not required.</param>
 		/// <exception cref="DirectoryNotFoundException">Thrown if the source directory specified in <paramref name="job"/> does not exist.</exception>
-		public void Execute(BackupJob job, Action<ProgressState> progressCallback)
+		public void Execute(BackupJob job, string BusinessSoftware, Action<ProgressState> progressCallback)
 		{
 			if (!Directory.Exists(job.SourceDirectory))
 			{
@@ -51,13 +51,42 @@ namespace EasySave.Backup
             var extensionsArray = config.GetConfig("PriorityExtensions") as JArray;
             List<string> extensions = extensionsArray?.ToObject<List<string>>() ?? [];
 
+            if (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
+            {
+                string msg = $"[BLOCK] Logiciel métier détecté : '{BusinessSoftware}'. Sauvegarde annulée.";
+                BackupManager.GetLogger().Log(new LogEntry
+                {
+                    Level = Level.Warning,
+                    Message = $"Backup {job.Name} aborted: Business software '{BusinessSoftware}' is running."
+                });
+                job.State = State.Error;
+                progressCallback?.Invoke(new ProgressState
+                {
+                    BackupName = job.Name,
+                    State = State.Error,
+                    Message = msg
+                });
+                return;
+            }
+
             int processedFiles = 0;
 			long processedSize = 0;
 			int copiedFiles = 0;
 
 			foreach (var sourceFile in files)
 			{
-				var relativePath = Path.GetRelativePath(job.SourceDirectory, sourceFile);
+                if (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
+                {
+                    BackupManager.GetLogger().Log(new LogEntry
+                    {
+                        Level = Level.Warning,
+                        Message = $"Backup {job.Name} stopped: Business software '{BusinessSoftware}' detected during execution."
+                    });
+                    job.State = State.Error;
+                    break; 
+                }
+
+                var relativePath = Path.GetRelativePath(job.SourceDirectory, sourceFile);
 				var targetFile = Path.Combine(job.TargetDirectory, relativePath);
 				var targetDir = Path.GetDirectoryName(targetFile);
 
@@ -148,19 +177,22 @@ namespace EasySave.Backup
 				processedSize += fileSize;
 			}
 
-			// Final progress state
-			var finalState = new ProgressState
-			{
-				BackupName = job.Name,
-				State = State.Completed,
-				TotalFiles = totalFiles,
-				TotalSize = totalSize,
-				FilesRemaining = 0,
-				SizeRemaining = 0,
-				ProgressPercentage = 100
-			};
+            // Final progress state
+            if (job.State != State.Error)
+            {
+                var finalState = new ProgressState
+                {
+                    BackupName = job.Name,
+                    State = State.Completed,
+                    TotalFiles = totalFiles,
+                    TotalSize = totalSize,
+                    FilesRemaining = 0,
+                    SizeRemaining = 0,
+                    ProgressPercentage = 100
+                };
 
-			progressCallback?.Invoke(finalState);
+                progressCallback?.Invoke(finalState);
+            }
 		}
 	}
 }

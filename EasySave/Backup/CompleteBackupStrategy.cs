@@ -18,8 +18,9 @@ namespace EasySave.Backup
         /// </summary>
         /// <remarks>
         /// The method creates the target directory if it does not already exist. The progress callback is
-        /// invoked periodically with the current progress state, including after the operation completes. If an error occurs
-        /// while copying a file, the method logs the error and continues processing the remaining files.
+        /// invoked periodically with the current progress state, including after the operation completes. 
+        /// If an error occurs while copying a file, the method logs the error with a negative execution time (-1) 
+        /// and continues processing the remaining files.
         /// Paths are logged in UNC format.
         /// </remarks>
         /// <param name="job">The backup job to execute. Specifies the source and target directories, as well as backup metadata.</param>
@@ -165,7 +166,25 @@ namespace EasySave.Backup
                 catch (Exception e)
                 {
                     stopwatch.Stop();
-                    BackupManager.GetLogger().Log(new LogEntry { Level = Level.Error, Message = $"An exception occured while saving file: {sourceFile}" });
+
+                    // Convert paths to UNC for the error log
+                    string uncSource = PathUtils.ToUnc(sourceFile);
+                    string uncTarget = PathUtils.ToUnc(targetFile);
+
+                    // 1. Log the structured entry with negative time (-1) as per specification
+                    BackupManager.GetLogger().Log(new LogEntry
+                    {
+                        Name = job.Name,
+                        SourceFile = uncSource,
+                        TargetFile = uncTarget,
+                        FileSize = fileSize,
+                        ElapsedTime = -1, // Indicates error
+                        EncryptionTime = 0,
+                        Level = Level.Error,
+                        Message = $"Copy failed: {e.Message}"
+                    });
+
+                    // 2. Log the full stack trace for debugging
                     BackupManager.GetLogger().LogError(e);
                 }
 

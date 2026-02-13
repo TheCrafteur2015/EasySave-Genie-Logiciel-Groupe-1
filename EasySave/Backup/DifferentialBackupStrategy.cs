@@ -19,8 +19,9 @@ namespace EasySave.Backup
         /// <remarks>
         /// The method performs a differential backup, copying only files that are new or have changed since
         /// the last backup. The target directory is created if it does not exist. The progress callback is invoked multiple
-        /// times during execution, including a final call when the backup is complete. This method is not
-        /// thread-safe. Paths are logged in UNC format.
+        /// times during execution, including a final call when the backup is complete. 
+        /// If an error occurs, it is logged with a negative elapsed time (-1).
+        /// Paths are logged in UNC format.
         /// </remarks>
         /// <param name="job">The backup job to execute. Specifies the source and target directories, as well as job metadata.</param>
         /// <param name="BusinessSoftware">The name of the business software to check for. If running, the backup may be aborted.</param>
@@ -173,11 +174,25 @@ namespace EasySave.Backup
                     catch (Exception e)
                     {
                         stopwatch.Stop();
+
+                        // Convert paths to UNC for the error log
+                        string uncSource = PathUtils.ToUnc(sourceFile);
+                        string uncTarget = PathUtils.ToUnc(targetFile);
+
+                        // 1. Log the structured entry with negative time (-1) as per specification
                         BackupManager.GetLogger().Log(new LogEntry
                         {
+                            Name = job.Name,
+                            SourceFile = uncSource,
+                            TargetFile = uncTarget,
+                            FileSize = fileSize,
+                            ElapsedTime = -1, // Indicates error
+                            EncryptionTime = 0,
                             Level = Level.Error,
-                            Message = $"An exception occured while saving file: {sourceFile}"
+                            Message = $"Copy failed: {e.Message}"
                         });
+
+                        // 2. Log the full stack trace for debugging
                         BackupManager.GetLogger().LogError(e);
                     }
                 }

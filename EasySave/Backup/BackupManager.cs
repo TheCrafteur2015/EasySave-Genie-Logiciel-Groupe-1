@@ -10,7 +10,7 @@ namespace EasySave.Backup
 	public class BackupManager
 	{
 		private static BackupManager? _instance;
-		private static ILogger<dynamic>? _logger;
+		private static ILogger<string>? _logger;
 		private static readonly object _lock = new();
 		
 		private readonly List<BackupJob> _backupJobs;
@@ -66,13 +66,13 @@ namespace EasySave.Backup
 			return _instance;
 		}
 		
-		public static ILogger<dynamic> GetLogger()
+		public static ILogger<string> GetLogger()
 		{
 			if (_logger == null)
 			{
 				lock (_lock)
 				{
-					_logger = (ILogger<dynamic>) new SimpleLogger(Path.Combine(GetBM().appData, "Logs"));
+					_logger = new SimpleLogger(Path.Combine(GetBM().appData, "Logs"));
 				}
 			}
 			return _logger;

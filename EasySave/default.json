@@ -1,0 +1,6 @@
+{
+	"Version": "1.1.0",
+	"MaxBackupJobs": 5,
+	"UseBackupJobLimit": false,
+	"LoggerFormat": "text"
+}

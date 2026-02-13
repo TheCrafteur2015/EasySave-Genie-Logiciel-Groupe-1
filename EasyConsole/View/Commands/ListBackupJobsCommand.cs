@@ -5,10 +5,10 @@ using EasySave.View.Localization;
 
 namespace EasyConsole.View.Commands
 {
-    public class ListBackupJobsCommand : ICommand
-    {
-        public void Execute()
-        {
+	public class ListBackupJobsCommand : ICommand
+	{
+		public void Execute()
+		{
 			Console.WriteLine("=== {0} ===", I18n.Instance.GetString("list_title"));
 
 			var jobs = BackupManager.GetBM().GetAllJobs();
@@ -33,7 +33,6 @@ namespace EasyConsole.View.Commands
 
 		public string GetI18nKey() => "menu_list";
 
-
 		public int GetID() => 4;
-    }
+	}
 }

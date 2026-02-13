@@ -4,10 +4,10 @@ using EasySave.View.Localization;
 
 namespace EasyConsole.View.Commands
 {
-    public class ExecuteAllBackupJobsCommand : ICommand
-    {
-        public void Execute()
-        {
+	public class ExecuteAllBackupJobsCommand : ICommand
+	{
+		public void Execute()
+		{
 			Console.Clear();
 			Console.WriteLine(I18n.Instance.GetString("execute_all_start"));
 
@@ -23,8 +23,7 @@ namespace EasyConsole.View.Commands
 		}
 
 		public string GetI18nKey() => "menu_execute_all";
-
-
+		
 		public int GetID() => 3;
-    }
+	}
 }

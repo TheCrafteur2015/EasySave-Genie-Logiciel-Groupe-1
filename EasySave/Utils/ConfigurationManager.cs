@@ -104,14 +104,24 @@ namespace EasySave.Utils
 			return ConfigValues[key] ?? throw new ArgumentException("This configuration key doesn't exists!");
 		}
 
-		/// <summary>
-		/// Loads all saved backup jobs from persistent storage.
-		/// </summary>
-		/// <remarks>If the backup jobs file does not exist or cannot be read, the method returns an empty list. The
-		/// method does not throw exceptions for missing or invalid files.</remarks>
-		/// <returns>A list of <see cref="BackupJob"/> objects representing the saved backup jobs. Returns an empty list if no backup
-		/// jobs are found or if an error occurs while loading.</returns>
-		public List<BackupJob> LoadBackupJobs()
+            _configFilePath = Path.Combine(_configDirectory, "config.json");
+            _savedBackupJobPath = Path.Combine(_configDirectory, "backups.json");
+            if (!File.Exists(_configFilePath) || new FileInfo(_configFilePath).Length == 0)
+            {
+                File.WriteAllText(_configFilePath, ResourceManager.ReadResourceFile("default.json"));
+            }
+            string jsonContent = File.ReadAllText(_configFilePath);
+            ConfigValues = JsonConvert.DeserializeObject(jsonContent);
+        }
+
+        /// <summary>
+        /// Loads all saved backup jobs from persistent storage.
+        /// </summary>
+        /// <remarks>If the backup jobs file does not exist or cannot be read, the method returns an empty list. The
+        /// method does not throw exceptions for missing or invalid files.</remarks>
+        /// <returns>A list of <see cref="BackupJob"/> objects representing the saved backup jobs. Returns an empty list if no backup
+        /// jobs are found or if an error occurs while loading.</returns>
+        public List<BackupJob> LoadBackupJobs()
 		{
 			if (!File.Exists(_savedBackupJobPath))
 			{

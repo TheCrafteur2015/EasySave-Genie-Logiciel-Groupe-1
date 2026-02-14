@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# IDE0060: Supprimer le paramètre inutilisé
+dotnet_diagnostic.IDE0060.severity = none

@@ -21,12 +21,14 @@ namespace EasySave.Utils
 		public readonly string _configFilePath;
 		public readonly string _savedBackupJobPath;
 
-		/// <summary>
-		/// Gets the dynamic configuration values for the current instance.
-		/// </summary>
-		/// <remarks>The returned object provides access to configuration settings whose structure may vary at
-		/// runtime. Use dynamic member access to retrieve specific configuration values as needed.</remarks>
-		private dynamic ConfigValues { get; set; }
+        private readonly object _saveLock = new();
+
+        /// <summary>
+        /// Gets the dynamic configuration values for the current instance.
+        /// </summary>
+        /// <remarks>The returned object provides access to configuration settings whose structure may vary at
+        /// runtime. Use dynamic member access to retrieve specific configuration values as needed.</remarks>
+        private dynamic ConfigValues { get; set; }
 
 		/// <summary>
 		/// Initializes a new instance of the ConfigurationManager class using the specified configuration directory. Ensures
@@ -140,10 +142,12 @@ namespace EasySave.Utils
 		{
 			try
 			{
-				//JSON_OPTIONS
-				string jsonContent = System.Text.Json.JsonSerializer.Serialize(jobs, JSON_OPTIONS);
-				File.WriteAllText(_savedBackupJobPath, jsonContent);
-			}
+                lock (_saveLock)
+                {
+                    string jsonContent = System.Text.Json.JsonSerializer.Serialize(jobs, JSON_OPTIONS);
+                    File.WriteAllText(_savedBackupJobPath, jsonContent);
+                }
+            }
 			catch (Exception ex)
 			{
 				throw new Exception($"Failed to save configuration: {ex.Message}");

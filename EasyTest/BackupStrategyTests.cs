@@ -1,5 +1,9 @@
 ﻿using EasySave.Backup;
+using EasySave.Utils;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace EasyTest
 {
@@ -34,6 +38,7 @@ namespace EasyTest
             if (Directory.Exists(_dossierSource)) Directory.Delete(_dossierSource, true);
             if (Directory.Exists(_dossierCible)) Directory.Delete(_dossierCible, true);
         }
+
         private void KillCalculator()
         {
             var processNames = new[] { "CalculatorApp", "calc", "Calculator" };
@@ -47,10 +52,9 @@ namespace EasyTest
                         p.Kill();
                         p.WaitForExit(1000);
                     }
-                    catch {}
+                    catch { }
                 }
             }
-
             Thread.Sleep(100);
         }
 
@@ -66,10 +70,9 @@ namespace EasyTest
 
             bool succes = bm.ExecuteJob(job.Id);
 
-            Assert.IsTrue(succes, $"Le job a échoué avec l'état : {job.State}. Vérifiez les logs ou la config.");
-
+            Assert.IsTrue(succes);
             string fichierCible = Path.Combine(_dossierCible, NomFichierTest);
-            Assert.IsTrue(File.Exists(fichierCible), "Le fichier aurait dû être copié dans le dossier cible.");
+            Assert.IsTrue(File.Exists(fichierCible));
             Assert.AreEqual("Contenu de test", File.ReadAllText(fichierCible));
         }
 
@@ -93,7 +96,7 @@ namespace EasyTest
             bm.ExecuteJob(id);
             DateTime dateDeuxiemeCopie = File.GetLastWriteTime(fichierCible);
 
-            Assert.AreNotEqual(datePremiereCopie, dateDeuxiemeCopie, "Le fichier cible aurait dû être mis à jour.");
+            Assert.AreNotEqual(datePremiereCopie, dateDeuxiemeCopie);
             Assert.AreEqual("Version 2 - Modifié", File.ReadAllText(fichierCible));
         }
 
@@ -104,14 +107,12 @@ namespace EasyTest
             try
             {
                 Thread.Sleep(2000);
-
                 var bm = BackupManager.GetBM();
                 bm.AddJob("TestBlocage", _dossierSource, _dossierCible, BackupType.Complete);
                 int id = bm.GetAllJobs()[0].Id;
 
                 bool succes = bm.ExecuteJob(id);
-
-                Assert.IsFalse(succes, "Le job aurait dû échouer (retourner false) car la Calculatrice est ouverte.");
+                Assert.IsFalse(succes);
             }
             finally
             {
@@ -133,11 +134,68 @@ namespace EasyTest
             bm.ExecuteJob(id);
 
             string cheminFichierCible = Path.Combine(_dossierCible, NomFichierCrypto);
-            Assert.IsTrue(File.Exists(cheminFichierCible), "Le fichier crypté doit exister.");
-
+            Assert.IsTrue(File.Exists(cheminFichierCible));
             string contenuCible = File.ReadAllText(cheminFichierCible);
+            Assert.AreNotEqual(contenuClair, contenuCible);
+        }
 
-            Assert.AreNotEqual(contenuClair, contenuCible, "Le contenu du fichier cible devrait être crypté (différent de la source).");
+        [TestMethod]
+        public void TestPriorite_Differentiel_Blocage()
+        {
+            string appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave");
+            string configDir = Path.Combine(appData, "Config");
+            Directory.CreateDirectory(configDir);
+            string configPath = Path.Combine(configDir, "config.json");
+
+            var configSpeciale = new
+            {
+                Version = "1.1.0",
+                MaxBackupJobs = 5,
+                PriorityExtensions = new[] { ".txt" },
+                CryptoKey = "1234",
+                CryptoSoftPath = ""
+            };
+            File.WriteAllText(configPath, JsonConvert.SerializeObject(configSpeciale));
+
+            typeof(BackupManager).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+
+            string sourceNonPrio = Path.Combine(Path.GetTempPath(), "ES_NonPrio_Src");
+            string cibleNonPrio = Path.Combine(Path.GetTempPath(), "ES_NonPrio_Tgt");
+            string sourcePrio = Path.Combine(Path.GetTempPath(), "ES_Prio_Src");
+            string ciblePrio = Path.Combine(Path.GetTempPath(), "ES_Prio_Tgt");
+
+            if (Directory.Exists(sourceNonPrio)) Directory.Delete(sourceNonPrio, true);
+            if (Directory.Exists(sourcePrio)) Directory.Delete(sourcePrio, true);
+            if (Directory.Exists(cibleNonPrio)) Directory.Delete(cibleNonPrio, true);
+            if (Directory.Exists(ciblePrio)) Directory.Delete(ciblePrio, true);
+
+            Directory.CreateDirectory(sourceNonPrio);
+            Directory.CreateDirectory(sourcePrio);
+
+            for (int i = 0; i < 50; i++)
+            {
+                File.WriteAllText(Path.Combine(sourceNonPrio, $"file_{i}.dat"), "Data");
+                File.WriteAllText(Path.Combine(sourcePrio, $"doc_{i}.txt"), "Priority Data");
+            }
+
+            var bm = BackupManager.GetBM();
+            foreach (var j in bm.GetAllJobs()) bm.DeleteJob(j.Id);
+
+            bm.AddJob("Job_NonPrio", sourceNonPrio, cibleNonPrio, BackupType.Differential);
+            bm.AddJob("Job_Prio", sourcePrio, ciblePrio, BackupType.Differential);
+
+            bm.ExecuteAllJobs();
+
+            int countNonPrio = Directory.Exists(cibleNonPrio) ? Directory.GetFiles(cibleNonPrio).Length : 0;
+            int countPrio = Directory.Exists(ciblePrio) ? Directory.GetFiles(ciblePrio).Length : 0;
+
+            Assert.AreEqual(50, countPrio);
+            Assert.AreEqual(50, countNonPrio);
+
+            try { Directory.Delete(sourceNonPrio, true); } catch { }
+            try { Directory.Delete(sourcePrio, true); } catch { }
+            try { Directory.Delete(cibleNonPrio, true); } catch { }
+            try { Directory.Delete(ciblePrio, true); } catch { }
         }
     }
 }

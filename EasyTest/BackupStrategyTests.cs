@@ -8,12 +8,13 @@ namespace EasyTest
     {
         private string _dossierSource = null!;
         private string _dossierCible = null!;
-        private const string NomFichierTest = "fichier_test.txt";
+        private const string NomFichierTest = "fichier_test.dat";
         private const string NomFichierCrypto = "secret.txt";
 
         [TestInitialize]
         public void Setup()
         {
+            KillCalculator();
             _dossierSource = Path.Combine(Path.GetTempPath(), "EasySave_Source_Test");
             _dossierCible = Path.Combine(Path.GetTempPath(), "EasySave_Cible_Test");
 
@@ -29,19 +30,43 @@ namespace EasyTest
         [TestCleanup]
         public void Cleanup()
         {
+            KillCalculator();
             if (Directory.Exists(_dossierSource)) Directory.Delete(_dossierSource, true);
             if (Directory.Exists(_dossierCible)) Directory.Delete(_dossierCible, true);
+        }
+        private void KillCalculator()
+        {
+            var processNames = new[] { "CalculatorApp", "calc", "Calculator" };
+            foreach (var name in processNames)
+            {
+                var processes = Process.GetProcessesByName(name);
+                foreach (var p in processes)
+                {
+                    try
+                    {
+                        p.Kill();
+                        p.WaitForExit(1000);
+                    }
+                    catch {}
+                }
+            }
+
+            Thread.Sleep(100);
         }
 
         [TestMethod]
         public void TestSauvegardeComplete_CopieFichiers()
         {
-            File.WriteAllText(Path.Combine(_dossierSource, NomFichierTest), "Contenu de test");
+            string cheminFichierSource = Path.Combine(_dossierSource, NomFichierTest);
+            File.WriteAllText(cheminFichierSource, "Contenu de test");
+
             var bm = BackupManager.GetBM();
             bm.AddJob("TestComplet", _dossierSource, _dossierCible, BackupType.Complete);
-            int id = bm.GetAllJobs()[0].Id;
+            var job = bm.GetAllJobs()[0];
 
-            bm.ExecuteJob(id);
+            bool succes = bm.ExecuteJob(job.Id);
+
+            Assert.IsTrue(succes, $"Le job a échoué avec l'état : {job.State}. Vérifiez les logs ou la config.");
 
             string fichierCible = Path.Combine(_dossierCible, NomFichierTest);
             Assert.IsTrue(File.Exists(fichierCible), "Le fichier aurait dû être copié dans le dossier cible.");

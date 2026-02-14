@@ -174,13 +174,17 @@ namespace EasySave.Backup
 		/// progress is reported.</param>
 		public void ExecuteJobRange(int startId, int endId, Action<ProgressState>? progressCallback = null)
 		{
-			for (int i = startId; i <= endId; i++)
+            List<Task> tasks = new();
+            for (int i = startId; i <= endId; i++)
 			{
 				var job = _backupJobs.FirstOrDefault(j => j.Id == i);
 				if (job != null)
-					ExecuteSingleJob(job, progressCallback);
+				{
+                    tasks.Add(Task.Run(() => ExecuteSingleJob(job, progressCallback)));
+                }
 			}
-		}
+            Task.WaitAll(tasks.ToArray());
+        }
 
 		/// <summary>
 		/// Executes the backup jobs corresponding to the specified job IDs, optionally reporting progress for each job.
@@ -191,13 +195,17 @@ namespace EasySave.Backup
 		/// reported.</param>
 		public void ExecuteJobList(int[] ids, Action<ProgressState>? progressCallback = null)
 		{
-			foreach (var id in ids)
+            List<Task> tasks = new();
+            foreach (var id in ids)
 			{
 				var job = _backupJobs.FirstOrDefault(j => j.Id == id);
 				if (job != null)
-					ExecuteSingleJob(job, progressCallback);
+				{
+                    tasks.Add(Task.Run(() => ExecuteSingleJob(job, progressCallback)));
+                }
 			}
-		}
+            Task.WaitAll(tasks.ToArray());
+        }
 
 		/// <summary>
 		/// Executes all configured backup jobs in sequence, optionally reporting progress for each job.
@@ -208,11 +216,13 @@ namespace EasySave.Backup
 		/// <see langword="null"/>, no progress is reported.</param>
 		public void ExecuteAllJobs(Action<ProgressState>? progressCallback = null)
 		{
-			foreach (var job in _backupJobs)
+            List<Task> tasks = new();
+            foreach (var job in _backupJobs)
 			{
-				ExecuteSingleJob(job, progressCallback);
-			}
-		}
+                tasks.Add(Task.Run(() => ExecuteSingleJob(job, progressCallback)));
+            }
+            Task.WaitAll(tasks.ToArray());
+        }
 
 		/// <summary>
 		/// Executes the specified backup job and updates progress using the provided callback.
@@ -241,7 +251,6 @@ namespace EasySave.Backup
 			{
 				job.Error();
 				BackupManager.GetLogger().LogError(e);
-				throw;
 			}
 			finally
 			{

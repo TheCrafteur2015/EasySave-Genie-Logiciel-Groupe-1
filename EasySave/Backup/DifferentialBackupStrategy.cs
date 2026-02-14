@@ -52,6 +52,8 @@ namespace EasySave.Backup
 
             var priorityFiles = files.Where(f => priorityExtensions.Contains(Path.GetExtension(f))).ToList();
             var nonPriorityFiles = files.Where(f => !priorityExtensions.Contains(Path.GetExtension(f))).ToList();
+            long maxFileSizeConfig = (long)(config.GetConfig("MaxParallelTransferSize") ?? 1000000);
+            long maxFileSizeBytes = maxFileSizeConfig * 1024;
 
             if (priorityFiles.Count > 0)
             {
@@ -103,6 +105,9 @@ namespace EasySave.Backup
                 var sourceFileInfo = new FileInfo(sourceFile);
                 var fileSize = sourceFileInfo.Length;
                 bool needsCopy = false;
+                bool isBigFile = fileSize > maxFileSizeBytes;
+                bool semaphoreAcquired = false;
+
                 try
                 {
                     var relativePath = Path.GetRelativePath(job.SourceDirectory, sourceFile);
@@ -151,6 +156,11 @@ namespace EasySave.Backup
 
                         try
                         {
+                            if (isBigFile)
+                            {
+                                BackupManager.BigFileSemaphore.Wait();
+                                semaphoreAcquired = true;
+                            }
                             File.Copy(sourceFile, targetFile, true);
                             string ext = Path.GetExtension(targetFile);
                             if (File.Exists(cryptoPath) && priorityExtensions.Contains(ext))
@@ -209,6 +219,10 @@ namespace EasySave.Backup
                 }
                 finally
                 {
+                    if (semaphoreAcquired)
+                    {
+                        BackupManager.BigFileSemaphore.Release();
+                    }   
                     // On libère le compteur même si le fichier n'a pas été copié (différentiel)
                     if (isPriority)
                     {

@@ -123,6 +123,24 @@ namespace EasyTest
         [TestMethod]
         public void TestCryptoSoft_Integration()
         {
+            string appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave");
+            string configDir = Path.Combine(appData, "Config");
+            Directory.CreateDirectory(configDir);
+            string configPath = Path.Combine(configDir, "config.json");
+
+
+            var configSpeciale = new
+            {
+                Version = "1.1.0",
+                MaxBackupJobs = 5,
+                PriorityExtensions = new[] { ".txt" },
+                CryptoKey = "1234",
+                CryptoSoftPath = @"C:\FISA_A3\Bloc_Génie_Logiciel\EasySave-Genie-Logiciel-Groupe-1\EasyConsole\bin\Debug\net8.0\CryptoSoft.exe"
+            };
+            File.WriteAllText(configPath, JsonConvert.SerializeObject(configSpeciale));
+
+            typeof(BackupManager).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+
             string cheminFichierSource = Path.Combine(_dossierSource, NomFichierCrypto);
             string contenuClair = "Ceci est un secret";
             File.WriteAllText(cheminFichierSource, contenuClair);
@@ -134,9 +152,11 @@ namespace EasyTest
             bm.ExecuteJob(id);
 
             string cheminFichierCible = Path.Combine(_dossierCible, NomFichierCrypto);
-            Assert.IsTrue(File.Exists(cheminFichierCible));
+            Assert.IsTrue(File.Exists(cheminFichierCible), "Le fichier crypté doit exister");
+
             string contenuCible = File.ReadAllText(cheminFichierCible);
-            Assert.AreNotEqual(contenuClair, contenuCible);
+
+            Assert.AreNotEqual(contenuClair, contenuCible, "Le fichier cible devrait être crypté (différent de la source)");
         }
 
         [TestMethod]
@@ -196,6 +216,73 @@ namespace EasyTest
             try { Directory.Delete(sourcePrio, true); } catch { }
             try { Directory.Delete(cibleNonPrio, true); } catch { }
             try { Directory.Delete(ciblePrio, true); } catch { }
+        }
+        [TestMethod]
+        public void TestLimiteTransfert_GrosFichiers()
+        {
+            string appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave");
+            string configDir = Path.Combine(appData, "Config");
+            Directory.CreateDirectory(configDir);
+            string configPath = Path.Combine(configDir, "config.json");
+
+            var configSpeciale = new
+            {
+                Version = "1.1.0",
+                MaxBackupJobs = 5,
+                PriorityExtensions = new string[] { },
+                MaxParallelTransferSize = 1,
+                CryptoKey = "1234",
+                CryptoSoftPath = ""
+            };
+            File.WriteAllText(configPath, JsonConvert.SerializeObject(configSpeciale));
+
+            typeof(BackupManager).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+
+            string srcGrosA = Path.Combine(Path.GetTempPath(), "ES_GrosA_Src");
+            string tgtGrosA = Path.Combine(Path.GetTempPath(), "ES_GrosA_Tgt");
+            string srcGrosB = Path.Combine(Path.GetTempPath(), "ES_GrosB_Src");
+            string tgtGrosB = Path.Combine(Path.GetTempPath(), "ES_GrosB_Tgt");
+            string srcPetit = Path.Combine(Path.GetTempPath(), "ES_Petit_Src");
+            string tgtPetit = Path.Combine(Path.GetTempPath(), "ES_Petit_Tgt");
+
+            if (Directory.Exists(srcGrosA)) Directory.Delete(srcGrosA, true);
+            if (Directory.Exists(tgtGrosA)) Directory.Delete(tgtGrosA, true);
+            if (Directory.Exists(srcGrosB)) Directory.Delete(srcGrosB, true);
+            if (Directory.Exists(tgtGrosB)) Directory.Delete(tgtGrosB, true);
+            if (Directory.Exists(srcPetit)) Directory.Delete(srcPetit, true);
+            if (Directory.Exists(tgtPetit)) Directory.Delete(tgtPetit, true);
+
+            Directory.CreateDirectory(srcGrosA);
+            Directory.CreateDirectory(srcGrosB);
+            Directory.CreateDirectory(srcPetit);
+
+            string grosContenu = new string('A', 2000);
+            for (int i = 0; i < 10; i++)
+            {
+                File.WriteAllText(Path.Combine(srcGrosA, $"grosA_{i}.bin"), grosContenu);
+                File.WriteAllText(Path.Combine(srcGrosB, $"grosB_{i}.bin"), grosContenu);
+                File.WriteAllText(Path.Combine(srcPetit, $"petit_{i}.txt"), "Petite data");
+            }
+
+            var bm = BackupManager.GetBM();
+            foreach (var j in bm.GetAllJobs()) bm.DeleteJob(j.Id);
+
+            bm.AddJob("Job_Gros_A", srcGrosA, tgtGrosA, BackupType.Complete);
+            bm.AddJob("Job_Gros_B", srcGrosB, tgtGrosB, BackupType.Complete);
+            bm.AddJob("Job_Petit", srcPetit, tgtPetit, BackupType.Complete);
+
+            bm.ExecuteAllJobs();
+
+            Assert.AreEqual(10, Directory.GetFiles(tgtGrosA).Length, "Fichiers Gros A manquants");
+            Assert.AreEqual(10, Directory.GetFiles(tgtGrosB).Length, "Fichiers Gros B manquants");
+            Assert.AreEqual(10, Directory.GetFiles(tgtPetit).Length, "Fichiers Petit manquants");
+
+            try { Directory.Delete(srcGrosA, true); } catch { }
+            try { Directory.Delete(tgtGrosA, true); } catch { }
+            try { Directory.Delete(srcGrosB, true); } catch { }
+            try { Directory.Delete(tgtGrosB, true); } catch { }
+            try { Directory.Delete(srcPetit, true); } catch { }
+            try { Directory.Delete(tgtPetit, true); } catch { }
         }
     }
 }

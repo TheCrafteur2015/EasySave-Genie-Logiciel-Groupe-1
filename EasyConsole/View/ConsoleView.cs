@@ -14,6 +14,7 @@ namespace EasyConsole.View
 	/// </summary>
 	public class ConsoleView
 	{
+        private static readonly object _consoleLock = new();
         /// <summary>
         /// Initialization of the new instance for the console view.
 		/// Load the unique instance needed for the functioning of the application system.
@@ -131,28 +132,30 @@ namespace EasyConsole.View
 
 		public static void DisplayProgress(ProgressState state)
 		{
-            if (!string.IsNullOrEmpty(state.Message))
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"\n >> {state.Message}");
-                Console.ResetColor();
-                if (state.State == State.Error) return;
-            }
-
-            Console.WriteLine($"\n{I18n.Instance.GetString("progress_active")}");
-			Console.WriteLine(string.Format(I18n.Instance.GetString("progress_files"), 
-				state.TotalFiles - state.FilesRemaining, state.TotalFiles));
-			Console.WriteLine(string.Format(I18n.Instance.GetString("progress_size"), 
-				state.TotalSize - state.SizeRemaining, state.TotalSize));
-			Console.WriteLine(string.Format(I18n.Instance.GetString("progress_percentage"), 
-				state.ProgressPercentage));
-			
-			if (!string.IsNullOrEmpty(state.CurrentSourceFile))
+			lock (_consoleLock)
 			{
-				Console.WriteLine(string.Format(I18n.Instance.GetString("progress_current"), 
-					Path.GetFileName(state.CurrentSourceFile)));
+				if (!string.IsNullOrEmpty(state.Message))
+				{
+					Console.ForegroundColor = ConsoleColor.Red;
+					Console.WriteLine($"\n >> {state.Message}");
+					Console.ResetColor();
+					if (state.State == State.Error) return;
+				}
+
+				Console.WriteLine($"\n{I18n.Instance.GetString("progress_active")} - {state.BackupName}"); // Ajout du nom pour savoir qui parle
+				Console.WriteLine(string.Format(I18n.Instance.GetString("progress_files"),
+					state.TotalFiles - state.FilesRemaining, state.TotalFiles));
+				Console.WriteLine(string.Format(I18n.Instance.GetString("progress_size"),
+					state.TotalSize - state.SizeRemaining, state.TotalSize));
+				Console.WriteLine(string.Format(I18n.Instance.GetString("progress_percentage"),
+					state.ProgressPercentage));
+
+				if (!string.IsNullOrEmpty(state.CurrentSourceFile))
+				{
+					Console.WriteLine(string.Format(I18n.Instance.GetString("progress_current"),
+						Path.GetFileName(state.CurrentSourceFile)));
+				}
 			}
 		}
-		
 	}
 }

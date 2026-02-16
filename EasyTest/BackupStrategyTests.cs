@@ -68,7 +68,11 @@ namespace EasyTest
             bm.AddJob("TestComplet", _dossierSource, _dossierCible, BackupType.Complete);
             var job = bm.GetAllJobs()[0];
 
-            bool succes = bm.ExecuteJob(job.Id);
+            // CORRECTION : Utilisation de ExecuteJobAsync + Wait pour attendre la fin
+            var task = bm.ExecuteJobAsync(job.Id);
+            task.Wait();
+
+            bool succes = job.State == State.Completed;
 
             Assert.IsTrue(succes);
             string fichierCible = Path.Combine(_dossierCible, NomFichierTest);
@@ -86,14 +90,14 @@ namespace EasyTest
             bm.AddJob("TestDiff", _dossierSource, _dossierCible, BackupType.Differential);
             int id = bm.GetAllJobs()[0].Id;
 
-            bm.ExecuteJob(id);
+            bm.ExecuteJobAsync(id).Wait(); // Version Async + Wait
             string fichierCible = Path.Combine(_dossierCible, NomFichierTest);
             DateTime datePremiereCopie = File.GetLastWriteTime(fichierCible);
 
             Thread.Sleep(1000);
             File.WriteAllText(fichierSource, "Version 2 - Modifié");
 
-            bm.ExecuteJob(id);
+            bm.ExecuteJobAsync(id).Wait(); // Version Async + Wait
             DateTime dateDeuxiemeCopie = File.GetLastWriteTime(fichierCible);
 
             Assert.AreNotEqual(datePremiereCopie, dateDeuxiemeCopie);
@@ -111,8 +115,11 @@ namespace EasyTest
                 bm.AddJob("TestBlocage", _dossierSource, _dossierCible, BackupType.Complete);
                 int id = bm.GetAllJobs()[0].Id;
 
-                bool succes = bm.ExecuteJob(id);
-                Assert.IsFalse(succes);
+                bm.ExecuteJobAsync(id).Wait(); // On attend la fin (qui devrait être en erreur ou bloquée)
+
+                // On vérifie que l'état est bien Error car bloqué par le logiciel métier
+                var job = bm.GetAllJobs().First(j => j.Id == id);
+                Assert.AreEqual(State.Error, job.State);
             }
             finally
             {
@@ -127,7 +134,6 @@ namespace EasyTest
             string configDir = Path.Combine(appData, "Config");
             Directory.CreateDirectory(configDir);
             string configPath = Path.Combine(configDir, "config.json");
-
 
             var configSpeciale = new
             {
@@ -149,13 +155,12 @@ namespace EasyTest
             bm.AddJob("TestCrypto", _dossierSource, _dossierCible, BackupType.Complete);
             int id = bm.GetAllJobs()[0].Id;
 
-            bm.ExecuteJob(id);
+            bm.ExecuteJobAsync(id).Wait();
 
             string cheminFichierCible = Path.Combine(_dossierCible, NomFichierCrypto);
             Assert.IsTrue(File.Exists(cheminFichierCible), "Le fichier crypté doit exister");
 
             string contenuCible = File.ReadAllText(cheminFichierCible);
-
             Assert.AreNotEqual(contenuClair, contenuCible, "Le fichier cible devrait être crypté (différent de la source)");
         }
 
@@ -204,7 +209,11 @@ namespace EasyTest
             bm.AddJob("Job_NonPrio", sourceNonPrio, cibleNonPrio, BackupType.Differential);
             bm.AddJob("Job_Prio", sourcePrio, ciblePrio, BackupType.Differential);
 
-            bm.ExecuteAllJobs();
+            // CORRECTION MAJEURE ICI :
+            // 1. On lance les tâches avec ExecuteAllJobsAsync
+            // 2. On attend qu'elles soient TOUTES finies avec Task.WaitAll
+            var tasks = bm.ExecuteAllJobsAsync();
+            Task.WaitAll(tasks.ToArray());
 
             int countNonPrio = Directory.Exists(cibleNonPrio) ? Directory.GetFiles(cibleNonPrio).Length : 0;
             int countPrio = Directory.Exists(ciblePrio) ? Directory.GetFiles(ciblePrio).Length : 0;
@@ -217,6 +226,7 @@ namespace EasyTest
             try { Directory.Delete(cibleNonPrio, true); } catch { }
             try { Directory.Delete(ciblePrio, true); } catch { }
         }
+
         [TestMethod]
         public void TestLimiteTransfert_GrosFichiers()
         {
@@ -271,7 +281,9 @@ namespace EasyTest
             bm.AddJob("Job_Gros_B", srcGrosB, tgtGrosB, BackupType.Complete);
             bm.AddJob("Job_Petit", srcPetit, tgtPetit, BackupType.Complete);
 
-            bm.ExecuteAllJobs();
+            // CORRECTION ICI AUSSI :
+            var tasks = bm.ExecuteAllJobsAsync();
+            Task.WaitAll(tasks.ToArray());
 
             Assert.AreEqual(10, Directory.GetFiles(tgtGrosA).Length, "Fichiers Gros A manquants");
             Assert.AreEqual(10, Directory.GetFiles(tgtGrosB).Length, "Fichiers Gros B manquants");
@@ -283,6 +295,81 @@ namespace EasyTest
             try { Directory.Delete(tgtGrosB, true); } catch { }
             try { Directory.Delete(srcPetit, true); } catch { }
             try { Directory.Delete(tgtPetit, true); } catch { }
+        }
+
+        [TestMethod]
+        public void TestInteraction_PauseResumeStop()
+        {
+            string appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave");
+            string configDir = Path.Combine(appData, "Config");
+            Directory.CreateDirectory(configDir);
+
+            var configSpeciale = new
+            {
+                Version = "1.1.0",
+                MaxBackupJobs = 5,
+                PriorityExtensions = new string[] { },
+                MaxParallelTransferSize = 100000,
+                CryptoKey = "1234",
+                CryptoSoftPath = ""
+            };
+            File.WriteAllText(Path.Combine(configDir, "config.json"), JsonConvert.SerializeObject(configSpeciale));
+
+            typeof(BackupManager).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+
+            string source = Path.Combine(Path.GetTempPath(), "ES_Interact_Src");
+            string cible = Path.Combine(Path.GetTempPath(), "ES_Interact_Tgt");
+
+            if (Directory.Exists(source)) Directory.Delete(source, true);
+            if (Directory.Exists(cible)) Directory.Delete(cible, true);
+            Directory.CreateDirectory(source);
+
+            for (int i = 0; i < 1000; i++)
+            {
+                File.WriteAllText(Path.Combine(source, $"file_{i}.txt"), "data");
+            }
+
+            var bm = BackupManager.GetBM();
+            foreach (var j in bm.GetAllJobs()) bm.DeleteJob(j.Id);
+            bm.AddJob("Job_Interact", source, cible, BackupType.Complete);
+            var job = bm.GetAllJobs()[0];
+
+            int fichiersRestants = 1000;
+
+            Task task = bm.ExecuteJobAsync(job.Id, (state) =>
+            {
+                fichiersRestants = state.FilesRemaining;
+            });
+
+            Thread.Sleep(500);
+
+            bm.PauseJob(job.Id);
+            Thread.Sleep(1000);
+
+            int fichiersRestantsPendantPause = fichiersRestants;
+
+            Thread.Sleep(1000);
+
+            Assert.AreEqual(fichiersRestantsPendantPause, fichiersRestants, "Le job ne doit pas progresser pendant la pause.");
+
+            bm.ResumeJob(job.Id);
+            Thread.Sleep(1000);
+
+            Assert.AreNotEqual(fichiersRestantsPendantPause, fichiersRestants, "Le job doit reprendre sa progression après Resume.");
+            Assert.IsTrue(fichiersRestants < fichiersRestantsPendantPause, "Le nombre de fichiers restants doit diminuer.");
+
+            bm.StopJob(job.Id);
+
+            task.Wait(2000);
+
+            Assert.IsTrue(task.IsCompleted, "La tâche doit être terminée après un Stop.");
+            Assert.AreEqual(State.Error, job.State, "L'état du job doit être 'Error' (ou Stopped) après une interruption utilisateur.");
+
+            int fichiersCopies = Directory.Exists(cible) ? Directory.GetFiles(cible).Length : 0;
+            Assert.IsTrue(fichiersCopies < 1000, $"Le job aurait dû être stoppé avant la fin (Copiés: {fichiersCopies}/1000).");
+
+            try { Directory.Delete(source, true); } catch { }
+            try { Directory.Delete(cible, true); } catch { }
         }
     }
 }

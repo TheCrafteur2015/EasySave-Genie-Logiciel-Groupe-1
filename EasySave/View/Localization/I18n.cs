@@ -21,7 +21,9 @@ namespace EasySave.View.Localization
 
 		private Dictionary<string, Dictionary<string, string>> properties;
 
-		public string Language { get; private set; } = string.Empty;
+        public string this[string key] => GetString(key);
+
+        public string Language { get; private set; } = string.Empty;
 
 		private static I18n? _instance;
 

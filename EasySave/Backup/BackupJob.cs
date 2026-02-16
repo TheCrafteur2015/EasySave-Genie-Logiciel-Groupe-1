@@ -13,9 +13,9 @@ namespace EasySave.Backup
 
 		public string TargetDirectory { get; set; }
 
-		public readonly BackupType Type;
+        public BackupType Type { get; }
 
-		public IBackupStrategy Strategy { get; }
+        public IBackupStrategy Strategy { get; }
 
 		public DateTime LastExecution { get; private set; }
 

@@ -1,5 +1,5 @@
+using EasyLog.Logging;
 using EasySave.Backup;
-using Newtonsoft.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -31,7 +31,7 @@ namespace EasySave.Utils
 		/// runtime. Use dynamic member access to retrieve specific configuration values as needed.</remarks>
 		private readonly Dictionary<string, object> configValues;
 
-		private readonly List<string> readOnlyVariables = ["Version"];
+		private readonly List<string> readOnlyVariables = ["Version", "PriorityExtensions"];
 
 		/// <summary>
 		/// Indicates wether the configuration variables have been edited and are required to save.
@@ -58,62 +58,46 @@ namespace EasySave.Utils
 				File.WriteAllText(configFilePath, ResourceManager.ReadResourceFile(ResourceManager.DEFAULT_CONFIG_FILENAME));
 
 			string jsonContent = File.ReadAllText(configFilePath);
-			configValues = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(jsonContent) ?? [];
+			configValues = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonContent) ?? [];
 
 			// Migrate configuration if needed
 			MigrateConfigurationIfNeeded();
 	}
 
-	/// <summary>
-	/// Migrates the configuration file to the latest version by merging existing values
-	/// with new default values for any missing keys.
-	/// </summary>
-	private void MigrateConfigurationIfNeeded()
-	{
-		var defaultConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JObject>(
-			ResourceManager.ReadResourceFile(ResourceManager.DEFAULT_CONFIG_FILENAME));
-		
-		if (defaultConfig == null) return;
-
-		//var currentConfig = ConfigValues as Newtonsoft.Json.Linq.JObject;
-		var currentConfig = configValues;
-		if (currentConfig == null) return;
-
-		bool configUpdated = false;
-
-		// Add any missing keys from default config
-		foreach (var property in defaultConfig.Properties())
+		/// <summary>
+		/// Migrates the configuration file to the latest version by merging existing values
+		/// with new default values for any missing keys.
+		/// </summary>
+		private void MigrateConfigurationIfNeeded()
 		{
-			if (currentConfig[property.Name] == null)
-			{
-				currentConfig[property.Name] = property.Value;
-				configUpdated = true;
-				MarkDirty();
-			}
-		}
+			var defaultConfig = (JsonSerializer.Deserialize<Dictionary<string, object>>(
+				ResourceManager.ReadResourceFile(ResourceManager.DEFAULT_CONFIG_FILENAME)
+			) ?? []) ?? throw new FileNotFoundException("Couldn't find packaged resource: " + ResourceManager.DEFAULT_CONFIG_FILENAME);
 
-		// Update version if configuration was migrated
-		if (configUpdated)
-		{
-			var defaultVersion = defaultConfig["Version"];
-			if (defaultVersion != null)
+			if (GetConfig<Version>("Version").CompareTo(Version.Create(defaultConfig["Version"] as string)) == -1)
 			{
-				currentConfig["Version"] = defaultVersion;
+				foreach (var kvp in defaultConfig)
+				{
+					if (!configValues.ContainsKey(kvp.Key))
+					{
+						configValues.Add(kvp.Key, kvp.Value);
+						MarkDirty();
+					}
+				}
 			}
 
-			// Save the updated configuration
-			//File.WriteAllText(_configFilePath, currentConfig.ToString(Newtonsoft.Json.Formatting.Indented));
-			File.WriteAllText(configFilePath, System.Text.Json.JsonSerializer.Serialize(currentConfig, JSON_OPTIONS));
-			//configValues = currentConfig;
+			if (isDirty)
+				configValues["Version"] = defaultConfig["Version"];
 		}
-	}
 
 		public T GetConfig<T>(string key, T? defaultValue = default)
 		{
-			//return ConfigValues[key] ?? throw new ArgumentException("This configuration key doesn't exists!");
 			T? ret = default;
 			if (configValues.TryGetValue(key, out var value))
 			{
+				if (key == "Version" && typeof(T) == typeof(Version))
+					return (T) (object) Version.Create(value as string);
+
 				ret = value switch
 				{
 					T t => t,
@@ -126,13 +110,20 @@ namespace EasySave.Utils
 
 		public Dictionary<string, object> GetConfigDictionary()
 		{
-			return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(System.Text.Json.JsonSerializer.Serialize(configValues)) ?? [];
+			return JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(configValues)) ?? [];
 		}
 
 		public bool SetConfig<T>(string key, T? value = default)
 		{
 			if (value == null)
 				return false;
+			if (!configValues.ContainsKey(key))
+				return false;
+			if (readOnlyVariables.Contains(key))
+			{
+				BackupManager.GetLogger().Log(new() { Level = Level.Warning, Message = $"User attempted to edit read-only field: {key}" });
+				return false;
+			}
 			configValues[key] = value;
 			MarkDirty();
 			return true;
@@ -160,7 +151,7 @@ namespace EasySave.Utils
 			try
 			{
 				string jsonContent = File.ReadAllText(savedBackupJobPath);
-				var jobs = System.Text.Json.JsonSerializer.Deserialize<List<BackupJob>>(jsonContent);
+				var jobs = JsonSerializer.Deserialize<List<BackupJob>>(jsonContent);
 				return jobs ?? [];
 			}
 			catch (Exception e)
@@ -179,8 +170,7 @@ namespace EasySave.Utils
 		{
 			try
 			{
-				//JSON_OPTIONS
-				string jsonContent = System.Text.Json.JsonSerializer.Serialize(jobs, JSON_OPTIONS);
+				string jsonContent = JsonSerializer.Serialize(jobs, JSON_OPTIONS);
 				File.WriteAllText(savedBackupJobPath, jsonContent);
 			}
 			catch (Exception ex)
@@ -191,7 +181,14 @@ namespace EasySave.Utils
 
 		public void SaveConfiguration()
 		{
-
+			if (isDirty)
+			{
+				File.WriteAllText(configFilePath, JsonSerializer.Serialize(configValues, JSON_OPTIONS));
+				BackupManager.GetLogger().Log(new() { Level = Level.Info, Message = "Saving configuration file..." });
+			} else
+			{
+				BackupManager.GetLogger().Log(new() { Level = Level.Info, Message = "Configuration file untouched" });
+			}
 		}
 	}
 }

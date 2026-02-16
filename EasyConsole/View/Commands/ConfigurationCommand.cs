@@ -1,11 +1,14 @@
 ﻿using EasyConsole.View.Command;
 using EasySave.Backup;
 using EasySave.View.Localization;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace EasyConsole.View.Commands
 {
-	public class ConfigurationCommand : ICommand
+	public partial class ConfigurationCommand : ICommand
 	{
+
 		public void Execute()
 		{
 			var i18n = I18n.Instance;
@@ -17,17 +20,51 @@ namespace EasyConsole.View.Commands
 
 			string? action;
 			bool loop = true;
+			var configManager = BackupManager.GetBM().ConfigManager;
 			do
 			{
 				Console.Write("> ");
-				action = Console.ReadLine();
+				action = Console.ReadLine() ?? string.Empty;
 				switch (action)
 				{
 					case "list":
-						Dictionary<string, object> configs = BackupManager.GetBM().ConfigManager.GetConfigDictionary();
+						Dictionary<string, object> configs = configManager.GetConfigDictionary();
 						foreach (var config in configs)
 						{
 							Console.WriteLine("{0}={1}", config.Key, config.Value);
+						}
+						break;
+					case var s when GetRegex().IsMatch(s):
+						var param1 = GetRegex().Match(s).Groups["param"].Value;
+						try
+						{
+							Console.WriteLine("{0}={1}", param1, configManager.GetConfig<object?>(param1));
+						} catch (ArgumentException e)
+						{
+							Console.Error.WriteLine(e.Message);
+							BackupManager.GetLogger().LogError(e);
+						}
+						break;
+					case var s when SetRegex().IsMatch(s):
+						var param2   = SetRegex().Match(s).Groups["param"].Value;
+						string value = SetRegex().Match(s).Groups["value"].Value;
+						try
+						{
+							using var doc = JsonDocument.Parse(value);
+							if (BoolRegex().IsMatch(value))
+								configManager.SetConfig<bool>(param2, doc.RootElement.GetBoolean());
+							else if (IntRegex().IsMatch(value))
+								configManager.SetConfig<int>(param2, doc.RootElement.GetInt32());
+							else if (DoubleRegex().IsMatch(value))
+								configManager.SetConfig<double>(param2, doc.RootElement.GetDouble());
+							else
+								configManager.SetConfig<string>(param2, value);
+							Console.WriteLine("Successfully updated param {0} value to {1}", param2, value);
+						}
+						catch (ArgumentException e)
+						{
+							Console.Error.WriteLine(e.Message);
+							BackupManager.GetLogger().LogError(e);
 						}
 						break;
 					case "exit":
@@ -43,6 +80,20 @@ namespace EasyConsole.View.Commands
 		public string GetI18nKey() => "menu_config";
 
 		public int GetID() => 7;
-	}
 
+		[GeneratedRegex(@"^get (?<param>\w+)$")]
+		private static partial Regex GetRegex();
+
+		[GeneratedRegex(@"^set (?<param>\w+) (?<value>.+)$")]
+		private static partial Regex SetRegex();
+
+		[GeneratedRegex(@"^([tT][rR][uU][eE]|[fF][aA][lL][sS][eE])$")]
+		private static partial Regex BoolRegex();
+
+		[GeneratedRegex(@"^-?\d+$")]
+		private static partial Regex IntRegex();
+
+		[GeneratedRegex(@"^-?\d+\.\d+$")]
+		private static partial Regex DoubleRegex();
+	}
 }

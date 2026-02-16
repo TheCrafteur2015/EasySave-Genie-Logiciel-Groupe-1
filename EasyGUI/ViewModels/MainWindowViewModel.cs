@@ -3,25 +3,29 @@ using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EasySave.Backup;
+using EasySave.View.Localization; // Nécessaire pour I18n
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Windows.Input;
 
 namespace EasyGUI.ViewModels
 {
     public class MainWindowViewModel : ObservableObject
     {
+        // --- GESTION DE LA TRADUCTION DYNAMIQUE ---
+        // Cette propriété permet d'utiliser {Binding L[key]} dans le XAML
+        public I18n L => I18n.Instance;
+
         public string Greeting { get; } = "Welcome to EasySave!";
 
-        // Référence vers ton gestionnaire logique (Le Singleton)
         private readonly BackupManager _backupManager;
 
-        // La liste que l'interface graphique va afficher
-        // ObservableCollection permet à l'UI de savoir quand on ajoute/supprime une ligne
+        // Liste des jobs affichée dans l'UI
         public ObservableCollection<BackupJob> BackupJobs { get; set; }
 
-        // Navigation: quelle vue est actuellement affichée
+        // Navigation
         private string _currentView = "Menu";
         public string CurrentView
         {
@@ -29,7 +33,7 @@ namespace EasyGUI.ViewModels
             set => SetProperty(ref _currentView, value);
         }
 
-        // Propriétés pour les formulaires
+        // --- PROPRIÉTÉS DE FORMULAIRE ---
         private string _newJobName = "";
         public string NewJobName
         {
@@ -86,6 +90,7 @@ namespace EasyGUI.ViewModels
             set => SetProperty(ref _isExecuting, value);
         }
 
+        // --- COMMANDES ---
         public ICommand SwitchThemeCommand { get; }
         public ICommand CreateBackupJobCommand { get; }
         public ICommand ExecuteBackupJobCommand { get; }
@@ -102,15 +107,14 @@ namespace EasyGUI.ViewModels
 
         public MainWindowViewModel()
         {
-            // 1. On récupère ton instance unique
+            // 1. Récupération du Singleton BackupManager
             _backupManager = BackupManager.GetBM();
 
-            // 2. On remplit la liste pour l'interface graphique
-            // On charge les jobs existants depuis ton manager
+            // 2. Initialisation de la liste observable
             var jobsFromManager = _backupManager.GetAllJobs();
             BackupJobs = new ObservableCollection<BackupJob>(jobsFromManager);
 
-            // Initialize commands
+            // 3. Initialisation des commandes
             SwitchThemeCommand = new RelayCommand<string>(SwitchTheme);
             CreateBackupJobCommand = new RelayCommand(CreateBackupJob);
             ExecuteBackupJobCommand = new RelayCommand(ExecuteBackupJob);
@@ -126,6 +130,8 @@ namespace EasyGUI.ViewModels
             ApplyLanguageCommand = new RelayCommand(ApplyLanguage);
         }
 
+        // --- MÉTHODES ---
+
         private void SwitchTheme(string? theme)
         {
             if (Application.Current is not null)
@@ -139,19 +145,6 @@ namespace EasyGUI.ViewModels
             }
         }
 
-        // Exemple : Une méthode pour ajouter un job depuis l'UI
-        public void CreateNewJob(string name, string source, string target, BackupType type)
-        {
-            // On appelle ta logique métier
-            bool success = _backupManager.AddJob(name, source, target, type);
-
-            if (success)
-            {
-                // Si ça a marché, on rafraîchit la liste de l'écran
-                RefreshBackupJobs();
-            }
-        }
-
         private void RefreshBackupJobs()
         {
             BackupJobs.Clear();
@@ -161,7 +154,6 @@ namespace EasyGUI.ViewModels
             }
         }
 
-        // Command implementations
         private void BackToMenu()
         {
             CurrentView = "Menu";
@@ -186,17 +178,17 @@ namespace EasyGUI.ViewModels
             if (success)
             {
                 RefreshBackupJobs();
-                StatusMessage = $"✓ Backup job '{NewJobName}' created successfully!";
+                StatusMessage = "✓ Job created successfully!"; // Tu peux aussi utiliser L["create_success"] ici si tu veux
 
-                // Attendre un peu pour que l'utilisateur voie le message
-                System.Threading.Thread.Sleep(1500);
+                // Petit délai pour l'UX (optionnel, peut nécessiter async/await pour être propre, ici simplifié)
+                // Thread.Sleep(1000); 
 
                 CurrentView = "Menu";
                 StatusMessage = "";
             }
             else
             {
-                StatusMessage = "✗ Failed to create job. Check that all fields are filled and the maximum number of jobs hasn't been reached.";
+                StatusMessage = "✗ Failed to create job. Check inputs or max limit.";
             }
         }
 
@@ -214,29 +206,25 @@ namespace EasyGUI.ViewModels
                 try
                 {
                     IsExecuting = true;
-                    int jobId = SelectedJob.Id; // Sauvegarder l'ID
-                    string jobName = SelectedJob.Name; // Sauvegarder le nom
-                    StatusMessage = $"Executing backup job '{jobName}'...";
+                    int jobId = SelectedJob.Id;
+                    string jobName = SelectedJob.Name;
+                    StatusMessage = $"Executing '{jobName}'...";
 
+                    // Exécution synchrone (bloque l'UI, idéalement à mettre dans un Task.Run pour la V3)
                     _backupManager.ExecuteJob(jobId, progress =>
                     {
+                        // Callback de progression
+                        // Note: Pour mettre à jour l'UI depuis un autre thread, il faudrait Dispatcher.UIThread.Invoke
+                        // Mais ici BackupManager est synchrone dans la V1/V2, donc ça passe.
                         int filesProcessed = progress.TotalFiles - progress.FilesRemaining;
-                        StatusMessage = $"Executing: {progress.CurrentSourceFile} ({filesProcessed}/{progress.TotalFiles}) - {progress.ProgressPercentage:F1}%";
+                        StatusMessage = $"Running: {progress.ProgressPercentage:F1}% - {filesProcessed}/{progress.TotalFiles}";
                     });
 
                     RefreshBackupJobs();
+                    SelectedJob = BackupJobs.FirstOrDefault(j => j.Id == jobId); // Restaurer sélection
 
-                    // Restaurer la sélection
-                    SelectedJob = BackupJobs.FirstOrDefault(j => j.Id == jobId);
-
-                    StatusMessage = $"✓ Backup job '{jobName}' completed successfully!";
+                    StatusMessage = $"✓ '{jobName}' completed!";
                     IsExecuting = false;
-
-                    // Attendre 2 secondes pour que l'utilisateur voie le message
-                    System.Threading.Thread.Sleep(2000);
-
-                    CurrentView = "Menu";
-                    StatusMessage = "";
                 }
                 catch (Exception ex)
                 {
@@ -246,7 +234,7 @@ namespace EasyGUI.ViewModels
             }
             else
             {
-                StatusMessage = "Please select a backup job first.";
+                StatusMessage = "Please select a job.";
             }
         }
 
@@ -254,18 +242,21 @@ namespace EasyGUI.ViewModels
         {
             try
             {
-                StatusMessage = "Executing all backup jobs...";
+                StatusMessage = "Executing all jobs...";
+                IsExecuting = true;
 
                 _backupManager.ExecuteAllJobs(progress =>
                 {
-                    StatusMessage = $"Executing: {progress.BackupName} - {progress.ProgressPercentage:F1}%";
+                    StatusMessage = $"Running: {progress.BackupName} - {progress.ProgressPercentage:F1}%";
                 });
 
                 RefreshBackupJobs();
-                StatusMessage = "✓ All backup jobs completed successfully!";
+                StatusMessage = "✓ All jobs completed!";
+                IsExecuting = false;
             }
             catch (Exception ex)
             {
+                IsExecuting = false;
                 StatusMessage = $"✗ Error: {ex.Message}";
             }
         }
@@ -293,40 +284,59 @@ namespace EasyGUI.ViewModels
                 if (success)
                 {
                     RefreshBackupJobs();
-                    StatusMessage = $"✓ Backup job '{jobName}' deleted successfully!";
-
-                    // Attendre un peu pour que l'utilisateur voie le message
-                    System.Threading.Thread.Sleep(1500);
-
+                    StatusMessage = $"✓ '{jobName}' deleted!";
+                    // Thread.Sleep(1000);
                     CurrentView = "Menu";
                     StatusMessage = "";
                 }
                 else
                 {
-                    StatusMessage = "✗ Failed to delete the backup job.";
+                    StatusMessage = "✗ Failed to delete.";
                 }
             }
             else
             {
-                StatusMessage = "Please select a backup job to delete.";
+                StatusMessage = "Select a job first.";
             }
         }
 
         private void ChangeLanguage()
         {
+            // On charge la langue actuelle dans le sélecteur
+            // Si la langue est "fr_fr", l'index est 1, sinon 0
+            SelectedLanguage = I18n.Instance.Language == "fr_fr" ? 1 : 0;
+
             CurrentView = "ChangeLanguage";
+            StatusMessage = "";
         }
 
         private void ApplyLanguage()
         {
-            // TODO: Implémenter le changement de langue avec le système I18n
-            // Pour l'instant on retourne juste au menu
-            CurrentView = "Menu";
+            // 0 = English (en_us), 1 = French (fr_fr)
+            string code = SelectedLanguage == 0 ? "en_us" : "fr_fr";
+
+            try
+            {
+                // 1. Changer la langue dans le singleton
+                I18n.Instance.SetLanguage(code);
+
+                // 2. Notifier la vue que la propriété "L" a changé
+                // Cela force le re-binding de tous les textes {Binding L[...]}
+                OnPropertyChanged(nameof(L));
+
+                StatusMessage = code == "en_us" ? "Language set to English" : "Langue définie sur Français";
+
+                // Optionnel : Retourner au menu ou rester sur la page
+                // CurrentView = "Menu"; 
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Error: " + ex.Message;
+            }
         }
 
         private void Exit()
         {
-            // Fermer l'application
             if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
             {
                 desktop.Shutdown();

@@ -3,300 +3,266 @@
         xmlns:vm="using:EasyGUI.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="EasyGUI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="EasyGUI"
-        >
+        Title="ProSoft EasySave 3.0"
+        Background="#F7FAFC"
+        WindowStartupLocation="CenterScreen">
 
-    <Design.DataContext>
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
+	<Design.DataContext>
+		<vm:MainWindowViewModel/>
+	</Design.DataContext>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+	<Grid ColumnDefinitions="260, *">
 
-        <!-- Header with title and theme button -->
-        <Grid Grid.Row="0" Margin="10">
-            <TextBlock Text="=== EasySave - Backup Manager ===" 
-                       HorizontalAlignment="Center" 
-                       VerticalAlignment="Center"
-                       FontSize="24"
-                       FontWeight="Bold"
-                       Margin="0,20,0,20"/>
+		<Border Grid.Column="0" Classes="Sidebar">
+			<Grid RowDefinitions="Auto, *, Auto">
 
-            <Button Content="Dark theme" 
-                    HorizontalAlignment="Right" 
-                    VerticalAlignment="Top"
-                    Command="{Binding SwitchThemeCommand}"
-                    CommandParameter="Dark"
-                    IsVisible="{Binding $parent[Window].ActualThemeVariant, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static ThemeVariant.Light}}">
-            </Button>
-            <Button Content="Light theme" 
-                    HorizontalAlignment="Right" 
-                    VerticalAlignment="Top"
-                    Command="{Binding SwitchThemeCommand}"
-                    CommandParameter="Light"
-                    IsVisible="{Binding $parent[Window].ActualThemeVariant, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static ThemeVariant.Dark}}">
-            </Button>
-        </Grid>
+				<StackPanel Grid.Row="0" Margin="0,30,0,40">
+					<TextBlock Text="EasySave" HorizontalAlignment="Center" FontSize="28" FontWeight="Bold" Foreground="#F6E05E"/>
+					<TextBlock Text="{Binding L[app_title]}" HorizontalAlignment="Center" FontSize="12" Foreground="#A0AEC0"/>
+				</StackPanel>
 
-        <!-- Main menu buttons -->
-        <StackPanel Grid.Row="1" 
-                    HorizontalAlignment="Center" 
-                    VerticalAlignment="Center"
-                    Spacing="15"
-                    Width="400"
-                    IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=Menu}">
+				<StackPanel Grid.Row="1" Spacing="5">
 
-            <Button Content="1. Create a new backup job"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Left"
-                    Padding="20,15"
-                    FontSize="16"
-                    Command="{Binding CreateBackupJobCommand}"/>
+					<Button Classes="NavButton" Command="{Binding BackToMenuCommand}">
+						<StackPanel Orientation="Horizontal" Spacing="15">
+							<TextBlock Text="🏠"/>
+							<TextBlock Text="{Binding L[menu_dashboard]}"/>
+						</StackPanel>
+					</Button>
 
-            <Button Content="2. Execute a backup job"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Left"
-                    Padding="20,15"
-                    FontSize="16"
-                    Command="{Binding ExecuteBackupJobCommand}"/>
+					<Separator Height="1" Background="#4A5568" Margin="20,10"/>
+					<TextBlock Text="{Binding L[menu_actions_title]}" FontSize="10" FontWeight="Bold" Foreground="#718096" Margin="25,0,0,5"/>
 
-            <Button Content="3. Execute all backup jobs"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Left"
-                    Padding="20,15"
-                    FontSize="16"
-                    Command="{Binding ExecuteAllBackupJobsCommand}"/>
+					<Button Classes="NavButton" Command="{Binding CreateBackupJobCommand}">
+						<StackPanel Orientation="Horizontal" Spacing="15">
+							<TextBlock Text="➕"/>
+							<TextBlock Text="{Binding L[menu_create]}"/>
+						</StackPanel>
+					</Button>
 
-            <Button Content="4. List all backup jobs"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Left"
-                    Padding="20,15"
-                    FontSize="16"
-                    Command="{Binding ListAllBackupJobsCommand}"/>
+					<Button Classes="NavButton" Command="{Binding ExecuteBackupJobCommand}">
+						<StackPanel Orientation="Horizontal" Spacing="15">
+							<TextBlock Text="🚀"/>
+							<TextBlock Text="{Binding L[menu_execute]}"/>
+						</StackPanel>
+					</Button>
 
-            <Button Content="5. Delete a backup job"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Left"
-                    Padding="20,15"
-                    FontSize="16"
-                    Command="{Binding DeleteBackupJobCommand}"/>
+					<Button Classes="NavButton" Command="{Binding ExecuteAllBackupJobsCommand}">
+						<StackPanel Orientation="Horizontal" Spacing="15">
+							<TextBlock Text="⚡"/>
+							<TextBlock Text="{Binding L[menu_execute_all]}"/>
+						</StackPanel>
+					</Button>
 
-            <Button Content="6. Change language"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Left"
-                    Padding="20,15"
-                    FontSize="16"
-                    Command="{Binding ChangeLanguageCommand}"/>
+					<Button Classes="NavButton" Command="{Binding ListAllBackupJobsCommand}">
+						<StackPanel Orientation="Horizontal" Spacing="15">
+							<TextBlock Text="📋"/>
+							<TextBlock Text="{Binding L[menu_list]}"/>
+						</StackPanel>
+					</Button>
 
-            <Button Content="7. Exit"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Left"
-                    Padding="20,15"
-                    FontSize="16"
-                    Command="{Binding ExitCommand}"/>
+					<Button Classes="NavButton" Command="{Binding DeleteBackupJobCommand}">
+						<StackPanel Orientation="Horizontal" Spacing="15">
+							<TextBlock Text="🗑"/>
+							<TextBlock Text="{Binding L[menu_delete]}"/>
+						</StackPanel>
+					</Button>
+				</StackPanel>
 
-        </StackPanel>
+				<StackPanel Grid.Row="2" Margin="0,0,0,20">
+					<Button Classes="NavButton" Command="{Binding ChangeLanguageCommand}">
+						<StackPanel Orientation="Horizontal" Spacing="15">
+							<TextBlock Text="🌐"/>
+							<TextBlock Text="{Binding L[menu_language]}"/>
+						</StackPanel>
+					</Button>
+					<Button Classes="NavButton" Command="{Binding ExitCommand}" Foreground="#FC8181">
+						<StackPanel Orientation="Horizontal" Spacing="15">
+							<TextBlock Text="🚪"/>
+							<TextBlock Text="{Binding L[menu_exit]}"/>
+						</StackPanel>
+					</Button>
+				</StackPanel>
+			</Grid>
+		</Border>
 
-        <!-- Create Job View -->
-        <StackPanel Grid.Row="1"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="15"
-                    Width="500"
-                    IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=CreateJob}">
+		<Grid Grid.Column="1" RowDefinitions="Auto, *">
 
-            <TextBlock Text="Create a New Backup Job" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+			<Border Grid.Row="0" Background="White" Height="60" BoxShadow="0 2 5 0 #05000000">
+				<Grid ColumnDefinitions="*, Auto" Margin="30,0">
+					<TextBlock Text="{Binding CurrentView, StringFormat='{}View: {0}'}" VerticalAlignment="Center" FontSize="16" FontWeight="SemiBold" Foreground="#2D3748"/>
+					<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+						<Button Content="🌗 Theme" Command="{Binding SwitchThemeCommand}" CommandParameter="Dark" Background="Transparent" BorderThickness="0"/>
+					</StackPanel>
+				</Grid>
+			</Border>
 
-            <TextBlock Text="Job Name:"/>
-            <TextBox Text="{Binding NewJobName}" Watermark="Enter job name"/>
+			<Panel Grid.Row="1" Margin="10">
 
-            <TextBlock Text="Source Path:"/>
-            <TextBox Text="{Binding NewJobSource}" Watermark="C:\Source\Folder"/>
+				<Border Classes="Card" IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=Menu}">
+					<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20">
+						<TextBlock Text="{Binding L[dashboard_welcome]}" FontSize="32" FontWeight="Bold" Foreground="#2D3748" HorizontalAlignment="Center"/>
+						<TextBlock Text="{Binding L[dashboard_subtitle]}" FontSize="18" Foreground="#718096" HorizontalAlignment="Center"/>
 
-            <TextBlock Text="Target Path:"/>
-            <TextBox Text="{Binding NewJobTarget}" Watermark="C:\Target\Folder"/>
+						<Border Background="#FFF9C4" CornerRadius="8" Padding="20" Margin="0,30,0,0">
+							<StackPanel>
+								<TextBlock Text="Statut" FontWeight="Bold" Foreground="#B7791F" Margin="0,0,0,10"/>
+								<TextBlock Text="{Binding BackupJobs.Count}" Foreground="#744210"/>
+							</StackPanel>
+						</Border>
+					</StackPanel>
+				</Border>
 
-            <TextBlock Text="Backup Type:"/>
-            <ComboBox SelectedIndex="{Binding SelectedBackupType}">
-                <ComboBoxItem Content="Complete"/>
-                <ComboBoxItem Content="Differential"/>
-            </ComboBox>
+				<Border Classes="Card" IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=CreateJob}">
+					<StackPanel Spacing="20" MaxWidth="500">
+						<TextBlock Text="{Binding L[create_title]}" FontSize="24" FontWeight="Bold" Foreground="#2D3748"/>
+						<Separator Background="#E2E8F0"/>
 
-            <!-- Status Message -->
-            <TextBlock Text="{Binding StatusMessage}"
-                       HorizontalAlignment="Center"
-                       FontWeight="SemiBold"
-                       IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                       TextWrapping="Wrap"
-                       MaxWidth="450"/>
+						<StackPanel Spacing="5">
+							<TextBlock Text="{Binding L[create_name]}" FontWeight="Medium"/>
+							<TextBox Text="{Binding NewJobName}"/>
+						</StackPanel>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,20,0,0">
-                <Button Content="Create" Command="{Binding SaveNewJobCommand}" Width="120" Padding="10"/>
-                <Button Content="Cancel" Command="{Binding BackToMenuCommand}" Width="120" Padding="10"/>
-            </StackPanel>
-        </StackPanel>
+						<StackPanel Spacing="5">
+							<TextBlock Text="{Binding L[create_source]}" FontWeight="Medium"/>
+							<TextBox Text="{Binding NewJobSource}"/>
+						</StackPanel>
 
-        <!-- Execute Job View -->
-        <StackPanel Grid.Row="1"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="15"
-                    Width="500"
-                    IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ExecuteJob}">
+						<StackPanel Spacing="5">
+							<TextBlock Text="{Binding L[create_target]}" FontWeight="Medium"/>
+							<TextBox Text="{Binding NewJobTarget}"/>
+						</StackPanel>
 
-            <TextBlock Text="Execute a Backup Job" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+						<StackPanel Spacing="5">
+							<TextBlock Text="{Binding L[create_type]}" FontWeight="Medium"/>
+							<ComboBox SelectedIndex="{Binding SelectedBackupType}" HorizontalAlignment="Stretch">
+								<ComboBoxItem Content="{Binding L[type_complete]}"/>
+								<ComboBoxItem Content="{Binding L[type_differential]}"/>
+							</ComboBox>
+						</StackPanel>
 
-            <TextBlock Text="Select a job to execute:"/>
-            <ComboBox ItemsSource="{Binding BackupJobs}" 
-                      SelectedItem="{Binding SelectedJob}"
-                      Width="400"
-                      PlaceholderText="Choose a backup job...">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Name}"/>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
+						<TextBlock Text="{Binding StatusMessage}" Foreground="Red" TextWrapping="Wrap"/>
 
-            <TextBlock Text="No backup jobs available. Create one first!" 
-                       Foreground="Orange"
-                       HorizontalAlignment="Center"
-                       IsVisible="{Binding !BackupJobs.Count}"/>
+						<StackPanel Orientation="Horizontal" Spacing="15" Margin="0,20,0,0">
+							<Button Classes="Primary" Content="{Binding L[btn_save]}" Command="{Binding SaveNewJobCommand}"/>
+							<Button Content="{Binding L[btn_cancel]}" Command="{Binding BackToMenuCommand}" Background="Transparent"/>
+						</StackPanel>
+					</StackPanel>
+				</Border>
 
-            <!-- Status Message -->
-            <TextBlock Text="{Binding StatusMessage}"
-                       HorizontalAlignment="Center"
-                       FontWeight="SemiBold"
-                       Foreground="{Binding StatusMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
-                       IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                       TextWrapping="Wrap"
-                       MaxWidth="450"/>
+				<Border Classes="Card" IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ExecuteJob}">
+					<StackPanel Spacing="20" MaxWidth="500">
+						<TextBlock Text="{Binding L[execute_title]}" FontSize="24" FontWeight="Bold" Foreground="#2D3748"/>
+						<TextBlock Text="{Binding L[execute_subtitle]}" Foreground="#718096"/>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,20,0,0">
-                <Button Content="Execute" 
-                        Command="{Binding ExecuteSelectedJobCommand}" 
-                        Width="120" 
-                        Padding="10"
-                        IsEnabled="{Binding !IsExecuting}"/>
-                <Button Content="Cancel" 
-                        Command="{Binding BackToMenuCommand}" 
-                        Width="120" 
-                        Padding="10"
-                        IsEnabled="{Binding !IsExecuting}"/>
-            </StackPanel>
-        </StackPanel>
+						<ComboBox ItemsSource="{Binding BackupJobs}"
+                                  SelectedItem="{Binding SelectedJob}"
+                                  HorizontalAlignment="Stretch"
+                                  PlaceholderText="{Binding L[execute_placeholder]}">
+							<ComboBox.ItemTemplate>
+								<DataTemplate>
+									<StackPanel Orientation="Horizontal" Spacing="10">
+										<TextBlock Text="📦"/>
+										<TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+									</StackPanel>
+								</DataTemplate>
+							</ComboBox.ItemTemplate>
+						</ComboBox>
 
-        <!-- List Jobs View -->
-        <StackPanel Grid.Row="1"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
-                    Spacing="15"
-                    Width="700"
-                    Margin="0,50,0,0"
-                    IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ListJobs}">
+						<Border Background="#EDF2F7" CornerRadius="8" Padding="15" IsVisible="{Binding IsExecuting}">
+							<StackPanel Spacing="10">
+								<TextBlock Text="{Binding L[execute_processing]}" FontWeight="Bold" Foreground="#2D3748"/>
+								<ProgressBar Value="50" IsIndeterminate="True" Height="10" Foreground="#F6E05E"/>
+								<TextBlock Text="{Binding StatusMessage}" FontSize="12" TextWrapping="Wrap"/>
+							</StackPanel>
+						</Border>
 
-            <TextBlock Text="All Backup Jobs" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+						<Button Classes="Primary"
+                                Content="{Binding L[btn_start]}"
+                                Command="{Binding ExecuteSelectedJobCommand}"
+                                IsEnabled="{Binding !IsExecuting}"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"/>
+					</StackPanel>
+				</Border>
 
-            <ListBox ItemsSource="{Binding BackupJobs}" Height="400">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Spacing="5" Margin="10">
-                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16"/>
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="ID:" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding Id}"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="Source:" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding SourceDirectory}"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="Target:" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding TargetDirectory}"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+				<Border Classes="Card" IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ListJobs}">
+					<Grid RowDefinitions="Auto, *">
+						<TextBlock Grid.Row="0" Text="{Binding L[list_title]}" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+						<ListBox Grid.Row="1" ItemsSource="{Binding BackupJobs}" Background="Transparent">
+							<ListBox.Styles>
+								<Style Selector="ListBoxItem">
+									<Setter Property="Padding" Value="0"/>
+									<Setter Property="Margin" Value="0,0,0,10"/>
+									<Setter Property="Background" Value="Transparent"/>
+								</Style>
+							</ListBox.Styles>
+							<ListBox.ItemTemplate>
+								<DataTemplate>
+									<Border Background="#F7FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="15">
+										<Grid ColumnDefinitions="50, *, Auto">
+											<Border Grid.Column="0" Background="#F6E05E" Width="40" Height="40" CornerRadius="20">
+												<TextBlock Text="{Binding Id}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="#2D3748"/>
+											</Border>
+											<StackPanel Grid.Column="1" Margin="15,0">
+												<TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16" Foreground="#2D3748"/>
+												<TextBlock Text="{Binding SourceDirectory}" FontSize="12" Foreground="#718096"/>
+												<TextBlock Text="{Binding TargetDirectory}" FontSize="12" Foreground="#718096"/>
+											</StackPanel>
+											<Border Grid.Column="2" Background="#EDF2F7" CornerRadius="4" Padding="10,5" VerticalAlignment="Center">
+												<TextBlock Text="{Binding Type}" FontSize="12" FontWeight="SemiBold"/>
+											</Border>
+										</Grid>
+									</Border>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+					</Grid>
+				</Border>
 
-            <Button Content="Back to Menu" Command="{Binding BackToMenuCommand}" Width="150" Padding="10" HorizontalAlignment="Center"/>
-        </StackPanel>
+				<Border Classes="Card" IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=DeleteJob}">
+					<StackPanel Spacing="20" MaxWidth="500">
+						<TextBlock Text="{Binding L[delete_title]}" FontSize="24" FontWeight="Bold" Foreground="#E53E3E"/>
+						<TextBlock Text="{Binding L[delete_warning]}" Foreground="#718096"/>
 
-        <!-- Delete Job View -->
-        <StackPanel Grid.Row="1"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="15"
-                    Width="500"
-                    IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=DeleteJob}">
+						<ComboBox ItemsSource="{Binding BackupJobs}"
+								 SelectedItem="{Binding SelectedJob}"
+								 HorizontalAlignment="Stretch">
+							<ComboBox.ItemTemplate>
+								<DataTemplate>
+									<TextBlock Text="{Binding Name}"/>
+								</DataTemplate>
+							</ComboBox.ItemTemplate>
+						</ComboBox>
 
-            <TextBlock Text="Delete a Backup Job" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+						<Button Content="{Binding L[btn_delete]}"
+                                Background="#E53E3E"
+                                Foreground="White"
+                                Padding="20,10"
+                                CornerRadius="6"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding DeleteSelectedJobCommand}"/>
+					</StackPanel>
+				</Border>
 
-            <TextBlock Text="Select a job to delete:"/>
-            <ComboBox ItemsSource="{Binding BackupJobs}" 
-                      SelectedItem="{Binding SelectedJob}"
-                      Width="400"
-                      PlaceholderText="Choose a backup job...">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Name}"/>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
+				<Border Classes="Card" IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ChangeLanguage}">
+					<StackPanel Spacing="20" MaxWidth="400">
+						<TextBlock Text="{Binding L[settings_title]}" FontSize="24" FontWeight="Bold"/>
+						<TextBlock Text="{Binding L[settings_lang]}"/>
+						<ComboBox SelectedIndex="{Binding SelectedLanguage}" HorizontalAlignment="Stretch">
+							<ComboBoxItem>🇬🇧 English</ComboBoxItem>
+							<ComboBoxItem>🇫🇷 Français</ComboBoxItem>
+						</ComboBox>
+						<Button Classes="Primary" Content="{Binding L[btn_apply]}" Command="{Binding ApplyLanguageCommand}"/>
+					</StackPanel>
+				</Border>
 
-            <TextBlock Text="No backup jobs available." 
-                       Foreground="Orange"
-                       HorizontalAlignment="Center"
-                       IsVisible="{Binding !BackupJobs.Count}"/>
-
-            <TextBlock Text="Warning: This action cannot be undone!" 
-                       Foreground="Red" 
-                       HorizontalAlignment="Center"
-                       FontWeight="Bold"/>
-
-            <!-- Status Message -->
-            <TextBlock Text="{Binding StatusMessage}"
-                       HorizontalAlignment="Center"
-                       FontWeight="SemiBold"
-                       IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                       TextWrapping="Wrap"
-                       MaxWidth="450"/>
-
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,20,0,0">
-                <Button Content="Delete" Command="{Binding DeleteSelectedJobCommand}" Width="120" Padding="10"/>
-                <Button Content="Cancel" Command="{Binding BackToMenuCommand}" Width="120" Padding="10"/>
-            </StackPanel>
-        </StackPanel>
-
-        <!-- Change Language View -->
-        <StackPanel Grid.Row="1"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="15"
-                    Width="400"
-                    IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ChangeLanguage}">
-
-            <TextBlock Text="Change Language" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
-
-            <TextBlock Text="Select language:"/>
-            <ComboBox Width="300" SelectedIndex="{Binding SelectedLanguage}">
-                <ComboBoxItem Content="English"/>
-                <ComboBoxItem Content="Français"/>
-            </ComboBox>
-
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,20,0,0">
-                <Button Content="Apply" Command="{Binding ApplyLanguageCommand}" Width="120" Padding="10"/>
-                <Button Content="Cancel" Command="{Binding BackToMenuCommand}" Width="120" Padding="10"/>
-            </StackPanel>
-        </StackPanel>
-
-    </Grid>
-
+			</Panel>
+		</Grid>
+	</Grid>
 </Window>

@@ -60,6 +60,27 @@ namespace EasySave.Backup
 
             var sortedFiles = priorityFiles.Concat(nonPriorityFiles).ToList();
 
+            bool logSentStart = false;
+            while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
+            {
+                if (!logSentStart)
+                {
+                    BackupManager.GetLogger().Log(new LogEntry { Level = Level.Warning, Message = $"[PAUSE] Logiciel métier '{BusinessSoftware}' détecté. En attente..." });
+                    logSentStart = true;
+                }
+
+                progressCallback?.Invoke(new ProgressState { BackupName = job.Name, State = State.Active, Message = $"En pause : Attente de fermeture de {BusinessSoftware}..." });
+
+                Thread.Sleep(2000); 
+
+                if (job.Cts.IsCancellationRequested)
+                {
+                    if (priorityFiles.Count > 0) Interlocked.Add(ref BackupManager.GlobalPriorityFilesPending, -priorityFiles.Count);
+                    job.State = State.Error;
+                    return;
+                }
+            }
+
             if (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
             {
                 if (priorityFiles.Count > 0) Interlocked.Add(ref BackupManager.GlobalPriorityFilesPending, -priorityFiles.Count);
@@ -74,7 +95,7 @@ namespace EasySave.Backup
             int processedFiles = 0;
             long processedSize = 0;
 
-            foreach (var sourceFile in files)
+            foreach (var sourceFile in sortedFiles)
             {
                 bool isPriority = priorityExtensions.Contains(Path.GetExtension(sourceFile));
 
@@ -92,6 +113,23 @@ namespace EasySave.Backup
                 }
 
                 job.PauseWaitHandle.Wait();
+
+                bool logSentLoop = false;
+                while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
+                {
+                    if (!logSentLoop)
+                    {
+                        BackupManager.GetLogger().Log(new LogEntry { Level = Level.Warning, Message = $"[PAUSE] Logiciel métier '{BusinessSoftware}' détecté. Mise en pause..." });
+                        logSentLoop = true;
+                    }
+
+                    progressCallback?.Invoke(new ProgressState { BackupName = job.Name, State = State.Active, Message = $"En pause : Attente de fermeture de {BusinessSoftware}..." });
+
+                    Thread.Sleep(2000);
+
+                    // Si STOP est demandé pendant la pause, on sort de la boucle d'attente
+                    if (job.Cts.IsCancellationRequested) break;
+                }
 
 
                 if (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)

@@ -38,10 +38,8 @@ namespace EasySave.Utils
 
 			_configFilePath     = Path.Combine(_configDirectory, "config.json");
 			_savedBackupJobPath = Path.Combine(_configDirectory, "backups.json");
-			if (!File.Exists(_configFilePath))
-				File.Create(_configFilePath);
-			if (new FileInfo(_configFilePath).Length == 0)
-			{
+            if (!File.Exists(_configFilePath) || new FileInfo(_configFilePath).Length == 0)
+            {
 				File.WriteAllText(_configFilePath, ResourceManager.ReadResourceFile("default.json"));
 			}
 			string jsonContent = File.ReadAllText(_configFilePath);

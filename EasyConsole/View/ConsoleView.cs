@@ -157,5 +157,53 @@ namespace EasyConsole.View
 				}
 			}
 		}
-	}
+        public static void MonitorJobs(List<Task> tasks)
+        {
+            Console.WriteLine("\n[CONTROLS] P: Pause | R: Play/Resume | S: Stop | Esc: Quit Monitor");
+
+            // Tant qu'au moins une tâche tourne
+            while (!Task.WaitAll(tasks.ToArray(), 50)) // On attend 50ms, si pas fini, on continue la boucle
+            {
+                if (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey(true).Key;
+
+                    // On verrouille la console pour ne pas que les logs s'écrivent pendant qu'on tape
+                    lock (_consoleLock)
+                    {
+                        if (key == ConsoleKey.Escape) break;
+
+                        if (key == ConsoleKey.P || key == ConsoleKey.R || key == ConsoleKey.S)
+                        {
+                            Console.Write($"\nAction ({key}) > Enter Job ID (or 0 for ALL): ");
+                            if (int.TryParse(Console.ReadLine(), out int id))
+                            {
+                                var bm = BackupManager.GetBM();
+                                switch (key)
+                                {
+                                    case ConsoleKey.P:
+                                        if (id == 0) bm.PauseAllJobs(); else bm.PauseJob(id);
+                                        Console.WriteLine(id == 0 ? "All jobs paused." : $"Job {id} paused.");
+                                        break;
+                                    case ConsoleKey.R:
+                                        if (id == 0) bm.ResumeAllJobs(); else bm.ResumeJob(id);
+                                        Console.WriteLine(id == 0 ? "All jobs resumed." : $"Job {id} resumed.");
+                                        break;
+                                    case ConsoleKey.S:
+                                        if (id == 0) bm.StopAllJobs(); else bm.StopJob(id);
+                                        Console.WriteLine(id == 0 ? "All jobs stopped." : $"Job {id} stopped.");
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Invalid ID.");
+                            }
+                            Console.WriteLine("Resuming monitoring...");
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

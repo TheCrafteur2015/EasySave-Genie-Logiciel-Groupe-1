@@ -209,33 +209,77 @@ namespace EasySave.Backup
             Task.WaitAll(tasks.ToArray());
         }
 
-		/// <summary>
-		/// Executes all configured backup jobs in sequence, optionally reporting progress for each job.
-		/// </summary>
-		/// <remarks>Each backup job is executed in the order in which it was added. The method blocks until all jobs
-		/// have completed. If a progress callback is provided, it is invoked for each job's progress updates.</remarks>
-		/// <param name="progressCallback">An optional callback that receives progress updates for each job as a <see cref="ProgressState"/> instance. If
-		/// <see langword="null"/>, no progress is reported.</param>
-		public void ExecuteAllJobs(Action<ProgressState>? progressCallback = null)
-		{
+        /// <summary>
+        /// Executes all configured backup jobs in sequence, optionally reporting progress for each job.
+        /// </summary>
+        /// <remarks>Each backup job is executed in the order in which it was added. The method blocks until all jobs
+        /// have completed. If a progress callback is provided, it is invoked for each job's progress updates.</remarks>
+        /// <param name="progressCallback">An optional callback that receives progress updates for each job as a <see cref="ProgressState"/> instance. If
+        /// <see langword="null"/>, no progress is reported.</param>
+        public List<Task> ExecuteAllJobsAsync(Action<ProgressState>? progressCallback = null)
+        {
             List<Task> tasks = new();
             foreach (var job in _backupJobs)
-			{
+            {
+                // On réinitialise les contrôles avant de lancer
+                job.ResetControls();
                 tasks.Add(Task.Run(() => ExecuteSingleJob(job, progressCallback)));
             }
-            Task.WaitAll(tasks.ToArray());
+            return tasks; // On retourne les tâches pour que la Vue puisse les surveiller
         }
 
-		/// <summary>
-		/// Executes the specified backup job and updates progress using the provided callback.
-		/// </summary>
-		/// <remarks>If an exception occurs during job execution, the job is marked as failed and the error is logged
-		/// before the exception is rethrown. The job's progress state is removed after execution completes, regardless of
-		/// success or failure.</remarks>
-		/// <param name="job">The backup job to execute. Cannot be null.</param>
-		/// <param name="progressCallback">An optional callback that receives progress updates as the job executes. If null, progress updates are not
-		/// reported to the caller.</param>
-		private void ExecuteSingleJob(BackupJob job, Action<ProgressState>? progressCallback)
+        public Task ExecuteJobAsync(int id, Action<ProgressState>? progressCallback = null)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            if (job == null) throw new ArgumentException($"Backup job {id} not found.");
+
+            job.ResetControls();
+            return Task.Run(() => ExecuteSingleJob(job, progressCallback));
+        }
+
+        public void PauseJob(int id)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            job?.PauseWaitHandle.Reset(); // Met le feu au rouge
+        }
+
+        public void ResumeJob(int id)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            job?.PauseWaitHandle.Set(); // Met le feu au vert
+        }
+
+        public void StopJob(int id)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            job?.Cts.Cancel(); // Envoie la demande d'arrêt
+        }
+
+        public void StopAllJobs()
+        {
+            foreach (var job in _backupJobs) job.Cts.Cancel();
+        }
+
+        public void PauseAllJobs()
+        {
+            foreach (var job in _backupJobs) job.PauseWaitHandle.Reset();
+        }
+
+        public void ResumeAllJobs()
+        {
+            foreach (var job in _backupJobs) job.PauseWaitHandle.Set();
+        }
+
+        /// <summary>
+        /// Executes the specified backup job and updates progress using the provided callback.
+        /// </summary>
+        /// <remarks>If an exception occurs during job execution, the job is marked as failed and the error is logged
+        /// before the exception is rethrown. The job's progress state is removed after execution completes, regardless of
+        /// success or failure.</remarks>
+        /// <param name="job">The backup job to execute. Cannot be null.</param>
+        /// <param name="progressCallback">An optional callback that receives progress updates as the job executes. If null, progress updates are not
+        /// reported to the caller.</param>
+        private void ExecuteSingleJob(BackupJob job, Action<ProgressState>? progressCallback)
 		{
 			try
 			{

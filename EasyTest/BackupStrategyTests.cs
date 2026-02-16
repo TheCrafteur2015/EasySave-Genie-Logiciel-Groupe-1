@@ -3,14 +3,40 @@ using System.Diagnostics;
 
 namespace EasyTest
 {
+    /// <summary>
+    /// Unit tests for backup strategies (Complete and Differential).
+    /// Validates file copying, business software detection, and encryption integration.
+    /// </summary>
     [TestClass]
     public class BackupStrategyTests
     {
+        /// <summary>
+        /// Path to the temporary source directory used for testing.
+        /// </summary>
         private string _dossierSource = null!;
+
+        /// <summary>
+        /// Path to the temporary target directory used for testing.
+        /// </summary>
         private string _dossierCible = null!;
+
+        /// <summary>
+        /// Constant name for a standard test file.
+        /// </summary>
         private const string NomFichierTest = "fichier_test.txt";
+
+        /// <summary>
+        /// Constant name for a file that should trigger encryption.
+        /// </summary>
         private const string NomFichierCrypto = "secret.txt";
 
+        /// <summary>
+        /// Initializes the test environment before each test.
+        /// </summary>
+        /// <remarks>
+        /// Creates clean temporary directories and removes any existing backup jobs 
+        /// from the BackupManager to prevent test interference.
+        /// </remarks>
         [TestInitialize]
         public void Setup()
         {
@@ -26,6 +52,12 @@ namespace EasyTest
             foreach (var job in bm.GetAllJobs()) bm.DeleteJob(job.Id);
         }
 
+        /// <summary>
+        /// Cleans up the test environment after each test.
+        /// </summary>
+        /// <remarks>
+        /// Deletes the temporary source and target directories created during the setup.
+        /// </remarks>
         [TestCleanup]
         public void Cleanup()
         {
@@ -33,6 +65,9 @@ namespace EasyTest
             if (Directory.Exists(_dossierCible)) Directory.Delete(_dossierCible, true);
         }
 
+        /// <summary>
+        /// Verifies that a Complete Backup correctly copies files to the target directory.
+        /// </summary>
         [TestMethod]
         public void TestSauvegardeComplete_CopieFichiers()
         {
@@ -44,10 +79,17 @@ namespace EasyTest
             bm.ExecuteJob(id);
 
             string fichierCible = Path.Combine(_dossierCible, NomFichierTest);
-            Assert.IsTrue(File.Exists(fichierCible), "Le fichier aurait dû être copié dans le dossier cible.");
+            Assert.IsTrue(File.Exists(fichierCible), "The file should have been copied to the target directory.");
             Assert.AreEqual("Contenu de test", File.ReadAllText(fichierCible));
         }
 
+        /// <summary>
+        /// Verifies that a Differential Backup updates a file when it has been modified.
+        /// </summary>
+        /// <remarks>
+        /// This test performs an initial backup, modifies the source file after a delay, 
+        /// and verifies that the second backup updates the target file timestamp and content.
+        /// </remarks>
         [TestMethod]
         public void TestSauvegardeDifferentielle_FichierModifie()
         {
@@ -68,10 +110,17 @@ namespace EasyTest
             bm.ExecuteJob(id);
             DateTime dateDeuxiemeCopie = File.GetLastWriteTime(fichierCible);
 
-            Assert.AreNotEqual(datePremiereCopie, dateDeuxiemeCopie, "Le fichier cible aurait dû être mis à jour.");
+            Assert.AreNotEqual(datePremiereCopie, dateDeuxiemeCopie, "The target file should have been updated.");
             Assert.AreEqual("Version 2 - Modifié", File.ReadAllText(fichierCible));
         }
 
+        /// <summary>
+        /// Tests the blocking mechanism when business software is detected.
+        /// </summary>
+        /// <remarks>
+        /// Simulates the presence of business software (calc.exe) and verifies 
+        /// that the BackupManager refuses to execute the job.
+        /// </remarks>
         [TestMethod]
         public void TestLogicielMetier_Blocage()
         {
@@ -86,7 +135,7 @@ namespace EasyTest
 
                 bool succes = bm.ExecuteJob(id);
 
-                Assert.IsFalse(succes, "Le job aurait dû échouer (retourner false) car la Calculatrice est ouverte.");
+                Assert.IsFalse(succes, "The job should have failed (returned false) because Calculator is open.");
             }
             finally
             {
@@ -94,6 +143,13 @@ namespace EasyTest
             }
         }
 
+        /// <summary>
+        /// Verifies the integration with CryptoSoft for encrypted backups.
+        /// </summary>
+        /// <remarks>
+        /// Checks that a file identified for encryption is different in the target 
+        /// directory compared to the original clear-text source.
+        /// </remarks>
         [TestMethod]
         public void TestCryptoSoft_Integration()
         {
@@ -108,11 +164,11 @@ namespace EasyTest
             bm.ExecuteJob(id);
 
             string cheminFichierCible = Path.Combine(_dossierCible, NomFichierCrypto);
-            Assert.IsTrue(File.Exists(cheminFichierCible), "Le fichier crypté doit exister.");
+            Assert.IsTrue(File.Exists(cheminFichierCible), "The encrypted file must exist.");
 
             string contenuCible = File.ReadAllText(cheminFichierCible);
 
-            Assert.AreNotEqual(contenuClair, contenuCible, "Le contenu du fichier cible devrait être crypté (différent de la source).");
+            Assert.AreNotEqual(contenuClair, contenuCible, "Target file content should be encrypted (different from source).");
         }
     }
 }

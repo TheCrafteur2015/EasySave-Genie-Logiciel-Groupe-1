@@ -50,16 +50,20 @@ namespace EasyConsole.View.Commands
 						string value = SetRegex().Match(s).Groups["value"].Value;
 						try
 						{
+							bool success = false;
+
 							using var doc = JsonDocument.Parse(value);
 							if (BoolRegex().IsMatch(value))
-								configManager.SetConfig<bool>(param2, doc.RootElement.GetBoolean());
+								success = configManager.SetConfig<bool>(param2, doc.RootElement.GetBoolean());
 							else if (IntRegex().IsMatch(value))
-								configManager.SetConfig<int>(param2, doc.RootElement.GetInt32());
+								success = configManager.SetConfig<int>(param2, doc.RootElement.GetInt32());
 							else if (DoubleRegex().IsMatch(value))
-								configManager.SetConfig<double>(param2, doc.RootElement.GetDouble());
+								success = configManager.SetConfig<double>(param2, doc.RootElement.GetDouble());
 							else
-								configManager.SetConfig<string>(param2, value);
-							Console.WriteLine("Successfully updated param {0} value to {1}", param2, value);
+								success = configManager.SetConfig<string>(param2, value);
+
+							if (success)
+								Console.WriteLine("Successfully updated param {0} value to {1}", param2, value);
 						}
 						catch (ArgumentException e)
 						{

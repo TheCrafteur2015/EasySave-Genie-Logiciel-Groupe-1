@@ -7,6 +7,7 @@
 	"menu_list": "Lister tous les travaux de sauvegarde",
 	"menu_delete": "Supprimer un travail de sauvegarde",
 	"menu_language": "Changer de langue",
+	"menu_config": "Configuration",
 	"menu_exit": "Quitter",
 	"menu_choice": "Entrez votre choix ",
 
@@ -38,6 +39,14 @@
 
 	"language_select": "Sélectionnez la langue ",
 	"language_changed": "Langue changée avec succès !",
+
+	"config_list": "Liste des options ",
+	"config_list_desc": "Liste les paramètres disponibles",
+	"config_get_desc": "Renvoye la valeur du paramètre",
+	"config_set_desc": "Définit la valeur du paramètre fourni",
+	"config_exit_desc": "Sortir de la commande de configuration",
+	"config_param": "paramètre",
+	"config_value": "valeur",
 
 	"progress_active": "État : Actif",
 	"progress_files": "Fichiers : {0}/{1}",

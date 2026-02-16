@@ -22,21 +22,21 @@
 
         <!-- Header with title and theme button -->
         <Grid Grid.Row="0" Margin="10">
-            <TextBlock Text="=== EasySave - Backup Manager ===" 
+            <TextBlock Text="{Binding MenuTitle}" 
                        HorizontalAlignment="Center" 
                        VerticalAlignment="Center"
                        FontSize="24"
                        FontWeight="Bold"
                        Margin="0,20,0,20"/>
 
-            <Button Content="Dark theme" 
+            <Button Content="{Binding ThemeDark}" 
                     HorizontalAlignment="Right" 
                     VerticalAlignment="Top"
                     Command="{Binding SwitchThemeCommand}"
                     CommandParameter="Dark"
                     IsVisible="{Binding $parent[Window].ActualThemeVariant, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static ThemeVariant.Light}}">
             </Button>
-            <Button Content="Light theme" 
+            <Button Content="{Binding ThemeLight}" 
                     HorizontalAlignment="Right" 
                     VerticalAlignment="Top"
                     Command="{Binding SwitchThemeCommand}"
@@ -53,49 +53,49 @@
                     Width="400"
                     IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=Menu}">
 
-            <Button Content="1. Create a new backup job"
+            <Button Content="{Binding MenuCreate}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Left"
                     Padding="20,15"
                     FontSize="16"
                     Command="{Binding CreateBackupJobCommand}"/>
 
-            <Button Content="2. Execute a backup job"
+            <Button Content="{Binding MenuExecute}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Left"
                     Padding="20,15"
                     FontSize="16"
                     Command="{Binding ExecuteBackupJobCommand}"/>
 
-            <Button Content="3. Execute all backup jobs"
+            <Button Content="{Binding MenuExecuteAll}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Left"
                     Padding="20,15"
                     FontSize="16"
                     Command="{Binding ExecuteAllBackupJobsCommand}"/>
 
-            <Button Content="4. List all backup jobs"
+            <Button Content="{Binding MenuList}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Left"
                     Padding="20,15"
                     FontSize="16"
                     Command="{Binding ListAllBackupJobsCommand}"/>
 
-            <Button Content="5. Delete a backup job"
+            <Button Content="{Binding MenuDelete}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Left"
                     Padding="20,15"
                     FontSize="16"
                     Command="{Binding DeleteBackupJobCommand}"/>
 
-            <Button Content="6. Change language"
+            <Button Content="{Binding MenuLanguage}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Left"
                     Padding="20,15"
                     FontSize="16"
                     Command="{Binding ChangeLanguageCommand}"/>
 
-            <Button Content="7. Exit"
+            <Button Content="{Binding MenuExit}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Left"
                     Padding="20,15"
@@ -112,22 +112,19 @@
                     Width="500"
                     IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=CreateJob}">
 
-            <TextBlock Text="Create a New Backup Job" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding CreateTitle}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
 
-            <TextBlock Text="Job Name:"/>
+            <TextBlock Text="{Binding CreateName}"/>
             <TextBox Text="{Binding NewJobName}" Watermark="Enter job name"/>
 
-            <TextBlock Text="Source Path:"/>
+            <TextBlock Text="{Binding CreateSource}"/>
             <TextBox Text="{Binding NewJobSource}" Watermark="C:\Source\Folder"/>
 
-            <TextBlock Text="Target Path:"/>
+            <TextBlock Text="{Binding CreateTarget}"/>
             <TextBox Text="{Binding NewJobTarget}" Watermark="C:\Target\Folder"/>
 
-            <TextBlock Text="Backup Type:"/>
-            <ComboBox SelectedIndex="{Binding SelectedBackupType}">
-                <ComboBoxItem Content="Complete"/>
-                <ComboBoxItem Content="Differential"/>
-            </ComboBox>
+            <TextBlock Text="{Binding CreateType}"/>
+            <ComboBox SelectedIndex="{Binding SelectedBackupType}" ItemsSource="{Binding BackupTypes}"/>
 
             <!-- Status Message -->
             <TextBlock Text="{Binding StatusMessage}"
@@ -138,8 +135,8 @@
                        MaxWidth="450"/>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,20,0,0">
-                <Button Content="Create" Command="{Binding SaveNewJobCommand}" Width="120" Padding="10"/>
-                <Button Content="Cancel" Command="{Binding BackToMenuCommand}" Width="120" Padding="10"/>
+                <Button Content="{Binding CreateButton}" Command="{Binding SaveNewJobCommand}" Width="120" Padding="10"/>
+                <Button Content="{Binding ButtonCancel}" Command="{Binding BackToMenuCommand}" Width="120" Padding="10"/>
             </StackPanel>
         </StackPanel>
 
@@ -151,9 +148,9 @@
                     Width="500"
                     IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ExecuteJob}">
 
-            <TextBlock Text="Execute a Backup Job" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding ExecuteTitle}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
 
-            <TextBlock Text="Select a job to execute:"/>
+            <TextBlock Text="{Binding ExecuteSelect}"/>
             <ComboBox ItemsSource="{Binding BackupJobs}" 
                       SelectedItem="{Binding SelectedJob}"
                       Width="400"
@@ -165,7 +162,7 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
 
-            <TextBlock Text="No backup jobs available. Create one first!" 
+            <TextBlock Text="{Binding ExecuteNoJobs}" 
                        Foreground="Orange"
                        HorizontalAlignment="Center"
                        IsVisible="{Binding !BackupJobs.Count}"/>
@@ -180,12 +177,12 @@
                        MaxWidth="450"/>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,20,0,0">
-                <Button Content="Execute" 
+                <Button Content="{Binding ExecuteButton}" 
                         Command="{Binding ExecuteSelectedJobCommand}" 
                         Width="120" 
                         Padding="10"
                         IsEnabled="{Binding !IsExecuting}"/>
-                <Button Content="Cancel" 
+                <Button Content="{Binding ButtonCancel}" 
                         Command="{Binding BackToMenuCommand}" 
                         Width="120" 
                         Padding="10"
@@ -202,7 +199,7 @@
                     Margin="0,50,0,0"
                     IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ListJobs}">
 
-            <TextBlock Text="All Backup Jobs" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding ListTitle}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
 
             <ListBox ItemsSource="{Binding BackupJobs}" Height="400">
                 <ListBox.ItemTemplate>
@@ -210,15 +207,15 @@
                         <StackPanel Spacing="5" Margin="10">
                             <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16"/>
                             <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="ID:" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding $parent[Window].DataContext.ListId}" FontWeight="SemiBold"/>
                                 <TextBlock Text="{Binding Id}"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="Source:" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding $parent[Window].DataContext.ListSource}" FontWeight="SemiBold"/>
                                 <TextBlock Text="{Binding SourceDirectory}"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="Target:" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding $parent[Window].DataContext.ListTarget}" FontWeight="SemiBold"/>
                                 <TextBlock Text="{Binding TargetDirectory}"/>
                             </StackPanel>
                         </StackPanel>
@@ -226,7 +223,7 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <Button Content="Back to Menu" Command="{Binding BackToMenuCommand}" Width="150" Padding="10" HorizontalAlignment="Center"/>
+            <Button Content="{Binding ButtonBack}" Command="{Binding BackToMenuCommand}" Width="150" Padding="10" HorizontalAlignment="Center"/>
         </StackPanel>
 
         <!-- Delete Job View -->
@@ -237,9 +234,9 @@
                     Width="500"
                     IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=DeleteJob}">
 
-            <TextBlock Text="Delete a Backup Job" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding DeleteTitle}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
 
-            <TextBlock Text="Select a job to delete:"/>
+            <TextBlock Text="{Binding DeleteSelect}"/>
             <ComboBox ItemsSource="{Binding BackupJobs}" 
                       SelectedItem="{Binding SelectedJob}"
                       Width="400"
@@ -251,12 +248,12 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
 
-            <TextBlock Text="No backup jobs available." 
+            <TextBlock Text="{Binding DeleteNoJobs}" 
                        Foreground="Orange"
                        HorizontalAlignment="Center"
                        IsVisible="{Binding !BackupJobs.Count}"/>
 
-            <TextBlock Text="Warning: This action cannot be undone!" 
+            <TextBlock Text="{Binding DeleteWarning}" 
                        Foreground="Red" 
                        HorizontalAlignment="Center"
                        FontWeight="Bold"/>
@@ -270,8 +267,8 @@
                        MaxWidth="450"/>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,20,0,0">
-                <Button Content="Delete" Command="{Binding DeleteSelectedJobCommand}" Width="120" Padding="10"/>
-                <Button Content="Cancel" Command="{Binding BackToMenuCommand}" Width="120" Padding="10"/>
+                <Button Content="{Binding DeleteButton}" Command="{Binding DeleteSelectedJobCommand}" Width="120" Padding="10"/>
+                <Button Content="{Binding ButtonCancel}" Command="{Binding BackToMenuCommand}" Width="120" Padding="10"/>
             </StackPanel>
         </StackPanel>
 
@@ -283,17 +280,17 @@
                     Width="400"
                     IsVisible="{Binding CurrentView, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ChangeLanguage}">
 
-            <TextBlock Text="Change Language" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding LanguageTitle}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
 
-            <TextBlock Text="Select language:"/>
+            <TextBlock Text="{Binding LanguageSelect}"/>
             <ComboBox Width="300" SelectedIndex="{Binding SelectedLanguage}">
                 <ComboBoxItem Content="English"/>
                 <ComboBoxItem Content="Français"/>
             </ComboBox>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,20,0,0">
-                <Button Content="Apply" Command="{Binding ApplyLanguageCommand}" Width="120" Padding="10"/>
-                <Button Content="Cancel" Command="{Binding BackToMenuCommand}" Width="120" Padding="10"/>
+                <Button Content="{Binding LanguageApply}" Command="{Binding ApplyLanguageCommand}" Width="120" Padding="10"/>
+                <Button Content="{Binding ButtonCancel}" Command="{Binding BackToMenuCommand}" Width="120" Padding="10"/>
             </StackPanel>
         </StackPanel>
 

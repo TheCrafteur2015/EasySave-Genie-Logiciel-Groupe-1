@@ -66,8 +66,20 @@ namespace EasySave.Utils
 				var jobs = JsonConvert.DeserializeObject<List<BackupJob>>(jsonContent);
 				return jobs ?? [];
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
+				// Log l'erreur pour debug
+				System.Diagnostics.Debug.WriteLine($"Error loading backup jobs: {ex.Message}");
+				System.Diagnostics.Debug.WriteLine($"Exception details: {ex}");
+
+				// Supprimer le fichier corrompu
+				try
+				{
+					File.Delete(_savedBackupJobPath);
+					System.Diagnostics.Debug.WriteLine($"Corrupted file deleted: {_savedBackupJobPath}");
+				}
+				catch { }
+
 				return [];
 			}
 		}

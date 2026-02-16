@@ -3,13 +3,34 @@ using System.Xml.Serialization;
 
 namespace EasyLog.Logging
 {
-    public class XmlLogger(string path) : AbstractLogger<LogEntry>(path)
+    /// <summary>
+    /// Logger implementation that outputs logs in XML format.
+    /// </summary>
+    /// <remarks>
+    /// This logger serializes log entries into an XML structure. It handles reading existing logs,
+    /// deserializing them to append the new entry, and serializing the updated list back to the file.
+    /// </remarks>
+    /// <param name="path">The directory path where log files will be created.</param>
+    public class XmlLogger(string path) : AbstractLogger(path)
     {
         private readonly object _lock = new();
 
+        /// <summary>
+        /// Gets the file extension for XML log files.
+        /// </summary>
+        /// <returns>The string "xml".</returns>
         public override string GetExtension() => "xml";
 
-        public override void Log(Level level, LogEntry message)
+        /// <summary>
+        /// Writes a log entry to the XML log file.
+        /// </summary>
+        /// <remarks>
+        /// This method is thread-safe for writing. It reads the existing XML content,
+        /// deserializes it into a list of LogEntries, adds the new message, and overwrites the file
+        /// with the updated serialized XML data.
+        /// </remarks>
+        /// <param name="message">The log entry object to be serialized and written.</param>
+        public override void Log(LogEntry message)
         {
             List<LogEntry> logs = new List<LogEntry>();
             if (File.Exists(LogFile))
@@ -30,11 +51,6 @@ namespace EasyLog.Logging
                 serializer.Serialize(writer, logs);
                 File.WriteAllText(LogFile, writer.ToString());
             }
-        }
-        public override void LogError(Exception e)
-        {
-            LogEntry errorEntry = new LogEntry(0, e.Message ?? string.Empty, e.StackTrace ?? string.Empty, "", 0, 0);
-            Log(Level.Error, errorEntry);
         }
     }
 }

@@ -1,5 +1,6 @@
 using EasyLog.Logging;
 using EasySave.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace EasySave.Backup
 {
@@ -10,7 +11,7 @@ namespace EasySave.Backup
 	public class BackupManager
 	{
 		private static BackupManager? _instance;
-		private static ILogger<string>? _logger;
+		private static ILogger? _logger;
 		private static readonly object _lock = new();
 		
 		private readonly List<BackupJob> _backupJobs;
@@ -40,7 +41,10 @@ namespace EasySave.Backup
 			_stateWriter  = new StateWriter(Path.Combine(appData, "State"));
 			ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
 
-			MaxBackupJobs = ConfigManager.ConfigValues["MaxBackupJobs"];
+			MaxBackupJobs = ConfigManager.GetConfig("MaxBackupJobs");
+			var useBackupJobLimit = ConfigManager.GetConfig("UseBackupJobLimit") as JValue;
+			if (useBackupJobLimit?.Value is bool val && val == false)
+				MaxBackupJobs = -1;
 
 			// Load existing jobs
 			_backupJobs = ConfigManager.LoadBackupJobs();
@@ -66,13 +70,15 @@ namespace EasySave.Backup
 			return _instance;
 		}
 		
-		public static ILogger<string> GetLogger()
+		public static ILogger GetLogger()
 		{
 			if (_logger == null)
 			{
+				var BM = GetBM();
+				var format = BM.ConfigManager.GetConfig("LoggerFormat");
 				lock (_lock)
 				{
-					_logger = new SimpleLogger(Path.Combine(GetBM().appData, "Logs"));
+					_logger = LoggerFactory.CreateLogger(format?.Value as string ?? "text", Path.Combine(BM.appData, "Logs"));
 				}
 			}
 			return _logger;
@@ -99,7 +105,7 @@ namespace EasySave.Backup
 		/// jobs has been reached or if any parameter is invalid.</returns>
 		public bool AddJob(string? name, string? sourceDir, string? targetDir, BackupType type)
 		{
-			if (_backupJobs.Count >= MaxBackupJobs)
+			if (_backupJobs.Count >= MaxBackupJobs && MaxBackupJobs != -1)
 				return false;
 
 			if (string.IsNullOrWhiteSpace(name) ||
@@ -148,14 +154,16 @@ namespace EasySave.Backup
 		/// <param name="progressCallback">An optional callback that receives progress updates during job execution. If null, progress updates are not
 		/// reported.</param>
 		/// <exception cref="ArgumentException">Thrown if a backup job with the specified ID does not exist.</exception>
-		public void ExecuteJob(int id, Action<ProgressState>? progressCallback = null)
+		public bool ExecuteJob(int id, Action<ProgressState>? progressCallback = null)
 		{
 			var job = _backupJobs.FirstOrDefault(j => j.Id == id);
 			if (job == null)
 				throw new ArgumentException($"Backup job with ID {id} not found.");
 
 			ExecuteSingleJob(job, progressCallback);
-		}
+
+            return job.State != State.Error;
+        }
 
 		/// <summary>
 		/// Executes all backup jobs with IDs in the specified inclusive range, optionally reporting progress for each job.

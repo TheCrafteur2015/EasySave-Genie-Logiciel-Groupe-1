@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EasyLog.Data;
 
 namespace EasyLog.Logging
 {
@@ -13,7 +14,7 @@ namespace EasyLog.Logging
 	/// initialization and file path management. Derived classes must implement the logging methods to specify how log
 	/// entries are written. This class is not intended to be used directly; instead, inherit from it to create a custom
 	/// logger.</remarks>
-	public abstract class AbstractLogger<T> : ILogger<T>
+	public abstract class AbstractLogger : ILogger
 	{
 
 		private readonly string _path;
@@ -41,13 +42,7 @@ namespace EasyLog.Logging
 		/// </summary>
 		/// <param name="level">The severity level of the log entry. Determines the importance and filtering of the log message.</param>
 		/// <param name="message">The message to log. Cannot be null.</param>
-        public abstract void Log(Level level, T message);
+		public abstract void Log(LogEntry message);
 
-		/// <summary>
-		/// Logs the specified exception as an error entry.
-		/// </summary>
-		/// <param name="e">The exception to log. Cannot be null.</param>
-        public abstract void LogError(Exception e);
-
-    }
+	}
 }

@@ -5,12 +5,14 @@ namespace EasySave.Utils
 	/// <summary>
 	/// Provides methods for reading embedded resource files from the assembly.
 	/// </summary>
-    public class ResourceManager
-    {
-		/// <summary>
-		/// Initializes a new instance of the ResourceManager class.
-		/// </summary>
-        private ResourceManager() { }
+	public static class ResourceManager
+	{
+
+		public static readonly string CONFIG_FILENAME = "config.json";
+
+		public static readonly string BACKUP_FILENAME = "backups.json";
+
+		public static readonly string DEFAULT_CONFIG_FILENAME = "default.json";
 
 		/// <summary>
 		/// Reads the contents of an embedded resource file from the executing assembly.
@@ -23,12 +25,12 @@ namespace EasySave.Utils
 		/// <returns>A string containing the full contents of the specified embedded resource file.</returns>
 		/// <exception cref="FileNotFoundException">Thrown if the specified resource cannot be found in the executing assembly.</exception>
 		public static string ReadResourceFile(string resourceName)
-        {
+		{
 			var assembly = Assembly.GetExecutingAssembly();
 			if (!resourceName.StartsWith("EasySave."))
 				resourceName = "EasySave." + resourceName;
 			using Stream? stream = assembly.GetManifestResourceStream(resourceName) ?? throw new FileNotFoundException($"Unavailable resource: {resourceName}");
-            using var reader = new StreamReader(stream);
+			using var reader = new StreamReader(stream);
 			return reader.ReadToEnd();
 		}
 	}

@@ -20,17 +20,21 @@ namespace EasySave.Backup
 
 		public readonly int MaxBackupJobs;
 		private readonly string appData;
-
-
+		
 		public Signal LatestSignal { get; private set; }
-    
-    /// <summary>
+	
+		/// <summary>
 		/// Initializes a new instance of the BackupManager class and sets up required components and configuration.
 		/// </summary>
 		/// <remarks>This constructor is private and is intended to restrict instantiation of the BackupManager class
 		/// to within the class itself, typically to implement a singleton or controlled creation pattern.</remarks>
 		private BackupManager()
 		{
+
+			AppDomain.CurrentDomain.ProcessExit += (sender, args) => {
+				ConfigManager?.SaveConfiguration();
+			};
+
 			// Initialize paths
 			appData = Path.Combine(
 				Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

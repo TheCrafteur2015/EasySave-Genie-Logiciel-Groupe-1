@@ -1,0 +1,6 @@
+{
+	"Version": "string",
+	"MaxBackupJobs": "int32",
+	"UseBackupJobLimit": "bool",
+	"LoggerFormat": "string"
+}

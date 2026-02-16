@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+
 namespace EasySave.Backup
 {
 	/// <summary>
@@ -13,12 +15,14 @@ namespace EasySave.Backup
 
 		public string TargetDirectory { get; set; }
 
-        public BackupType Type { get; }
+		public BackupType Type { get; }
 
-        public IBackupStrategy Strategy { get; }
+		[JsonIgnore]
+		public IBackupStrategy Strategy { get; private set; }
 
 		public DateTime LastExecution { get; private set; }
 
+		[JsonIgnore]
 		public State State { get; private set; }
 
 		/// <summary>
@@ -29,10 +33,9 @@ namespace EasySave.Backup
 		/// <param name="sourceDir">The path to the source directory to be backed up. Must be a valid directory path.</param>
 		/// <param name="targetDir">The path to the target directory where backups will be stored. Must be a valid directory path.</param>
 		/// <param name="type">The type of backup to perform for this job.</param>
+		[JsonConstructor]
 		public BackupJob(int id, string name, string sourceDir, string targetDir, BackupType type)
 		{
-			
-
 			Id              = id;
 			Name            = name;
 			SourceDirectory = sourceDir;

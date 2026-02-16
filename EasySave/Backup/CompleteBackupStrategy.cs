@@ -64,15 +64,16 @@ namespace EasySave.Backup
                     Message = $"Backup {job.Name} aborted: Business software '{BusinessSoftware}' is running."
                 });
 
-                job.State = State.Error;
+                job.State = State.Paused;
                 progressCallback?.Invoke(new ProgressState
                 {
                     BackupName = job.Name,
-                    State = State.Error,
+                    State = State.Paused,
                     Message = msg
                 });
 
-                return;
+                // IMPORTANT: Lever une exception pour vraiment arrêter
+                throw new InvalidOperationException(msg);
             }
 
             int processedFiles = 0;
@@ -89,16 +90,17 @@ namespace EasySave.Backup
                         Message = $"Backup {job.Name} stopped: Business software '{BusinessSoftware}' detected during execution."
                     });
 
-                    job.State = State.Error;
+                    job.State = State.Paused;
 
                     progressCallback?.Invoke(new ProgressState
                     {
                         BackupName = job.Name,
-                        State = State.Error,
+                        State = State.Paused,
                         Message = msg
                     });
 
-                    break;
+                    // Lever une exception pour arrêter complètement
+                    throw new InvalidOperationException(msg);
                 }
 
                 var relativePath = Path.GetRelativePath(job.SourceDirectory, sourceFile);
@@ -193,7 +195,7 @@ namespace EasySave.Backup
             }
 
             // Final progress state
-            if (job.State != State.Error)
+            if (job.State != State.Error && job.State != State.Paused)
             {
                 var finalState = new ProgressState
                 {

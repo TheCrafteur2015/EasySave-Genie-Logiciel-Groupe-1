@@ -44,14 +44,14 @@ namespace EasySave.Backup
 		{
 			string BusinessSoftware = BackupManager.GetBM().ConfigManager.GetConfig("BusinessSoftware");
 			State = State.Active;
-            Strategy.Execute(this, BusinessSoftware, progressCallback);
+			Strategy.Execute(this, BusinessSoftware, progressCallback);
 
-            if (State != State.Error)
-            {
-                LastExecution = DateTime.Now;
-                State = State.Completed;
-            }
-        }
+			if (State != State.Error && State != State.Paused)
+			{
+				LastExecution = DateTime.Now;
+				State = State.Completed;
+			}
+		}
 
 		/// <summary>
 		/// Transitions the current state to indicate an error has occurred.	
@@ -80,6 +80,11 @@ namespace EasySave.Backup
 					job.State == State;
 			}
 			return false;
+		}
+
+		public override int GetHashCode()
+		{
+			return HashCode.Combine(Id, Name, SourceDirectory, TargetDirectory, Type, Strategy?.GetType(), State);
 		}
 
 		public override string ToString()

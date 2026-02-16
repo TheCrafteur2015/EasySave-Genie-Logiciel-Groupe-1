@@ -24,7 +24,12 @@ namespace EasyConsole.View.Commands
 
             try
             {
-                BackupManager.GetBM().ExecuteAllJobs(ConsoleView.DisplayProgress);
+                // On lance en asynchrone pour récupérer les tâches
+                var tasks = BackupManager.GetBM().ExecuteAllJobsAsync(ConsoleView.DisplayProgress);
+
+                // On lance le moniteur interactif
+                ConsoleView.MonitorJobs(tasks);
+
                 Console.WriteLine(I18n.Instance.GetString("execute_success"));
             }
             catch (Exception e)

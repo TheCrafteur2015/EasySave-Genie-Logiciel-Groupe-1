@@ -29,7 +29,6 @@ namespace EasyConsole.View.Commands
         {
             Console.Clear();
 
-            // Afficher la liste des processus de sauvegarde
             CommandContext.Instance.ExecuteCommand(4);
 
             Console.Write("{0}: ", I18n.Instance.GetString("execute_id"));
@@ -40,12 +39,11 @@ namespace EasyConsole.View.Commands
             {
                 if (id > 0)
                 {
-                    bool success = BackupManager.GetBM().ExecuteJob(id, ConsoleView.DisplayProgress);
+                    var task = BackupManager.GetBM().ExecuteJobAsync(id, ConsoleView.DisplayProgress);
 
-                    if (success)
-                    {
-                        Console.WriteLine(I18n.Instance.GetString("execute_success"));
-                    }
+                    ConsoleView.MonitorJobs(new List<Task> { task });
+
+                    Console.WriteLine(I18n.Instance.GetString("execute_success"));
                 }
             }
             catch (Exception e)

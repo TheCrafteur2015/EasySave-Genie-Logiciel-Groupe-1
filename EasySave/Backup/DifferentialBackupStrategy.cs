@@ -64,14 +64,14 @@ namespace EasySave.Backup
                     Level = Level.Warning,
                     Message = $"Backup {job.Name} aborted: Business software '{BusinessSoftware}' is running."
                 });
-                job.State = State.Error;
+                job.State = State.Paused;
                 progressCallback?.Invoke(new ProgressState
                 {
                     BackupName = job.Name,
-                    State = State.Error,
+                    State = State.Paused,
                     Message = msg
                 });
-                return;
+                throw new InvalidOperationException(msg);
             }
 
             int processedFiles = 0;
@@ -82,13 +82,23 @@ namespace EasySave.Backup
             {
                 if (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
                 {
+                    string msg = $"[STOP] Logiciel métier détecté : '{BusinessSoftware}'. Sauvegarde interrompue.";
                     BackupManager.GetLogger().Log(new LogEntry
                     {
                         Level = Level.Warning,
                         Message = $"Backup {job.Name} stopped: Business software '{BusinessSoftware}' detected during execution."
                     });
-                    job.State = State.Error;
-                    break;
+
+                    job.State = State.Paused;
+
+                    progressCallback?.Invoke(new ProgressState
+                    {
+                        BackupName = job.Name,
+                        State = State.Paused,
+                        Message = msg
+                    });
+
+                    throw new InvalidOperationException(msg);
                 }
 
                 var relativePath = Path.GetRelativePath(job.SourceDirectory, sourceFile);

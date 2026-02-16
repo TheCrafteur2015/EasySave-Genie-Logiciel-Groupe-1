@@ -23,7 +23,13 @@ namespace EasySave.Backup
 
 		public string TargetDirectory { get; set; } = TargetDirectory;
 
-		[JsonConverter(typeof(JsonStringEnumConverter))]
+        [JsonIgnore]
+        public ManualResetEventSlim PauseWaitHandle { get; } = new ManualResetEventSlim(true);
+
+        [JsonIgnore]
+        public CancellationTokenSource Cts { get; private set; } = new CancellationTokenSource();
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
 		public BackupType Type { get; set; } = Type;
 
 		[JsonIgnore]
@@ -34,13 +40,21 @@ namespace EasySave.Backup
 		[JsonConverter(typeof(JsonStringEnumConverter))]
 		public State State { get; set; } = State.Inactive;
 
-		/// <summary>
-		/// Executes the associated strategy and reports progress through the specified callback.
-		/// </summary>
-		/// <remarks>The method sets the state to active before execution and to completed after execution. The
-		/// progress callback is invoked to provide updates during the execution process.</remarks>
-		/// <param name="progressCallback">A callback method that receives progress updates as a <see cref="ProgressState"/> object. Cannot be null.</param>
-		public void Execute(Action<ProgressState> progressCallback)
+        public void ResetControls()
+        {
+            // On réinitialise le Token d'annulation pour une nouvelle exécution
+            Cts = new CancellationTokenSource();
+            // On s'assure que le travail n'est pas en pause au démarrage
+            PauseWaitHandle.Set();
+        }
+
+        /// <summary>
+        /// Executes the associated strategy and reports progress through the specified callback.
+        /// </summary>
+        /// <remarks>The method sets the state to active before execution and to completed after execution. The
+        /// progress callback is invoked to provide updates during the execution process.</remarks>
+        /// <param name="progressCallback">A callback method that receives progress updates as a <see cref="ProgressState"/> object. Cannot be null.</param>
+        public void Execute(Action<ProgressState> progressCallback)
 		{
 			string BusinessSoftware = BackupManager.GetBM().ConfigManager.GetConfig("BusinessSoftware");
 			State = State.Active;

@@ -10,6 +10,10 @@ namespace EasySave.Utils
 	/// </summary>
 	public class ConfigurationManager
 	{
+
+		/// <summary>
+		/// Static options used for JSON serialization.
+		/// </summary>
 		private static readonly JsonSerializerOptions JSON_OPTIONS = new()
 		{
 			WriteIndented = true,
@@ -17,16 +21,22 @@ namespace EasySave.Utils
 			IncludeFields = true
 		};
 
-		public readonly string _configDirectory;
-		public readonly string _configFilePath;
-		public readonly string _savedBackupJobPath;
+		public readonly string configFilePath;
+		public readonly string savedBackupJobPath;
 
 		/// <summary>
 		/// Gets the dynamic configuration values for the current instance.
 		/// </summary>
 		/// <remarks>The returned object provides access to configuration settings whose structure may vary at
 		/// runtime. Use dynamic member access to retrieve specific configuration values as needed.</remarks>
-		private dynamic ConfigValues { get; set; }
+		private readonly Dictionary<string, object> configValues;
+
+		private readonly List<string> readOnlyVariables = ["Version"];
+
+		/// <summary>
+		/// Indicates wether the configuration variables have been edited and are required to save.
+		/// </summary>
+		private bool isDirty = false;
 
 		/// <summary>
 		/// Initializes a new instance of the ConfigurationManager class using the specified configuration directory. Ensures
@@ -38,24 +48,20 @@ namespace EasySave.Utils
 		/// created. Cannot be null or empty.</param>
 		public ConfigurationManager(string configDirectory)
 		{
-			_configDirectory = configDirectory;
+			if (!Directory.Exists(configDirectory))
+				Directory.CreateDirectory(configDirectory);
 
-			if (!Directory.Exists(_configDirectory))
-			{
-				Directory.CreateDirectory(_configDirectory);
-			}
+			configFilePath     = Path.Combine(configDirectory, ResourceManager.CONFIG_FILENAME);
+			savedBackupJobPath = Path.Combine(configDirectory, ResourceManager.BACKUP_FILENAME);
 
-			_configFilePath = Path.Combine(_configDirectory, "config.json");
-			_savedBackupJobPath = Path.Combine(_configDirectory, "backups.json");
-			if (!File.Exists(_configFilePath) || new FileInfo(_configFilePath).Length == 0)
-			{
-				File.WriteAllText(_configFilePath, ResourceManager.ReadResourceFile("default.json"));
-			}
-			string jsonContent = File.ReadAllText(_configFilePath);
-			ConfigValues = JsonConvert.DeserializeObject(jsonContent);
+			if (!File.Exists(configFilePath) || new FileInfo(configFilePath).Length == 0)
+				File.WriteAllText(configFilePath, ResourceManager.ReadResourceFile(ResourceManager.DEFAULT_CONFIG_FILENAME));
 
-		// Migrate configuration if needed
-		MigrateConfigurationIfNeeded();
+			string jsonContent = File.ReadAllText(configFilePath);
+			configValues = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(jsonContent) ?? [];
+
+			// Migrate configuration if needed
+			MigrateConfigurationIfNeeded();
 	}
 
 	/// <summary>
@@ -65,11 +71,12 @@ namespace EasySave.Utils
 	private void MigrateConfigurationIfNeeded()
 	{
 		var defaultConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JObject>(
-			ResourceManager.ReadResourceFile("default.json"));
+			ResourceManager.ReadResourceFile(ResourceManager.DEFAULT_CONFIG_FILENAME));
 		
 		if (defaultConfig == null) return;
 
-		var currentConfig = ConfigValues as Newtonsoft.Json.Linq.JObject;
+		//var currentConfig = ConfigValues as Newtonsoft.Json.Linq.JObject;
+		var currentConfig = configValues;
 		if (currentConfig == null) return;
 
 		bool configUpdated = false;
@@ -81,6 +88,7 @@ namespace EasySave.Utils
 			{
 				currentConfig[property.Name] = property.Value;
 				configUpdated = true;
+				MarkDirty();
 			}
 		}
 
@@ -94,14 +102,41 @@ namespace EasySave.Utils
 			}
 
 			// Save the updated configuration
-			File.WriteAllText(_configFilePath, currentConfig.ToString(Newtonsoft.Json.Formatting.Indented));
-			ConfigValues = currentConfig;
+			//File.WriteAllText(_configFilePath, currentConfig.ToString(Newtonsoft.Json.Formatting.Indented));
+			File.WriteAllText(configFilePath, System.Text.Json.JsonSerializer.Serialize(currentConfig, JSON_OPTIONS));
+			//configValues = currentConfig;
 		}
 	}
 
-		public dynamic GetConfig(string key)
+		public T GetConfig<T>(string key, T? defaultValue = default)
 		{
-			return ConfigValues[key] ?? throw new ArgumentException("This configuration key doesn't exists!");
+			//return ConfigValues[key] ?? throw new ArgumentException("This configuration key doesn't exists!");
+			T? ret = default;
+			if (configValues.TryGetValue(key, out var value))
+			{
+				ret = value switch
+				{
+					T t => t,
+					JsonElement je => je.Deserialize<T>(),
+					_ => (T) Convert.ChangeType(value, typeof(T)) ?? defaultValue
+				} ?? defaultValue;
+			}
+			return ret ?? throw new ArgumentException("This configuration key doesn't exists!"); ;
+		}
+
+		public Dictionary<string, object> GetConfigDictionary()
+		{
+			return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(System.Text.Json.JsonSerializer.Serialize(configValues)) ?? [];
+		}
+
+		public void SetConfig()
+		{
+			MarkDirty();
+		}
+
+		public void MarkDirty()
+		{
+			isDirty = true;
 		}
 
 		/// <summary>
@@ -113,14 +148,14 @@ namespace EasySave.Utils
 		/// jobs are found or if an error occurs while loading.</returns>
 		public List<BackupJob> LoadBackupJobs()
 		{
-			if (!File.Exists(_savedBackupJobPath))
+			if (!File.Exists(savedBackupJobPath))
 			{
 				return [];
 			}
 
 			try
 			{
-				string jsonContent = File.ReadAllText(_savedBackupJobPath);
+				string jsonContent = File.ReadAllText(savedBackupJobPath);
 				var jobs = System.Text.Json.JsonSerializer.Deserialize<List<BackupJob>>(jsonContent);
 				return jobs ?? [];
 			}
@@ -142,7 +177,7 @@ namespace EasySave.Utils
 			{
 				//JSON_OPTIONS
 				string jsonContent = System.Text.Json.JsonSerializer.Serialize(jobs, JSON_OPTIONS);
-				File.WriteAllText(_savedBackupJobPath, jsonContent);
+				File.WriteAllText(savedBackupJobPath, jsonContent);
 			}
 			catch (Exception ex)
 			{

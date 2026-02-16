@@ -1,23 +1,39 @@
 <Application xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="EasyGUI.App"  xmlns:local="using:EasyGUI"
-             RequestedThemeVariant="Light">
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 x:Class="EasyGUI.App"  xmlns:local="using:EasyGUI"
+			 RequestedThemeVariant="Default">
 
 	<Application.DataTemplates>
 		<local:ViewLocator/>
 	</Application.DataTemplates>
 
+	<Application.Resources>
+		<!-- Ressources pour le thème clair -->
+		<ResourceDictionary>
+			<ResourceDictionary.ThemeDictionaries>
+				<ResourceDictionary x:Key="Light">
+					<SolidColorBrush x:Key="AppBackgroundBrush" Color="White"/>
+					<SolidColorBrush x:Key="CardBackgroundBrush" Color="#EBEBEB"/>
+				</ResourceDictionary>
+				<ResourceDictionary x:Key="Dark">
+					<SolidColorBrush x:Key="AppBackgroundBrush" Color="#0D0D0D"/>
+					<SolidColorBrush x:Key="CardBackgroundBrush" Color="#1A1A1A"/>
+				</ResourceDictionary>
+			</ResourceDictionary.ThemeDictionaries>
+		</ResourceDictionary>
+	</Application.Resources>
+
 	<Application.Styles>
 		<FluentTheme />
 
+		<!-- Sidebar avec la même couleur que les cartes -->
 		<Style Selector="Border.Sidebar">
-			<Setter Property="Background" Value="#2D3748"/>
+			<Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
 			<Setter Property="BoxShadow" Value="4 0 15 0 #20000000"/>
 		</Style>
 
 		<Style Selector="Button.NavButton">
 			<Setter Property="Background" Value="Transparent"/>
-			<Setter Property="Foreground" Value="#E2E8F0"/>
 			<Setter Property="FontSize" Value="15"/>
 			<Setter Property="Padding" Value="15, 12"/>
 			<Setter Property="HorizontalAlignment" Value="Stretch"/>
@@ -32,8 +48,7 @@
 			</Setter>
 		</Style>
 		<Style Selector="Button.NavButton:pointerover /template/ ContentPresenter">
-			<Setter Property="Background" Value="#4A5568"/>
-			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="Background" Value="{DynamicResource ButtonBackgroundPointerOver}"/>
 		</Style>
 
 		<Style Selector="Button.Primary">
@@ -48,8 +63,9 @@
 			<Setter Property="Background" Value="#ECC94B"/>
 		</Style>
 
+		<!-- Cartes : utilisent les ressources dynamiques du thème -->
 		<Style Selector="Border.Card">
-			<Setter Property="Background" Value="White"/>
+			<Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
 			<Setter Property="CornerRadius" Value="12"/>
 			<Setter Property="BoxShadow" Value="0 4 10 0 #15000000"/>
 			<Setter Property="Padding" Value="30"/>
@@ -59,9 +75,8 @@
 		<Style Selector="TextBox">
 			<Setter Property="CornerRadius" Value="4"/>
 			<Setter Property="Padding" Value="10"/>
-			<Setter Property="BorderBrush" Value="#E2E8F0"/>
 		</Style>
-		<Style Selector="TextBox:focus">
+		<Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
 			<Setter Property="BorderBrush" Value="#F6E05E"/>
 		</Style>
 

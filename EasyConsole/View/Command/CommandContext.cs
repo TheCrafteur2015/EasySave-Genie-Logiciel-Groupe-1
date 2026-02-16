@@ -34,6 +34,7 @@ namespace EasyConsole.View.Command
 				new ListBackupJobsCommand(),
 				new DeleteBackupJobCommand(),
 				new ChangeLanguageCommand(),
+				new ConfigurationCommand(),
 				new ExitCommand(),
 			];
 			

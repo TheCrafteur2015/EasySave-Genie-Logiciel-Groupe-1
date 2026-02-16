@@ -19,24 +19,47 @@ namespace EasyTest
         public void Setup()
         {
             KillCalculator();
+
             _dossierSource = Path.Combine(Path.GetTempPath(), "EasySave_Source_Test");
             _dossierCible = Path.Combine(Path.GetTempPath(), "EasySave_Cible_Test");
 
-            if (Directory.Exists(_dossierSource)) Directory.Delete(_dossierSource, true);
-            if (Directory.Exists(_dossierCible)) Directory.Delete(_dossierCible, true);
+            DeleteDirectorySafe(_dossierSource);
+            DeleteDirectorySafe(_dossierCible);
 
             Directory.CreateDirectory(_dossierSource);
 
             var bm = BackupManager.GetBM();
-            foreach (var job in bm.GetAllJobs()) bm.DeleteJob(job.Id);
+            var jobsIds = bm.GetAllJobs().Select(j => j.Id).ToList();
+            foreach (var id in jobsIds) bm.DeleteJob(id);
+
+            typeof(BackupManager).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
         }
 
         [TestCleanup]
         public void Cleanup()
         {
             KillCalculator();
-            if (Directory.Exists(_dossierSource)) Directory.Delete(_dossierSource, true);
-            if (Directory.Exists(_dossierCible)) Directory.Delete(_dossierCible, true);
+        }
+
+        private void DeleteDirectorySafe(string path)
+        {
+            if (Directory.Exists(path))
+            {
+                try
+                {
+                    Directory.Delete(path, true);
+                }
+                catch
+                {
+                    try
+                    {
+                        DirectoryInfo di = new DirectoryInfo(path);
+                        foreach (FileInfo file in di.GetFiles()) { try { file.Delete(); } catch { } }
+                        foreach (DirectoryInfo dir in di.GetDirectories()) { try { dir.Delete(true); } catch { } }
+                    }
+                    catch { }
+                }
+            }
         }
 
         private void KillCalculator()
@@ -102,29 +125,6 @@ namespace EasyTest
 
             Assert.AreNotEqual(datePremiereCopie, dateDeuxiemeCopie);
             Assert.AreEqual("Version 2 - Modifié", File.ReadAllText(fichierCible));
-        }
-
-        [TestMethod]
-        public void TestLogicielMetier_Blocage()
-        {
-            Process p = Process.Start("calc.exe");
-            try
-            {
-                Thread.Sleep(2000);
-                var bm = BackupManager.GetBM();
-                bm.AddJob("TestBlocage", _dossierSource, _dossierCible, BackupType.Complete);
-                int id = bm.GetAllJobs()[0].Id;
-
-                bm.ExecuteJobAsync(id).Wait(); // On attend la fin (qui devrait être en erreur ou bloquée)
-
-                // On vérifie que l'état est bien Error car bloqué par le logiciel métier
-                var job = bm.GetAllJobs().First(j => j.Id == id);
-                Assert.AreEqual(State.Error, job.State);
-            }
-            finally
-            {
-                if (p != null && !p.HasExited) p.Kill();
-            }
         }
 
         [TestMethod]
@@ -370,6 +370,77 @@ namespace EasyTest
 
             try { Directory.Delete(source, true); } catch { }
             try { Directory.Delete(cible, true); } catch { }
+        }
+        [TestMethod]
+        public void TestLogicielMetier_PauseEtReprise()
+        {
+            string appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave");
+            string configDir = Path.Combine(appData, "Config");
+            Directory.CreateDirectory(configDir);
+
+            var configSpeciale = new
+            {
+                Version = "1.1.0",
+                MaxBackupJobs = 5,
+                BusinessSoftware = "CalculatorApp",
+                PriorityExtensions = new string[] { },
+                CryptoKey = "1234",
+                CryptoSoftPath = ""
+            };
+            File.WriteAllText(Path.Combine(configDir, "config.json"), JsonConvert.SerializeObject(configSpeciale));
+
+            typeof(BackupManager).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+
+            string source = Path.Combine(Path.GetTempPath(), "ES_Pause_Src");
+            string cible = Path.Combine(Path.GetTempPath(), "ES_Pause_Tgt");
+            if (Directory.Exists(source)) Directory.Delete(source, true);
+            if (Directory.Exists(cible)) Directory.Delete(cible, true);
+            Directory.CreateDirectory(source);
+            for (int i = 0; i < 5; i++) File.WriteAllText(Path.Combine(source, $"data{i}.txt"), "content");
+
+            KillAllCalculators();
+
+            try
+            {
+                Process.Start("calc.exe");
+                Thread.Sleep(2000); 
+
+                var bm = BackupManager.GetBM();
+                bm.AddJob("TestPauseMetier", source, cible, BackupType.Complete);
+                var job = bm.GetAllJobs().Last();
+
+                Task task = bm.ExecuteJobAsync(job.Id);
+
+                Thread.Sleep(3000);
+
+                Assert.IsFalse(task.IsCompleted, "Le job doit être en pause (non fini) car la calculatrice est ouverte.");
+
+                KillAllCalculators();
+
+                task.Wait(5000);
+
+                Assert.IsTrue(task.IsCompleted, "Le job aurait dû reprendre et finir après la fermeture de la calculatrice.");
+                Assert.AreEqual(State.Completed, job.State);
+                Assert.AreEqual(5, Directory.GetFiles(cible).Length);
+            }
+            finally
+            {
+                KillAllCalculators();
+                try { Directory.Delete(source, true); } catch { }
+                try { Directory.Delete(cible, true); } catch { }
+            }
+        }
+
+        private void KillAllCalculators()
+        {
+            var names = new[] { "CalculatorApp", "calc", "Calculator", "win32calc" };
+            foreach (var name in names)
+            {
+                foreach (var p in Process.GetProcessesByName(name))
+                {
+                    try { p.Kill(); p.WaitForExit(100); } catch { }
+                }
+            }
         }
     }
 }

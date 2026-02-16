@@ -1,6 +1,7 @@
 ﻿using EasyConsole.View.Command;
 using EasySave.Backup;
 using EasySave.View.Localization;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -16,6 +17,7 @@ namespace EasyConsole.View.Commands
 			Console.WriteLine("\tlist - {0}", i18n.GetString("config_list_desc"));
 			Console.WriteLine("\tget <{0}> - {1}", i18n.GetString("config_param"), i18n.GetString("config_get_desc"));
 			Console.WriteLine("\tset <{0}> <{1}> - {2}", i18n.GetString("config_param"), i18n.GetString("config_value"), i18n.GetString("config_set_desc"));
+			Console.WriteLine("\topen - {0}", i18n.GetString("config_open_desc"));
 			Console.WriteLine("\texit - {0}", i18n.GetString("config_exit_desc"));
 
 			string? action;
@@ -68,6 +70,22 @@ namespace EasyConsole.View.Commands
 						catch (ArgumentException e)
 						{
 							Console.Error.WriteLine(e.Message);
+							BackupManager.GetLogger().LogError(e);
+						}
+						break;
+					case "open":
+						try
+						{
+							Console.WriteLine(i18n.GetString("config_open_msg"));
+							Process.Start(new ProcessStartInfo()
+							{
+								FileName = configManager.configFilePath,
+								UseShellExecute = true
+							});
+						}
+						catch (Exception e)
+						{
+							Console.WriteLine(i18n.GetString("config_open_fail"));
 							BackupManager.GetLogger().LogError(e);
 						}
 						break;

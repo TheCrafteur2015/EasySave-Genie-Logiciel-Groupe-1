@@ -1,0 +1,84 @@
+<Application xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 x:Class="EasyGUI.App"  xmlns:local="using:EasyGUI"
+			 RequestedThemeVariant="Default">
+
+	<Application.DataTemplates>
+		<local:ViewLocator/>
+	</Application.DataTemplates>
+
+	<Application.Resources>
+		<!-- Ressources pour le thème clair -->
+		<ResourceDictionary>
+			<ResourceDictionary.ThemeDictionaries>
+				<ResourceDictionary x:Key="Light">
+					<SolidColorBrush x:Key="AppBackgroundBrush" Color="White"/>
+					<SolidColorBrush x:Key="CardBackgroundBrush" Color="#EBEBEB"/>
+				</ResourceDictionary>
+				<ResourceDictionary x:Key="Dark">
+					<SolidColorBrush x:Key="AppBackgroundBrush" Color="#0D0D0D"/>
+					<SolidColorBrush x:Key="CardBackgroundBrush" Color="#1A1A1A"/>
+				</ResourceDictionary>
+			</ResourceDictionary.ThemeDictionaries>
+		</ResourceDictionary>
+	</Application.Resources>
+
+	<Application.Styles>
+		<FluentTheme />
+
+		<!-- Sidebar avec la même couleur que les cartes -->
+		<Style Selector="Border.Sidebar">
+			<Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+			<Setter Property="BoxShadow" Value="4 0 15 0 #20000000"/>
+		</Style>
+
+		<Style Selector="Button.NavButton">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="FontSize" Value="15"/>
+			<Setter Property="Padding" Value="15, 12"/>
+			<Setter Property="HorizontalAlignment" Value="Stretch"/>
+			<Setter Property="HorizontalContentAlignment" Value="Left"/>
+			<Setter Property="CornerRadius" Value="8"/>
+			<Setter Property="Margin" Value="10,2"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Transitions">
+				<Transitions>
+					<BrushTransition Property="Background" Duration="0:0:0.2"/>
+				</Transitions>
+			</Setter>
+		</Style>
+		<Style Selector="Button.NavButton:pointerover /template/ ContentPresenter">
+			<Setter Property="Background" Value="{DynamicResource ButtonBackgroundPointerOver}"/>
+		</Style>
+
+		<Style Selector="Button.Primary">
+			<Setter Property="Background" Value="#F6E05E"/>
+			<Setter Property="Foreground" Value="#2D3748"/>
+			<Setter Property="FontWeight" Value="SemiBold"/>
+			<Setter Property="Padding" Value="20,10"/>
+			<Setter Property="CornerRadius" Value="6"/>
+			<Setter Property="Cursor" Value="Hand"/>
+		</Style>
+		<Style Selector="Button.Primary:pointerover /template/ ContentPresenter">
+			<Setter Property="Background" Value="#ECC94B"/>
+		</Style>
+
+		<!-- Cartes : utilisent les ressources dynamiques du thème -->
+		<Style Selector="Border.Card">
+			<Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+			<Setter Property="CornerRadius" Value="12"/>
+			<Setter Property="BoxShadow" Value="0 4 10 0 #15000000"/>
+			<Setter Property="Padding" Value="30"/>
+			<Setter Property="Margin" Value="20"/>
+		</Style>
+
+		<Style Selector="TextBox">
+			<Setter Property="CornerRadius" Value="4"/>
+			<Setter Property="Padding" Value="10"/>
+		</Style>
+		<Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+			<Setter Property="BorderBrush" Value="#F6E05E"/>
+		</Style>
+
+	</Application.Styles>
+</Application>

@@ -3,6 +3,7 @@ using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EasySave.Backup;
+using EasySave.View.Localization;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -86,6 +87,58 @@ namespace EasyGUI.ViewModels
             set => SetProperty(ref _isExecuting, value);
         }
 
+        // Propriétés pour les textes traduits
+        private I18n _i18n = I18n.Instance;
+
+        public string MenuTitle => _i18n.GetString("menu_title");
+        public string MenuCreate => _i18n.GetString("menu_create");
+        public string MenuExecute => _i18n.GetString("menu_execute");
+        public string MenuExecuteAll => _i18n.GetString("menu_execute_all");
+        public string MenuList => _i18n.GetString("menu_list");
+        public string MenuDelete => _i18n.GetString("menu_delete");
+        public string MenuLanguage => _i18n.GetString("menu_language");
+        public string MenuExit => _i18n.GetString("menu_exit");
+
+        public string ThemeDark => _i18n.GetString("theme_dark");
+        public string ThemeLight => _i18n.GetString("theme_light");
+
+        public string CreateTitle => _i18n.GetString("create_title");
+        public string CreateName => _i18n.GetString("create_name");
+        public string CreateSource => _i18n.GetString("create_source");
+        public string CreateTarget => _i18n.GetString("create_target");
+        public string CreateType => _i18n.GetString("create_type");
+        public string CreateButton => _i18n.GetString("create_button");
+
+        public string ExecuteTitle => _i18n.GetString("execute_title");
+        public string ExecuteSelect => _i18n.GetString("execute_select");
+        public string ExecuteButton => _i18n.GetString("execute_button");
+        public string ExecuteNoJobs => _i18n.GetString("execute_no_jobs");
+
+        public string ListTitle => _i18n.GetString("list_title");
+        public string ListId => _i18n.GetString("list_id");
+        public string ListName => _i18n.GetString("list_name");
+        public string ListSource => _i18n.GetString("list_source");
+        public string ListTarget => _i18n.GetString("list_target");
+
+        public string DeleteTitle => _i18n.GetString("delete_title");
+        public string DeleteSelect => _i18n.GetString("delete_select");
+        public string DeleteButton => _i18n.GetString("delete_button");
+        public string DeleteWarning => _i18n.GetString("delete_warning");
+        public string DeleteNoJobs => _i18n.GetString("delete_no_jobs");
+
+        public string LanguageTitle => _i18n.GetString("language_title");
+        public string LanguageSelect => _i18n.GetString("language_select");
+        public string LanguageApply => _i18n.GetString("language_apply");
+
+        public string ButtonCancel => _i18n.GetString("button_cancel");
+        public string ButtonBack => _i18n.GetString("button_back");
+
+        public string TypeComplete => _i18n.GetString("type_complete");
+        public string TypeDifferential => _i18n.GetString("type_differential");
+
+        // Collection pour les types de backup dans la ComboBox
+        public ObservableCollection<string> BackupTypes { get; private set; }
+
         public ICommand SwitchThemeCommand { get; }
         public ICommand CreateBackupJobCommand { get; }
         public ICommand ExecuteBackupJobCommand { get; }
@@ -109,6 +162,13 @@ namespace EasyGUI.ViewModels
             // On charge les jobs existants depuis ton manager
             var jobsFromManager = _backupManager.GetAllJobs();
             BackupJobs = new ObservableCollection<BackupJob>(jobsFromManager);
+
+            // 3. Initialiser la collection des types de backup
+            BackupTypes = new ObservableCollection<string>
+            {
+                TypeComplete,
+                TypeDifferential
+            };
 
             // Initialize commands
             SwitchThemeCommand = new RelayCommand<string>(SwitchTheme);
@@ -315,13 +375,82 @@ namespace EasyGUI.ViewModels
         private void ChangeLanguage()
         {
             CurrentView = "ChangeLanguage";
+            StatusMessage = "";
         }
 
         private void ApplyLanguage()
         {
-            // TODO: Implémenter le changement de langue avec le système I18n
-            // Pour l'instant on retourne juste au menu
-            CurrentView = "Menu";
+            try
+            {
+                // Récupérer l'instance I18n
+                var i18n = I18n.Instance;
+
+                // Appliquer la langue sélectionnée
+                string languageCode = SelectedLanguage == 0 ? "en_us" : "fr_fr";
+                i18n.SetLanguage(languageCode);
+
+                // Notifier toutes les propriétés de traduction pour rafraîchir l'interface
+                RefreshTranslations();
+
+                StatusMessage = $"✓ Language changed to {(SelectedLanguage == 0 ? "English" : "Français")}!";
+
+                // Attendre un peu pour que l'utilisateur voie le message
+                System.Threading.Thread.Sleep(1000);
+
+                CurrentView = "Menu";
+                StatusMessage = "";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"✗ Error changing language: {ex.Message}";
+            }
+        }
+
+        private void RefreshTranslations()
+        {
+            // Notifier toutes les propriétés de traduction
+            OnPropertyChanged(nameof(MenuTitle));
+            OnPropertyChanged(nameof(MenuCreate));
+            OnPropertyChanged(nameof(MenuExecute));
+            OnPropertyChanged(nameof(MenuExecuteAll));
+            OnPropertyChanged(nameof(MenuList));
+            OnPropertyChanged(nameof(MenuDelete));
+            OnPropertyChanged(nameof(MenuLanguage));
+            OnPropertyChanged(nameof(MenuExit));
+            OnPropertyChanged(nameof(ThemeDark));
+            OnPropertyChanged(nameof(ThemeLight));
+            OnPropertyChanged(nameof(CreateTitle));
+            OnPropertyChanged(nameof(CreateName));
+            OnPropertyChanged(nameof(CreateSource));
+            OnPropertyChanged(nameof(CreateTarget));
+            OnPropertyChanged(nameof(CreateType));
+            OnPropertyChanged(nameof(CreateButton));
+            OnPropertyChanged(nameof(ExecuteTitle));
+            OnPropertyChanged(nameof(ExecuteSelect));
+            OnPropertyChanged(nameof(ExecuteButton));
+            OnPropertyChanged(nameof(ExecuteNoJobs));
+            OnPropertyChanged(nameof(ListTitle));
+            OnPropertyChanged(nameof(ListId));
+            OnPropertyChanged(nameof(ListName));
+            OnPropertyChanged(nameof(ListSource));
+            OnPropertyChanged(nameof(ListTarget));
+            OnPropertyChanged(nameof(DeleteTitle));
+            OnPropertyChanged(nameof(DeleteSelect));
+            OnPropertyChanged(nameof(DeleteButton));
+            OnPropertyChanged(nameof(DeleteWarning));
+            OnPropertyChanged(nameof(DeleteNoJobs));
+            OnPropertyChanged(nameof(LanguageTitle));
+            OnPropertyChanged(nameof(LanguageSelect));
+            OnPropertyChanged(nameof(LanguageApply));
+            OnPropertyChanged(nameof(ButtonCancel));
+            OnPropertyChanged(nameof(ButtonBack));
+            OnPropertyChanged(nameof(TypeComplete));
+            OnPropertyChanged(nameof(TypeDifferential));
+
+            // Mettre à jour la collection BackupTypes
+            BackupTypes.Clear();
+            BackupTypes.Add(TypeComplete);
+            BackupTypes.Add(TypeDifferential);
         }
 
         private void Exit()

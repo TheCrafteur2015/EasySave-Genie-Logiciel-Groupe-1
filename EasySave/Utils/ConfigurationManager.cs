@@ -129,9 +129,13 @@ namespace EasySave.Utils
 			return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(System.Text.Json.JsonSerializer.Serialize(configValues)) ?? [];
 		}
 
-		public void SetConfig()
+		public bool SetConfig<T>(string key, T? value = default)
 		{
+			if (value == null)
+				return false;
+			configValues[key] = value;
 			MarkDirty();
+			return true;
 		}
 
 		public void MarkDirty()
@@ -183,6 +187,11 @@ namespace EasySave.Utils
 			{
 				throw new Exception($"Failed to save configuration: {ex.Message}");
 			}
+		}
+
+		public void SaveConfiguration()
+		{
+
 		}
 	}
 }

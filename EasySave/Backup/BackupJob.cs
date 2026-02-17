@@ -34,6 +34,23 @@ namespace EasySave.Backup
 		[JsonConverter(typeof(JsonStringEnumConverter))]
 		public State State { get; set; } = State.Inactive;
 
+		[JsonIgnore]
+		public ManualResetEventSlim PauseWaitHandle { get; private set; } = new ManualResetEventSlim(true);
+
+		[JsonIgnore]
+		public CancellationTokenSource Cts { get; private set; } = new CancellationTokenSource();
+
+		/// <summary>
+		/// Resets pause and cancellation controls for a fresh execution.
+		/// </summary>
+		public void ResetControls()
+		{
+			Cts?.Dispose();
+			Cts = new CancellationTokenSource();
+			PauseWaitHandle?.Dispose();
+			PauseWaitHandle = new ManualResetEventSlim(true);
+		}
+
 		/// <summary>
 		/// Executes the associated strategy and reports progress through the specified callback.
 		/// </summary>

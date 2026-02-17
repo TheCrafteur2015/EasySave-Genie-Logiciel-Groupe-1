@@ -39,11 +39,11 @@ namespace EasyConsole.View.Commands
 
             Console.Write("{0}: ", I18n.Instance.GetString("delete_id"));
 
-            if (int.TryParse(Console.ReadLine(), out int id))
-            {
-                string key = BackupManager.GetBM().DeleteJob(id) ? "success" : "failure";
-                Console.WriteLine(I18n.Instance.GetString($"delete_{key}"));
-            }
-        }
-    }
+			if (int.TryParse(Console.ReadLine(), out int id))
+			{
+				string key = BackupManager.GetBM().DeleteJob(id) ? "success" : "failure";
+				Console.WriteLine(I18n.Instance.GetString($"delete_{key}"));
+			}
+		}
+	}
 }

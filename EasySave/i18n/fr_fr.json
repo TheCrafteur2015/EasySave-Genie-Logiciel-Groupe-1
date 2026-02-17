@@ -88,6 +88,17 @@
 	"button_cancel": "Annuler",
 	"button_back": "Retour au menu",
 
+	"config_list": "Liste des options ",
+	"config_list_desc": "Liste les paramètres disponibles",
+	"config_get_desc": "Renvoye la valeur du paramètre",
+	"config_set_desc": "Définit la valeur du paramètre fourni",
+	"config_open_desc": "Ouvre le fichier de configuration",
+	"config_open_msg": "Ouverture du fichier. . .",
+	"config_open_fail": "Échec de l'ouverture du fichier de configuration",
+	"config_exit_desc": "Sortir de la commande de configuration",
+	"config_param": "paramètre",
+	"config_value": "valeur",
+
 	"progress_active": "État : Actif",
 	"progress_files": "Fichiers : {0}/{1}",
 	"progress_size": "Taille : {0}/{1} octets",

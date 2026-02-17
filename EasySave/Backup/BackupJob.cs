@@ -109,5 +109,9 @@ namespace EasySave.Backup
 			return $"Backup ID: {Id}, name: {Name}, Source: {SourceDirectory}, Destination: {TargetDirectory}, Type: {Type}, Strategy: {Strategy == null}, Last Execution: {LastExecution}, State: {State}";
 		}
 
+		public override int GetHashCode()
+		{
+			return HashCode.Combine(Id, Name, SourceDirectory, TargetDirectory, Type, Strategy, LastExecution, State);
+		}
 	}
 }

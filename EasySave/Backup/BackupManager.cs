@@ -5,15 +5,15 @@ using Newtonsoft.Json.Linq;
 namespace EasySave.Backup
 {
 	/// <summary>
-	/// Backup Manager - Orchestrateur central des opérations de sauvegarde.
-	/// Implémente le pattern Singleton et sert de ViewModel dans l'architecture MVVM.
+	/// Backup Manager - Orchestrateur central des op�rations de sauvegarde.
+	/// Impl�mente le pattern Singleton et sert de ViewModel dans l'architecture MVVM.
 	/// </summary>
 	public class BackupManager
 	{
 		// --- SYNCHRONISATION GLOBALE ---
 
 		/// <summary>
-		/// Mutex global pour garantir que CryptoSoft est une instance unique sur tout le système.
+		/// Mutex global pour garantir que CryptoSoft est une instance unique sur tout le syst�me.
 		/// </summary>
 		public static readonly Mutex CryptoSoftMutex = new Mutex(false, @"Global\EasySave_CryptoSoft_Lock");
 
@@ -23,7 +23,7 @@ namespace EasySave.Backup
 		public static volatile int GlobalPriorityFilesPending = 0;
 
 		/// <summary>
-		/// Sémaphore pour limiter le transfert simultané de gros fichiers (évite la saturation bande passante).
+		/// S�maphore pour limiter le transfert simultan� de gros fichiers (�vite la saturation bande passante).
 		/// </summary>
 		public static SemaphoreSlim BigFileSemaphore = new(1, 1);
 
@@ -37,22 +37,35 @@ namespace EasySave.Backup
 		private readonly StateWriter _stateWriter;
 		public readonly int MaxBackupJobs;
 		private readonly string appData;
-
+		
 		public Signal LatestSignal { get; private set; }
-
+	
+		/// <summary>
+		/// Initializes a new instance of the BackupManager class and sets up required components and configuration.
+		/// </summary>
+		/// <remarks>This constructor is private and is intended to restrict instantiation of the BackupManager class
+		/// to within the class itself, typically to implement a singleton or controlled creation pattern.</remarks>
 		private BackupManager()
 		{
-			// Initialisation des chemins
-			appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave");
+
+			AppDomain.CurrentDomain.ProcessExit += (sender, args) => {
+				ConfigManager?.SaveConfiguration();
+			};
+
+			// Initialize paths
+			appData = Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+				"EasySave"
+			);
 
 			// Initialisation des composants
 			_stateWriter = new StateWriter(Path.Combine(appData, "State"));
 			ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
 
-			// Gestion de la limite de jobs
-			MaxBackupJobs = ConfigManager.GetConfig("MaxBackupJobs");
-			var useBackupJobLimit = ConfigManager.GetConfig("UseBackupJobLimit") as JValue;
-			if (useBackupJobLimit?.Value is bool val && val == false) MaxBackupJobs = -1;
+			MaxBackupJobs = ConfigManager.GetConfig<int>("MaxBackupJobs");
+			var useBackupJobLimit = ConfigManager.GetConfig<bool>("UseBackupJobLimit");
+			if (!useBackupJobLimit)
+				MaxBackupJobs = -1;
 
 			// Chargement des travaux
 			_backupJobs = ConfigManager.LoadBackupJobs();
@@ -76,10 +89,10 @@ namespace EasySave.Backup
 			if (_logger == null)
 			{
 				var BM = GetBM();
-				var format = BM.ConfigManager.GetConfig("LoggerFormat");
+				var format = BM.ConfigManager.GetConfig<string>("LoggerFormat");
 				lock (_lock)
 				{
-					_logger = LoggerFactory.CreateLogger(format?.Value as string ?? "text", Path.Combine(BM.appData, "Logs"));
+					_logger = LoggerFactory.CreateLogger(format ?? "text", Path.Combine(BM.appData, "Logs"));
 				}
 			}
 			return _logger;
@@ -110,10 +123,10 @@ namespace EasySave.Backup
 			return true;
 		}
 
-		// --- EXÉCUTION & CONTRÔLE (ASYNCHRONE) ---
+		// --- EX�CUTION & CONTR�LE (ASYNCHRONE) ---
 
 		/// <summary>
-		/// Exécute un job unique de manière asynchrone (utile pour le monitoring).
+		/// Ex�cute un job unique de mani�re asynchrone (utile pour le monitoring).
 		/// </summary>
 		public Task ExecuteJobAsync(int id, Action<ProgressState>? progressCallback = null)
 		{
@@ -144,7 +157,7 @@ namespace EasySave.Backup
 		}
 
 		/// <summary>
-		/// Déclenche l'exécution de tous les jobs et retourne la liste des tâches pour le moniteur.
+		/// D�clenche l'ex�cution de tous les jobs et retourne la liste des t�ches pour le moniteur.
 		/// </summary>
 		public List<Task> ExecuteAllJobsAsync(Action<ProgressState>? progressCallback = null)
 		{
@@ -162,7 +175,7 @@ namespace EasySave.Backup
 			Task.WaitAll(ExecuteAllJobsAsync(progressCallback).ToArray());
 		}
 
-		// --- MÉTHODES DE PILOTAGE ---
+		// --- M�THODES DE PILOTAGE ---
 
 		public void PauseJob(int id) => _backupJobs.FirstOrDefault(j => j.Id == id)?.PauseWaitHandle.Reset();
 		public void ResumeJob(int id) => _backupJobs.FirstOrDefault(j => j.Id == id)?.PauseWaitHandle.Set();

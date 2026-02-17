@@ -34,7 +34,6 @@ namespace EasyConsole.View.Commands
 					break;
 				}
 			}
-			//_ = Console.ReadKey();
 		}
 	}
 }

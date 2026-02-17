@@ -5,8 +5,8 @@ using EasySave.View.Localization;
 
 namespace EasyConsole.View.Commands
 {
-    public class CreateBackupJobCommand : ICommand
-    {
+	public class CreateBackupJobCommand : ICommand
+	{
 
 		public int GetID() => 1;
 
@@ -31,5 +31,5 @@ namespace EasyConsole.View.Commands
 		}
 
 		public string GetI18nKey() => "menu_create";
-    }
+	}
 }

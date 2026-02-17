@@ -7,6 +7,7 @@
 	"menu_list": "List all backup jobs",
 	"menu_delete": "Delete a backup job",
 	"menu_language": "Change language",
+	"menu_config": "Configuration",
 	"menu_exit": "Exit",
 	"menu_choice": "Enter your choice",
 
@@ -38,6 +39,17 @@
 
 	"language_select": "Select language",
 	"language_changed": "Language changed successfully!",
+
+	"config_list": "List of options",
+	"config_list_desc": "List the available parameters",
+	"config_get_desc": "Return the parameter's value",
+	"config_set_desc": "Set the provided parameter's value",
+	"config_open_desc": "Open the configuration file",
+	"config_open_msg": "File opening. . .",
+	"config_open_fail": "Failed to open config file",
+	"config_exit_desc": "Exit the configuration command",
+	"config_param": "param",
+	"config_value": "value",
 
 	"progress_active": "Status: Active",
 	"progress_files": "Files: {0}/{1}",

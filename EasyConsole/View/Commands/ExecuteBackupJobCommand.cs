@@ -7,7 +7,6 @@ namespace EasyConsole.View.Commands
 {
 	public class ExecuteBackupJobCommand : ICommand
 	{
-
 		public int GetID() => 2;
 
 		public void Execute()

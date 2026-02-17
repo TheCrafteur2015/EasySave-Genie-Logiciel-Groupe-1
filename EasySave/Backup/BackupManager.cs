@@ -20,17 +20,21 @@ namespace EasySave.Backup
 
 		public readonly int MaxBackupJobs;
 		private readonly string appData;
-
-
+		
 		public Signal LatestSignal { get; private set; }
-    
-    /// <summary>
+	
+		/// <summary>
 		/// Initializes a new instance of the BackupManager class and sets up required components and configuration.
 		/// </summary>
 		/// <remarks>This constructor is private and is intended to restrict instantiation of the BackupManager class
 		/// to within the class itself, typically to implement a singleton or controlled creation pattern.</remarks>
 		private BackupManager()
 		{
+
+			AppDomain.CurrentDomain.ProcessExit += (sender, args) => {
+				ConfigManager?.SaveConfiguration();
+			};
+
 			// Initialize paths
 			appData = Path.Combine(
 				Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -41,9 +45,9 @@ namespace EasySave.Backup
 			_stateWriter  = new StateWriter(Path.Combine(appData, "State"));
 			ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
 
-			MaxBackupJobs = ConfigManager.GetConfig("MaxBackupJobs");
-			var useBackupJobLimit = ConfigManager.GetConfig("UseBackupJobLimit") as JValue;
-			if (useBackupJobLimit?.Value is bool val && val == false)
+			MaxBackupJobs = ConfigManager.GetConfig<int>("MaxBackupJobs");
+			var useBackupJobLimit = ConfigManager.GetConfig<bool>("UseBackupJobLimit");
+			if (!useBackupJobLimit)
 				MaxBackupJobs = -1;
 
 			// Load existing jobs
@@ -75,10 +79,10 @@ namespace EasySave.Backup
 			if (_logger == null)
 			{
 				var BM = GetBM();
-				var format = BM.ConfigManager.GetConfig("LoggerFormat");
+				var format = BM.ConfigManager.GetConfig<string>("LoggerFormat");
 				lock (_lock)
 				{
-					_logger = LoggerFactory.CreateLogger(format?.Value as string ?? "text", Path.Combine(BM.appData, "Logs"));
+					_logger = LoggerFactory.CreateLogger(format ?? "text", Path.Combine(BM.appData, "Logs"));
 				}
 			}
 			return _logger;

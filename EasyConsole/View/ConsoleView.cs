@@ -14,11 +14,11 @@ namespace EasyConsole.View
 	/// </summary>
 	public class ConsoleView
 	{
-        /// <summary>
-        /// Initialization of the new instance for the console view.
+		/// <summary>
+		/// Initialization of the new instance for the console view.
 		/// Load the unique instance needed for the functioning of the application system.
-        /// </summary>
-        public ConsoleView()
+		/// </summary>
+		public ConsoleView()
 		{
 			// Initialization of Singleton instances
 			_ = BackupManager.GetBM();
@@ -26,16 +26,16 @@ namespace EasyConsole.View
 			_ = I18n.Instance;
 		}
 
-        /// <summary>
-        /// Start the application system in console mode.
-        /// </summary>
-        /// <param name="args">Arguments input from the command line when the application is launched.</param>
-        public static void Run(string[] args)
+		/// <summary>
+		/// Start the application system in console mode.
+		/// </summary>
+		/// <param name="args">Arguments input from the command line when the application is launched.</param>
+		public static void Run(string[] args)
 		{
 			// Check for command line arguments
 			if (args.Length > 0)
 			{
-                ProcessCommandLine(args);
+				ProcessCommandLine(args);
 				return;
 			}
 
@@ -46,8 +46,8 @@ namespace EasyConsole.View
 			{
 				BackupManager.GetBM().TransmitSignal(Signal.Continue);
 				context.DisplayCommands();
-                int choice;
-                try
+				int choice;
+				try
 				{
 					choice = ConsoleExt.ReadDec();
 				} catch(FormatException)

@@ -7,7 +7,7 @@ namespace EasyConsole.View.Commands
 	{
 		public string GetI18nKey() => "menu_exit";
 
-		public int GetID() => 7;
+		public int GetID() => 8;
 
 		public void Execute()
 		{

@@ -10,7 +10,8 @@ namespace EasySave.Backup
 	/// </summary>
 	public class BackupManager
 	{
-        public static volatile int GlobalPriorityFilesPending = 0;
+		public static volatile int GlobalPriorityFilesPending = 0;
+        public static SemaphoreSlim BigFileSemaphore = new(1, 1);
         private static BackupManager? _instance;
 		private static ILogger? _logger;
 		private static readonly object _lock = new();

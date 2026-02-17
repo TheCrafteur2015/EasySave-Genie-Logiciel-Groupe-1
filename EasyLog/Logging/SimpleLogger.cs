@@ -11,8 +11,7 @@ namespace EasyLog.Logging
     /// <param name="path">The file path where log entries will be written. If the file does not exist, it will be created.</param>
 	public class SimpleLogger(string path) : AbstractLogger(path)
 	{
-
-        private readonly object _lock = new();
+        private static readonly object _lock = new();
 
         public override string GetExtension() => "log";
 

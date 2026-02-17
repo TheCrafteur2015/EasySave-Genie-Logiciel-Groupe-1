@@ -50,6 +50,8 @@ namespace EasySave.Backup
 
             var priorityFiles = files.Where(f => priorityExtensions.Contains(Path.GetExtension(f))).ToList();
             var nonPriorityFiles = files.Where(f => !priorityExtensions.Contains(Path.GetExtension(f))).ToList();
+            long maxFileSizeConfig = (long)(config.GetConfig("MaxParallelTransferSize") ?? 1000000);
+            long maxFileSizeBytes = maxFileSizeConfig * 1024;
 
             if (priorityFiles.Count > 0)
             {
@@ -129,9 +131,16 @@ namespace EasySave.Backup
                 // Copy file and measure time
                 var stopwatch = Stopwatch.StartNew();
                 int encryptionTime = 0;
+                bool isBigFile = fileSize > maxFileSizeBytes;
+                bool semaphoreAcquired = false;
 
                 try
                 {
+                    if (isBigFile)
+                    {
+                        BackupManager.BigFileSemaphore.Wait();
+                        semaphoreAcquired = true;
+                    }
                     File.Copy(sourceFile, targetFile, true);
                     string ext = Path.GetExtension(targetFile);
                     if (File.Exists(cryptoPath) && priorityExtensions.Contains(ext))
@@ -188,6 +197,10 @@ namespace EasySave.Backup
                 }
                 finally
                 {
+                    if (semaphoreAcquired)
+                    {
+                        BackupManager.BigFileSemaphore.Release();
+                    }
                     if (isPriority)
                     {
                         Interlocked.Decrement(ref BackupManager.GlobalPriorityFilesPending);

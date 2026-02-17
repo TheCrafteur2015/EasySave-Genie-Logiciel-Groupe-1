@@ -39,39 +39,33 @@ namespace EasySave.Backup
             if (!Directory.Exists(job.TargetDirectory))
                 Directory.CreateDirectory(job.TargetDirectory);
 
-            var files = Directory.GetFiles(job.SourceDirectory, "*", SearchOption.AllDirectories);
-            var totalFiles = files.Length;
-            long totalSize = 0;
-
-            foreach (var file in files)
-            {
-                var fileInfo = new FileInfo(file);
-                totalSize += fileInfo.Length;
-            }
-
             var config = BackupManager.GetBM().ConfigManager;
             string cryptoPath = config.GetConfig("CryptoSoftPath")?.ToString() ?? "";
             string cryptoKey = config.GetConfig("CryptoKey")?.ToString() ?? "Key";
             var extensionsArray = config.GetConfig("PriorityExtensions") as JArray;
-            List<string> extensions = extensionsArray?.ToObject<List<string>>() ?? [];
+            List<string> priorityExtensions = extensionsArray?.ToObject<List<string>>() ?? [];
+            var files = Directory.GetFiles(job.SourceDirectory, "*", SearchOption.AllDirectories);
+            var totalFiles = files.Length;
+            long totalSize = files.Sum(f => new FileInfo(f).Length);
+
+            var priorityFiles = files.Where(f => priorityExtensions.Contains(Path.GetExtension(f))).ToList();
+            var nonPriorityFiles = files.Where(f => !priorityExtensions.Contains(Path.GetExtension(f))).ToList();
+
+            if (priorityFiles.Count > 0)
+            {
+                Interlocked.Add(ref BackupManager.GlobalPriorityFilesPending, priorityFiles.Count);
+            }
+
+            var sortedFiles = priorityFiles.Concat(nonPriorityFiles).ToList();
 
             if (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
             {
-                string msg = $"[BLOCK] Logiciel métier détecté : '{BusinessSoftware}'. Sauvegarde annulée.";
-                BackupManager.GetLogger().Log(new LogEntry
-                {
-                    Level = Level.Warning,
-                    Message = $"Backup {job.Name} aborted: Business software '{BusinessSoftware}' is running."
-                });
+                if (priorityFiles.Count > 0) Interlocked.Add(ref BackupManager.GlobalPriorityFilesPending, -priorityFiles.Count);
 
+                string msg = $"[BLOCK] Logiciel métier détecté : '{BusinessSoftware}'.";
+                BackupManager.GetLogger().Log(new LogEntry { Level = Level.Warning, Message = msg });
                 job.State = State.Error;
-                progressCallback?.Invoke(new ProgressState
-                {
-                    BackupName = job.Name,
-                    State = State.Error,
-                    Message = msg
-                });
-
+                progressCallback?.Invoke(new ProgressState { BackupName = job.Name, State = State.Error, Message = msg });
                 return;
             }
 
@@ -80,25 +74,30 @@ namespace EasySave.Backup
 
             foreach (var sourceFile in files)
             {
+                bool isPriority = priorityExtensions.Contains(Path.GetExtension(sourceFile));
                 if (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
                 {
-                    string msg = $"[STOP] Logiciel métier détecté : '{BusinessSoftware}'. Sauvegarde interrompue.";
-                    BackupManager.GetLogger().Log(new LogEntry
-                    {
-                        Level = Level.Warning,
-                        Message = $"Backup {job.Name} stopped: Business software '{BusinessSoftware}' detected during execution."
-                    });
-
+                    string msg = $"[STOP] Logiciel métier détecté : '{BusinessSoftware}'.";
+                    BackupManager.GetLogger().Log(new LogEntry { Level = Level.Warning, Message = msg });
                     job.State = State.Error;
+                    progressCallback?.Invoke(new ProgressState { BackupName = job.Name, State = State.Error, Message = msg });
 
-                    progressCallback?.Invoke(new ProgressState
-                    {
-                        BackupName = job.Name,
-                        State = State.Error,
-                        Message = msg
-                    });
+                    // Si on s'arrête, on nettoie le compteur pour ce fichier et les suivants
+                    if (isPriority) Interlocked.Decrement(ref BackupManager.GlobalPriorityFilesPending);
+                    int remaining = sortedFiles.Skip(processedFiles + 1).Count(f => priorityExtensions.Contains(Path.GetExtension(f)));
+                    if (remaining > 0) Interlocked.Add(ref BackupManager.GlobalPriorityFilesPending, -remaining);
 
                     break;
+                }
+
+                if (!isPriority)
+                {
+                    while (BackupManager.GlobalPriorityFilesPending > 0)
+                    {
+                        Thread.Sleep(50);
+
+                        if (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0) break;
+                    }
                 }
 
                 var relativePath = Path.GetRelativePath(job.SourceDirectory, sourceFile);
@@ -135,7 +134,7 @@ namespace EasySave.Backup
                 {
                     File.Copy(sourceFile, targetFile, true);
                     string ext = Path.GetExtension(targetFile);
-                    if (File.Exists(cryptoPath) && extensions.Contains(ext))
+                    if (File.Exists(cryptoPath) && priorityExtensions.Contains(ext))
                     {
                         var p = new Process();
                         p.StartInfo.FileName = cryptoPath;
@@ -186,6 +185,13 @@ namespace EasySave.Backup
 
                     // 2. Log the full stack trace for debugging
                     BackupManager.GetLogger().LogError(e);
+                }
+                finally
+                {
+                    if (isPriority)
+                    {
+                        Interlocked.Decrement(ref BackupManager.GlobalPriorityFilesPending);
+                    }
                 }
 
                 processedFiles++;

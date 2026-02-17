@@ -1,6 +1,8 @@
 ﻿using EasySave.Utils;
 using Newtonsoft.Json;
+using System.ComponentModel;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace EasySave.View.Localization
@@ -13,13 +15,22 @@ namespace EasySave.View.Localization
 	/// throughout the application. It allows switching between supported languages at runtime and retrieving localized
 	/// strings based on the current language. The class loads language resources embedded in the assembly and exposes
 	/// methods to access translations and language metadata.</remarks>
-	public partial class I18n
+	public partial class I18n : INotifyPropertyChanged
 	{
 		private readonly Dictionary<string, string> availableLanguages;
 
 		private Dictionary<string, string> translations;
 
 		private Dictionary<string, Dictionary<string, string>> properties;
+
+		public event PropertyChangedEventHandler? PropertyChanged;
+
+		protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+		{
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		}
+
+		public string this[string key] => GetString(key);
 
 		public string Language { get; private set; } = string.Empty;
 
@@ -80,7 +91,10 @@ namespace EasySave.View.Localization
 				throw new ArgumentException("This language does not exists!");
 			Language = languageName;
 			string jsonContent = ResourceManager.ReadResourceFile(availableLanguages[languageName]);
-			translations = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent);
+			translations = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent) ?? new Dictionary<string, string>();
+
+			// Notifier que toute l'instance a changé
+			OnPropertyChanged(string.Empty); // Notifie TOUTES les propriétés
 		}
 
 		/// <summary>

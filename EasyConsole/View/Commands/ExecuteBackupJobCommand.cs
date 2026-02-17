@@ -1,4 +1,4 @@
-﻿using EasySave.Backup;
+using EasySave.Backup;
 using EasySave.Extensions;
 using EasyConsole.View.Command;
 using EasySave.View.Localization;
@@ -39,10 +39,10 @@ namespace EasyConsole.View.Commands
             {
                 if (id > 0)
                 {
+                    // Utilisation de l'approche asynchrone pour permettre le monitoring (Pause/Stop) dans la vue Console
                     var task = BackupManager.GetBM().ExecuteJobAsync(id, ConsoleView.DisplayProgress);
-
                     ConsoleView.MonitorJobs(new List<Task> { task });
-
+                    
                     Console.WriteLine(I18n.Instance.GetString("execute_success"));
                 }
             }

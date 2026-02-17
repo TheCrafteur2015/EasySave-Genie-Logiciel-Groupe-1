@@ -4,7 +4,7 @@ using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EasySave.Backup;
-using EasySave.View.Localization; // Nécessaire pour I18n
+using EasySave.View.Localization; // Necessary for I18n
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -14,10 +14,17 @@ using System.Windows.Input;
 
 namespace EasyGUI.ViewModels
 {
-    // Classe pour tracker la progression de chaque job
+    /// <summary>
+    /// Represents the progress status of a specific backup job.
+    /// Used to track and display real-time updates in the UI for individual jobs.
+    /// </summary>
     public class JobProgressItem : ObservableObject
     {
         private string _jobName = "";
+
+        /// <summary>
+        /// Gets or sets the name of the backup job.
+        /// </summary>
         public string JobName
         {
             get => _jobName;
@@ -25,6 +32,10 @@ namespace EasyGUI.ViewModels
         }
 
         private double _progressPercentage = 0;
+
+        /// <summary>
+        /// Gets or sets the current completion percentage of the job (0-100).
+        /// </summary>
         public double ProgressPercentage
         {
             get => _progressPercentage;
@@ -32,6 +43,10 @@ namespace EasyGUI.ViewModels
         }
 
         private string _status = "Waiting...";
+
+        /// <summary>
+        /// Gets or sets the textual status of the job (e.g., "Waiting...", "Active", "Completed").
+        /// </summary>
         public string Status
         {
             get => _status;
@@ -39,6 +54,10 @@ namespace EasyGUI.ViewModels
         }
 
         private bool _isCompleted = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the job has completed successfully.
+        /// </summary>
         public bool IsCompleted
         {
             get => _isCompleted;
@@ -46,6 +65,10 @@ namespace EasyGUI.ViewModels
         }
 
         private bool _hasError = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the job encountered an error during execution.
+        /// </summary>
         public bool HasError
         {
             get => _hasError;
@@ -53,29 +76,50 @@ namespace EasyGUI.ViewModels
         }
     }
 
+    /// <summary>
+    /// Main ViewModel for the application's main window.
+    /// Implements the MVVM pattern to handle UI logic, state management, commands, and navigation.
+    /// </summary>
     public class MainWindowViewModel : ObservableObject
     {
-        // --- GESTION DE LA TRADUCTION DYNAMIQUE ---
-        // Cette propriété permet d'utiliser {Binding L[key]} dans le XAML
+        // --- DYNAMIC TRANSLATION MANAGEMENT ---
+
+        /// <summary>
+        /// Gets the internationalization instance.
+        /// Allows binding to translated strings in XAML using the indexer syntax {Binding L[key]}.
+        /// </summary>
         public I18n L => I18n.Instance;
 
+        /// <summary>
+        /// Gets the default greeting message.
+        /// </summary>
         public string Greeting { get; } = "Welcome to EasySave!";
 
         private readonly BackupManager _backupManager;
 
-        // Liste des jobs affichée dans l'UI
+        /// <summary>
+        /// Gets or sets the collection of backup jobs displayed in the UI.
+        /// </summary>
         public ObservableCollection<BackupJob> BackupJobs { get; set; }
 
         // Navigation
         private string _currentView = "Menu";
+
+        /// <summary>
+        /// Gets or sets the current view identifier to control UI navigation (e.g., "Menu", "CreateJob").
+        /// </summary>
         public string CurrentView
         {
             get => _currentView;
             set => SetProperty(ref _currentView, value);
         }
 
-        // --- PROPRIÉTÉS DE FORMULAIRE ---
+        // --- FORM PROPERTIES ---
         private string _newJobName = "";
+
+        /// <summary>
+        /// Gets or sets the name for a new backup job being created.
+        /// </summary>
         public string NewJobName
         {
             get => _newJobName;
@@ -83,6 +127,10 @@ namespace EasyGUI.ViewModels
         }
 
         private string _newJobSource = "";
+
+        /// <summary>
+        /// Gets or sets the source directory path for a new backup job.
+        /// </summary>
         public string NewJobSource
         {
             get => _newJobSource;
@@ -90,6 +138,10 @@ namespace EasyGUI.ViewModels
         }
 
         private string _newJobTarget = "";
+
+        /// <summary>
+        /// Gets or sets the target directory path for a new backup job.
+        /// </summary>
         public string NewJobTarget
         {
             get => _newJobTarget;
@@ -97,6 +149,11 @@ namespace EasyGUI.ViewModels
         }
 
         private int _selectedBackupType = 0;
+
+        /// <summary>
+        /// Gets or sets the selected index for the backup type.
+        /// 0 for Complete, 1 for Differential.
+        /// </summary>
         public int SelectedBackupType
         {
             get => _selectedBackupType;
@@ -104,6 +161,10 @@ namespace EasyGUI.ViewModels
         }
 
         private BackupJob? _selectedJob;
+
+        /// <summary>
+        /// Gets or sets the currently selected backup job from the list.
+        /// </summary>
         public BackupJob? SelectedJob
         {
             get => _selectedJob;
@@ -111,13 +172,23 @@ namespace EasyGUI.ViewModels
         }
 
         private int _selectedLanguage = 0;
+
+        /// <summary>
+        /// Gets or sets the selected language index.
+        /// 0 for English, 1 for French.
+        /// </summary>
         public int SelectedLanguage
         {
             get => _selectedLanguage;
             set => SetProperty(ref _selectedLanguage, value);
         }
 
-        private int _selectedWindowMode = 1; // 0=Windowed, 1=Maximized (défaut), 2=Fullscreen
+        private int _selectedWindowMode = 1; // 0=Windowed, 1=Maximized (default), 2=Fullscreen
+
+        /// <summary>
+        /// Gets or sets the selected window mode index.
+        /// 0: Windowed, 1: Maximized (default), 2: Fullscreen.
+        /// </summary>
         public int SelectedWindowMode
         {
             get
@@ -133,6 +204,10 @@ namespace EasyGUI.ViewModels
         }
 
         private string _statusMessage = "";
+
+        /// <summary>
+        /// Gets or sets the status message displayed to the user (success, error, or information).
+        /// </summary>
         public string StatusMessage
         {
             get => _statusMessage;
@@ -140,6 +215,11 @@ namespace EasyGUI.ViewModels
         }
 
         private bool _isExecuting = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether a backup operation is currently executing.
+        /// Used to disable specific UI controls during execution.
+        /// </summary>
         public bool IsExecuting
         {
             get => _isExecuting;
@@ -147,6 +227,10 @@ namespace EasyGUI.ViewModels
         }
 
         private double _currentProgress = 0;
+
+        /// <summary>
+        /// Gets or sets the current progress percentage of the executing job (for single job execution).
+        /// </summary>
         public double CurrentProgress
         {
             get => _currentProgress;
@@ -154,16 +238,22 @@ namespace EasyGUI.ViewModels
         }
 
         private string _currentFileInfo = "";
+
+        /// <summary>
+        /// Gets or sets the information string about the file currently being processed.
+        /// </summary>
         public string CurrentFileInfo
         {
             get => _currentFileInfo;
             set => SetProperty(ref _currentFileInfo, value);
         }
 
-        // Collection pour la progression de tous les jobs
+        /// <summary>
+        /// Gets the collection tracking the progress of all active backup jobs (for parallel execution).
+        /// </summary>
         public ObservableCollection<JobProgressItem> JobsProgress { get; private set; }
 
-        // Propriétés pour les textes traduits
+        // Localized string properties for UI binding
         private I18n _i18n = I18n.Instance;
 
         public string MenuTitle => _i18n.GetString("menu_title");
@@ -212,12 +302,17 @@ namespace EasyGUI.ViewModels
         public string TypeComplete => _i18n.GetString("type_complete");
         public string TypeDifferential => _i18n.GetString("type_differential");
 
-        // Collection pour les types de backup dans la ComboBox
+        /// <summary>
+        /// Gets the collection of available backup types for display in ComboBoxes.
+        /// </summary>
         public ObservableCollection<string> BackupTypes { get; private set; }
 
-        // Collection pour les modes de fenêtre
+        /// <summary>
+        /// Gets the collection of available window modes for display in ComboBoxes.
+        /// </summary>
         public ObservableCollection<string> WindowModes { get; private set; }
 
+        // --- COMMANDS ---
         public ICommand SwitchThemeCommand { get; }
         public ICommand CreateBackupJobCommand { get; }
         public ICommand ExecuteBackupJobCommand { get; }
@@ -235,26 +330,30 @@ namespace EasyGUI.ViewModels
         public ICommand ApplyLanguageCommand { get; }
         public ICommand ApplySettingsCommand { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the MainWindowViewModel class.
+        /// Sets up the BackupManager, data collections, commands, and default selections.
+        /// </summary>
         public MainWindowViewModel()
         {
-            // 1. Récupération du Singleton BackupManager
+            // 1. Retrieve Singleton BackupManager
             _backupManager = BackupManager.GetBM();
 
-            // 2. Initialisation de la liste observable
+            // 2. Initialize observable list of jobs
             var jobsFromManager = _backupManager.GetAllJobs();
             BackupJobs = new ObservableCollection<BackupJob>(jobsFromManager);
 
-            // 2b. Initialiser la collection de progression
+            // 2b. Initialize progress collection
             JobsProgress = new ObservableCollection<JobProgressItem>();
 
-            // 3. Initialiser la collection des types de backup
+            // 3. Initialize backup types collection
             BackupTypes = new ObservableCollection<string>
             {
                 TypeComplete,
                 TypeDifferential
             };
 
-            // 4. Initialiser la collection des modes de fenêtre
+            // 4. Initialize window modes collection
             WindowModes = new ObservableCollection<string>
             {
                 _i18n.GetString("settings_window_windowed"),
@@ -281,8 +380,12 @@ namespace EasyGUI.ViewModels
             ApplySettingsCommand = new RelayCommand(ApplySettings);
         }
 
-        // --- MÉTHODES ---
+        // --- METHODS ---
 
+        /// <summary>
+        /// Switches the application theme between Light and Dark modes.
+        /// </summary>
+        /// <param name="theme">The theme to switch to ("Light" or "Dark").</param>
         private void SwitchTheme(string? theme)
         {
             if (Application.Current is not null)
@@ -296,6 +399,9 @@ namespace EasyGUI.ViewModels
             }
         }
 
+        /// <summary>
+        /// Refreshes the list of backup jobs from the BackupManager.
+        /// </summary>
         private void RefreshBackupJobs()
         {
             BackupJobs.Clear();
@@ -305,12 +411,18 @@ namespace EasyGUI.ViewModels
             }
         }
 
+        /// <summary>
+        /// Navigates back to the main menu view.
+        /// </summary>
         private void BackToMenu()
         {
             CurrentView = "Menu";
             StatusMessage = "";
         }
 
+        /// <summary>
+        /// Navigates to the job creation view and resets form fields.
+        /// </summary>
         private void CreateBackupJob()
         {
             CurrentView = "CreateJob";
@@ -321,6 +433,10 @@ namespace EasyGUI.ViewModels
             StatusMessage = "";
         }
 
+        /// <summary>
+        /// Attempts to create a new backup job with the entered details.
+        /// Validates input and adds the job via BackupManager.
+        /// </summary>
         private async void SaveNewJob()
         {
             BackupType type = SelectedBackupType == 0 ? BackupType.Complete : BackupType.Differential;
@@ -331,10 +447,10 @@ namespace EasyGUI.ViewModels
                 RefreshBackupJobs();
                 StatusMessage = "✓ " + (_i18n.GetString("create_success") ?? "Job created successfully!");
 
-                // Attendre 2 secondes pour afficher le message
+                // Wait 2 seconds to display message
                 await Task.Delay(2000);
 
-                // Réinitialiser le formulaire pour permettre de créer un nouveau job
+                // Reset form to allow creating another job
                 NewJobName = "";
                 NewJobSource = "";
                 NewJobTarget = "";
@@ -347,6 +463,9 @@ namespace EasyGUI.ViewModels
             }
         }
 
+        /// <summary>
+        /// Navigates to the single job execution view.
+        /// </summary>
         private void ExecuteBackupJob()
         {
             RefreshBackupJobs();
@@ -354,6 +473,10 @@ namespace EasyGUI.ViewModels
             CurrentView = "ExecuteJob";
         }
 
+        /// <summary>
+        /// Starts the execution of the currently selected backup job asynchronously.
+        /// Updates progress and status on the UI thread.
+        /// </summary>
         private async void ExecuteSelectedJob()
         {
             if (SelectedJob != null)
@@ -369,10 +492,10 @@ namespace EasyGUI.ViewModels
                 {
                     try
                     {
-                        // Exécution dans un thread séparé pour ne pas bloquer l'UI
+                        // Execution in a separate thread to avoid blocking UI
                         _backupManager.ExecuteJob(jobId, progress =>
                         {
-                            // Mise à jour de la progression sur le thread UI
+                            // Update progress on UI thread
                             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                             {
                                 CurrentProgress = progress.ProgressPercentage;
@@ -402,7 +525,7 @@ namespace EasyGUI.ViewModels
                             });
                         });
 
-                        // Mise à jour finale sur le thread UI
+                        // Final update on UI thread
                         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                         {
                             RefreshBackupJobs();
@@ -438,14 +561,18 @@ namespace EasyGUI.ViewModels
             }
         }
 
+        /// <summary>
+        /// Prepares the UI for executing all backup jobs and navigates to the execution view.
+        /// Initializes the progress list for all jobs.
+        /// </summary>
         private void ExecuteAllBackupJobs()
         {
-            // Préparer la liste de progression
+            // Prepare progress list
             JobsProgress.Clear();
             foreach (var job in BackupJobs)
             {
-                JobsProgress.Add(new JobProgressItem 
-                { 
+                JobsProgress.Add(new JobProgressItem
+                {
                     JobName = job.Name,
                     Status = _i18n.GetString("execute_waiting") ?? "Waiting...",
                     ProgressPercentage = 0
@@ -457,6 +584,10 @@ namespace EasyGUI.ViewModels
             StatusMessage = "";
         }
 
+        /// <summary>
+        /// Launches the execution of all backup jobs sequentially in a background task.
+        /// Updates the status of each job in the JobsProgress collection.
+        /// </summary>
         private async void StartAllBackupJobs()
         {
             IsExecuting = true;
@@ -468,7 +599,7 @@ namespace EasyGUI.ViewModels
                 {
                     _backupManager.ExecuteAllJobs(progress =>
                     {
-                        // Trouver le job correspondant dans JobsProgress
+                        // Find corresponding job in JobsProgress
                         var progressItem = JobsProgress.FirstOrDefault(j => j.JobName == progress.BackupName);
                         if (progressItem != null)
                         {
@@ -495,7 +626,7 @@ namespace EasyGUI.ViewModels
                                 progressItem.Status = $"{progress.ProgressPercentage:F1}% - {filesCopied}/{progress.TotalFiles} files";
                             }
 
-                            // Si terminé à 100%
+                            // If completed 100%
                             if (progress.ProgressPercentage >= 100 && progress.State == State.Completed)
                             {
                                 progressItem.IsCompleted = true;
@@ -504,7 +635,7 @@ namespace EasyGUI.ViewModels
                         }
                     });
 
-                    // Marquer tous comme terminés
+                    // Mark all as completed
                     foreach (var item in JobsProgress.Where(j => !j.IsCompleted && !j.HasError))
                     {
                         item.IsCompleted = true;
@@ -519,7 +650,7 @@ namespace EasyGUI.ViewModels
                 {
                     StatusMessage = $"✗ Error: {ex.Message}";
 
-                    // Marquer les jobs non terminés comme erreur
+                    // Mark unfinished jobs as error
                     foreach (var item in JobsProgress.Where(j => !j.IsCompleted))
                     {
                         item.HasError = true;
@@ -533,6 +664,9 @@ namespace EasyGUI.ViewModels
             });
         }
 
+        /// <summary>
+        /// Navigates to the job list view.
+        /// </summary>
         private void ListAllBackupJobs()
         {
             RefreshBackupJobs();
@@ -540,6 +674,9 @@ namespace EasyGUI.ViewModels
             CurrentView = "ListJobs";
         }
 
+        /// <summary>
+        /// Navigates to the job deletion view.
+        /// </summary>
         private void DeleteBackupJob()
         {
             RefreshBackupJobs();
@@ -547,6 +684,9 @@ namespace EasyGUI.ViewModels
             CurrentView = "DeleteJob";
         }
 
+        /// <summary>
+        /// Deletes the currently selected backup job via the BackupManager.
+        /// </summary>
         private async void DeleteSelectedJob()
         {
             if (SelectedJob != null)
@@ -558,10 +698,10 @@ namespace EasyGUI.ViewModels
                     RefreshBackupJobs();
                     StatusMessage = $"✓ '{jobName}' deleted!";
 
-                    // Attendre 2 secondes pour afficher le message
+                    // Wait 2 seconds to display message
                     await Task.Delay(2000);
 
-                    // Réinitialiser la sélection et le message
+                    // Reset selection and message
                     SelectedJob = null;
                     StatusMessage = "";
                 }
@@ -576,28 +716,34 @@ namespace EasyGUI.ViewModels
             }
         }
 
+        /// <summary>
+        /// Navigates to the language selection view.
+        /// </summary>
         private void ChangeLanguage()
         {
-            // On charge la langue actuelle dans le sélecteur
-            // Si la langue est "fr_fr", l'index est 1, sinon 0
+            // Load current language into selector
+            // If language is "fr_fr", index is 1, else 0
             SelectedLanguage = I18n.Instance.Language == "fr_fr" ? 1 : 0;
 
             CurrentView = "ChangeLanguage";
             StatusMessage = "";
         }
 
+        /// <summary>
+        /// Navigates to the settings view and initializes current settings values.
+        /// </summary>
         private void OpenSettings()
         {
-            // Charger les paramètres actuels
+            // Load current settings
             SelectedLanguage = I18n.Instance.Language == "fr_fr" ? 1 : 0;
 
-            // Détecter le mode de fenêtre actuel
+            // Detect current window mode
             if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
             {
                 var mainWindow = desktop.MainWindow;
                 if (mainWindow != null)
                 {
-                    // Si ExtendClientArea est actif, c'est le mode fullscreen sans bordure
+                    // If ExtendClientArea is active, it's borderless fullscreen mode
                     if (mainWindow.ExtendClientAreaToDecorationsHint)
                     {
                         SelectedWindowMode = 2;
@@ -617,24 +763,27 @@ namespace EasyGUI.ViewModels
             StatusMessage = "";
         }
 
+        /// <summary>
+        /// Applies the selected settings (language and window mode) to the application.
+        /// </summary>
         private async void ApplySettings()
         {
             try
             {
-                // IMPORTANT: Sauvegarder SelectedWindowMode AVANT de changer la langue
-                // car RefreshTranslations() va réinitialiser la ComboBox
+                // IMPORTANT: Save SelectedWindowMode BEFORE changing language
+                // because RefreshTranslations() will reset the ComboBox
                 int savedWindowMode = SelectedWindowMode;
 
-                // Appliquer la langue
+                // Apply language
                 var i18n = I18n.Instance;
                 string languageCode = SelectedLanguage == 0 ? "en_us" : "fr_fr";
                 i18n.SetLanguage(languageCode);
                 RefreshTranslations();
 
-                // Restaurer SelectedWindowMode après le refresh
+                // Restore SelectedWindowMode after refresh
                 SelectedWindowMode = savedWindowMode;
 
-                // Appliquer le mode de fenêtre
+                // Apply window mode
                 if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
                 {
                     var mainWindow = desktop.MainWindow;
@@ -648,13 +797,13 @@ namespace EasyGUI.ViewModels
                                 mainWindow.WindowState = WindowState.Normal;
                                 break;
 
-                            case 1: // Maximized (avec bordures)
+                            case 1: // Maximized (with borders)
                                 mainWindow.ExtendClientAreaToDecorationsHint = false;
                                 await Task.Delay(50);
                                 mainWindow.WindowState = WindowState.Maximized;
                                 break;
 
-                            case 2: // Fullscreen sans bordure
+                            case 2: // Fullscreen borderless
                                 mainWindow.ExtendClientAreaToDecorationsHint = true;
                                 mainWindow.ExtendClientAreaTitleBarHeightHint = -1;
                                 mainWindow.ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;
@@ -665,7 +814,7 @@ namespace EasyGUI.ViewModels
                     }
                 }
 
-                // Afficher message de confirmation
+                // Display confirmation message
                 StatusMessage = "✓ " + i18n.GetString("settings_applied");
                 await Task.Delay(2000);
                 StatusMessage = "";
@@ -676,24 +825,27 @@ namespace EasyGUI.ViewModels
             }
         }
 
+        /// <summary>
+        /// Applies the selected language and updates the UI.
+        /// </summary>
         private void ApplyLanguage()
         {
             try
             {
-                // Récupérer l'instance I18n
+                // Get I18n instance
                 var i18n = I18n.Instance;
 
-                // Appliquer la langue sélectionnée
+                // Apply selected language
                 string languageCode = SelectedLanguage == 0 ? "en_us" : "fr_fr";
                 i18n.SetLanguage(languageCode);
 
-                // Notifier toutes les propriétés de traduction pour rafraîchir l'interface
+                // Notify all translation properties to refresh interface
                 RefreshTranslations();
 
-                // Afficher le message dans la langue nouvellement sélectionnée
+                // Display message in newly selected language
                 StatusMessage = i18n.GetString("language_changed");
 
-                // Attendre un peu pour que l'utilisateur voie le message
+                // Wait a bit for user to see the message
                 System.Threading.Thread.Sleep(1000);
 
                 CurrentView = "Menu";
@@ -705,28 +857,34 @@ namespace EasyGUI.ViewModels
             }
         }
 
+        /// <summary>
+        /// Updates local properties dependent on translation when the language changes.
+        /// </summary>
         private void RefreshTranslations()
         {
-            // L'objet I18n notifie maintenant automatiquement ses propres changements (Item[])
-            // On notifie quand même L au cas où certains bindings en auraient besoin
+            // I18n object now notifies its own changes automatically (Item[])
+            // Notify L just in case some bindings need it
             OnPropertyChanged(nameof(L));
 
-            // Mettre à jour la collection BackupTypes avec les nouvelles traductions
+            // Update BackupTypes collection with new translations
             BackupTypes.Clear();
             BackupTypes.Add(TypeComplete);
             BackupTypes.Add(TypeDifferential);
 
-            // Mettre à jour la collection WindowModes avec les nouvelles traductions
+            // Update WindowModes collection with new translations
             WindowModes.Clear();
             WindowModes.Add(_i18n.GetString("settings_window_windowed"));
             WindowModes.Add(_i18n.GetString("settings_window_maximized"));
             WindowModes.Add(_i18n.GetString("settings_window_fullscreen"));
 
-            // Notifier les propriétés individuelles qui sont encore utilisées
+            // Notify individual properties that are still used
             OnPropertyChanged(nameof(TypeComplete));
             OnPropertyChanged(nameof(TypeDifferential));
         }
 
+        /// <summary>
+        /// Closes the application.
+        /// </summary>
         private void Exit()
         {
             if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)

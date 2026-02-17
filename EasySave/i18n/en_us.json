@@ -43,6 +43,8 @@
 	"execute_waiting": "Waiting...",
 	"execute_completed": "Completed!",
 	"execute_all_completed": "All jobs completed successfully!",
+	"execute_paused": "Paused - Business software detected",
+	"execute_blocked": "Backup blocked - Business software is running",
 	"execute_all_start": "Executing all backup jobs...",
 	"execute_no_jobs": "No backup jobs available. Create one first!",
 

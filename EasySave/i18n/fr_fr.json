@@ -43,6 +43,8 @@
 	"execute_waiting": "En attente...",
 	"execute_completed": "Terminé !",
 	"execute_all_completed": "Tous les travaux ont été complétés avec succès !",
+	"execute_paused": "En pause - Logiciel métier détecté",
+	"execute_blocked": "Sauvegarde bloquée - Un logiciel métier est en cours d'exécution",
 	"execute_all_start": "Exécution de tous les travaux de sauvegarde...",
 	"execute_no_jobs": "Aucun travail de sauvegarde disponible. Créez-en un d'abord !",
 

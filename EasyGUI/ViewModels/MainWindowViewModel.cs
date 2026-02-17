@@ -501,7 +501,27 @@ namespace EasyGUI.ViewModels
                                 CurrentProgress = progress.ProgressPercentage;
                                 int filesProcessed = progress.TotalFiles - progress.FilesRemaining;
                                 CurrentFileInfo = $"{filesProcessed}/{progress.TotalFiles} files";
-                                StatusMessage = $"Running: {progress.ProgressPercentage:F1}% - {filesProcessed}/{progress.TotalFiles}";
+
+                                // Gérer le message personnalisé (blocage, erreur, etc.)
+                                if (!string.IsNullOrEmpty(progress.Message))
+                                {
+                                    if (progress.State == State.Paused)
+                                    {
+                                        StatusMessage = "⏸️ " + progress.Message;
+                                    }
+                                    else if (progress.State == State.Error)
+                                    {
+                                        StatusMessage = "✗ " + progress.Message;
+                                    }
+                                    else
+                                    {
+                                        StatusMessage = progress.Message;
+                                    }
+                                }
+                                else
+                                {
+                                    StatusMessage = $"Running: {progress.ProgressPercentage:F1}% - {filesProcessed}/{progress.TotalFiles}";
+                                }
                             });
                         });
 
@@ -513,6 +533,16 @@ namespace EasyGUI.ViewModels
                             StatusMessage = $"✓ '{jobName}' completed!";
                             CurrentProgress = 100;
                             IsExecuting = false;
+                        });
+                    }
+                    catch (InvalidOperationException ex) when (ex.Message.Contains("BLOCK") || ex.Message.Contains("STOP"))
+                    {
+                        // Exception de blocage du logiciel métier - c'est normal
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            IsExecuting = false;
+                            // Le StatusMessage a déjà été mis à jour par le callback
+                            // On ne fait rien de plus
                         });
                     }
                     catch (Exception ex)
@@ -575,10 +605,29 @@ namespace EasyGUI.ViewModels
                         {
                             progressItem.ProgressPercentage = progress.ProgressPercentage;
                             int filesCopied = progress.TotalFiles - progress.FilesRemaining;
-                            progressItem.Status = $"{progress.ProgressPercentage:F1}% - {filesCopied}/{progress.TotalFiles} files";
+
+                            // Gérer les messages personnalisés (blocage, erreur)
+                            if (!string.IsNullOrEmpty(progress.Message))
+                            {
+                                progressItem.Status = progress.Message;
+
+                                if (progress.State == State.Paused)
+                                {
+                                    progressItem.Status = "⏸️ " + progress.Message;
+                                }
+                                else if (progress.State == State.Error)
+                                {
+                                    progressItem.HasError = true;
+                                    progressItem.Status = "✗ " + progress.Message;
+                                }
+                            }
+                            else
+                            {
+                                progressItem.Status = $"{progress.ProgressPercentage:F1}% - {filesCopied}/{progress.TotalFiles} files";
+                            }
 
                             // If completed 100%
-                            if (progress.ProgressPercentage >= 100)
+                            if (progress.ProgressPercentage >= 100 && progress.State == State.Completed)
                             {
                                 progressItem.IsCompleted = true;
                                 progressItem.Status = _i18n.GetString("execute_completed") ?? "Completed!";

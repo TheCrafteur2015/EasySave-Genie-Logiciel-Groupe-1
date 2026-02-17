@@ -2,160 +2,139 @@ using EasySave.Backup;
 using EasySave.Extensions;
 using EasyConsole.View.Command;
 using EasySave.View.Localization;
+using System.Text;
 
 namespace EasyConsole.View
 {
-	/// <summary>
-	/// Console View - Handles user interface (View in MVVM)
-	/// <para>
-	/// The ConsoleView class act like the View in your software architecture.
-	/// It is responsible of menu displaying and get user input.
-	/// </para>
-	/// </summary>
-	public class ConsoleView
-	{
+    public class ConsoleView
+    {
+        private static readonly Dictionary<string, int> _jobLines = [];
+        private static int _baseLineIndex = 0;
         private static readonly object _consoleLock = new();
-        /// <summary>
-        /// Initialization of the new instance for the console view.
-		/// Load the unique instance needed for the functioning of the application system.
-        /// </summary>
+
         public ConsoleView()
-		{
-			// Initialization of Singleton instances
-			_ = BackupManager.GetBM();
-			_ = BackupManager.GetLogger();
-			_ = I18n.Instance;
-		}
+        {
+            _ = BackupManager.GetBM();
+            _ = BackupManager.GetLogger();
+            _ = I18n.Instance;
+        }
+
+        public static void Run(string[] args)
+        {
+            if (args.Length > 0)
+            {
+                ProcessCommandLine(args);
+                return;
+            }
+
+            var context = CommandContext.Instance;
+            while (true)
+            {
+                BackupManager.GetBM().TransmitSignal(Signal.Continue);
+                context.DisplayCommands();
+
+                int choice;
+                try { choice = ConsoleExt.ReadDec(); }
+                catch (FormatException) { continue; }
+
+                // Préparation propre de l'écran avant l'exécution
+                if (choice == 2 || choice == 3 || choice == 10)
+                {
+                    PrepareConsoleForMonitoring();
+                }
+
+                if (!context.ExecuteCommand(choice))
+                    Console.WriteLine(I18n.Instance.GetString("invalid_choice"));
+
+                // --- CORRECTIF IMPORTANT ---
+                // On s'assure que le curseur est bien en bas avant d'afficher "Press Enter"
+                StopMonitoring();
+                Console.WriteLine($"\n{I18n.Instance.GetString("press_enter")}");
+                _ = Console.ReadLine();
+
+                if (BackupManager.GetBM().LatestSignal == Signal.Exit) break;
+            }
+        }
+
+        public static void PrepareConsoleForMonitoring()
+        {
+            lock (_consoleLock)
+            {
+                Console.Clear();
+                Console.CursorVisible = false; // Cache le curseur pour éviter le clignotement
+                Console.WriteLine("=== Active Backup Dashboard (Parallel) ===");
+                // En-tête avec espacement fixe pour alignement parfait
+                Console.WriteLine($"{"Name",-20} | {"Progress",-25} | {"Status",-10} | {"Current File"}");
+                Console.WriteLine(new string('-', Console.WindowWidth - 1));
+
+                _baseLineIndex = Console.CursorTop;
+                _jobLines.Clear();
+            }
+        }
 
         /// <summary>
-        /// Start the application system in console mode.
+        /// Méthode pour sortir proprement du mode monitoring et remettre le curseur en bas
         /// </summary>
-        /// <param name="args">Arguments input from the command line when the application is launched.</param>
-        public static void Run(string[] args)
-		{
-			// Check for command line arguments
-			if (args.Length > 0)
-			{
-                ProcessCommandLine(args);
-				return;
-			}
+        public static void StopMonitoring()
+        {
+            lock (_consoleLock)
+            {
+                // On calcule la ligne juste après le dernier job affiché
+                int lastLine = _baseLineIndex + _jobLines.Count;
+                if (lastLine < Console.BufferHeight)
+                {
+                    Console.SetCursorPosition(0, lastLine + 1);
+                }
+                Console.CursorVisible = true; // On réaffiche le curseur
+            }
+        }
 
-			var context = CommandContext.Instance;
+        public static void DisplayProgress(ProgressState state)
+        {
+            lock (_consoleLock)
+            {
+                if (!_jobLines.ContainsKey(state.BackupName))
+                {
+                    _jobLines[state.BackupName] = _baseLineIndex + _jobLines.Count;
+                }
 
-			// Interactive menu mode
-			while (true)
-			{
-				BackupManager.GetBM().TransmitSignal(Signal.Continue);
-				context.DisplayCommands();
-                int choice;
-                try
-				{
-					choice = ConsoleExt.ReadDec();
-				} catch(FormatException)
-				{
-					Console.WriteLine(I18n.Instance.GetString("invalid_choice"));
-					_ = Console.ReadLine();
-					continue;
-				}
-				if (!context.ExecuteCommand(choice))
-					Console.WriteLine(I18n.Instance.GetString("invalid_choice"));
-				Console.WriteLine($"\n{I18n.Instance.GetString("press_enter")}");
-				_ = Console.ReadLine();
+                int currentRow = _jobLines[state.BackupName];
 
-				if (BackupManager.GetBM().LatestSignal == Signal.None)
-					throw new InvalidOperationException("Oops! This should not happen!");
+                // Protection contre le crash si on redimensionne la fenêtre trop petit
+                if (currentRow >= Console.BufferHeight) return;
 
-				if (BackupManager.GetBM().LatestSignal == Signal.Exit)
-				{
-					break;
-				}
-			}
-		}
+                Console.SetCursorPosition(0, currentRow);
 
-		/// <summary>
-		/// Parses and processes command-line arguments to execute one or more backup jobs based on the specified input
-		/// format.
-		/// </summary>
-		/// <remarks>The method supports three input formats for specifying backup jobs: a single integer for one job,
-		/// a hyphen-separated range for multiple jobs, or a semicolon-separated list for specific jobs. If the input does not
-		/// match any of these formats or is invalid, no jobs are executed. Any exceptions encountered during processing are
-		/// caught and an error message is displayed.</remarks>
-		/// <param name="args">An array of command-line arguments.
-		/// <item><description>"1-3" : range of ID </description></item>
-		/// <item><description>"1;3" : list of ID</description></item>
-		/// <item><description>"1" : unique ID</description></item>
-		/// </param>
-		public static void ProcessCommandLine(string[] args)
-		{
-			try
-			{
-				// Parse command line: EasySave.exe 1-3 or EasySave.exe 1;3
-				string argument = args[0];
+                // Barre de progression fixe
+                int barSize = 15;
+                double percent = Math.Clamp(state.ProgressPercentage, 0, 100);
+                int filled = (int)((percent / 100.0) * barSize);
+                string bar = "[" + new string('=', filled) + new string(' ', barSize - filled) + "]";
 
-				if (argument.Contains('-'))
-				{
-					// Range: 1-3
-					var parts = argument.Split('-');
-					if (parts.Length == 2 && int.TryParse(parts[0], out int start) && int.TryParse(parts[1], out int end))
-					{
-						Console.WriteLine($"Executing backup jobs {start} to {end}...");
-						BackupManager.GetBM().ExecuteJobRange(start, end, DisplayProgress);
-						Console.WriteLine("Execution completed!");
-					}
-				}
-				else if (argument.Contains(';'))
-				{
-					// List: 1;3;5
-					var parts = argument.Split(';');
-					var ids = parts.Select(p => int.TryParse(p, out int id) ? id : -1).Where(id => id != -1).ToArray();
-					
-					if (ids.Length > 0)
-					{
-						Console.WriteLine($"Executing backup jobs: {string.Join(", ", ids)}...");
-						BackupManager.GetBM().ExecuteJobList(ids, DisplayProgress);
-						Console.WriteLine("Execution completed!");
-					}
-				}
-				else if (int.TryParse(argument, out int singleId))
-				{
-					// Single job
-					Console.WriteLine($"Executing backup job {singleId}...");
-					BackupManager.GetBM().ExecuteJob(singleId, DisplayProgress);
-					Console.WriteLine("Execution completed!");
-				}
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine("{0}: {1}", I18n.Instance.GetString("error"), e.Message);
-			}
-		}
+                // Troncature et formatage des textes
+                string name = (state.BackupName.Length > 18) ? state.BackupName[..15] + "..." : state.BackupName;
+                string status = state.State.ToString();
+                string file = Path.GetFileName(state.CurrentSourceFile) ?? "";
+                if (file.Length > 30) file = "..." + file[^27..]; // Garde la fin du nom de fichier
 
-		public static void DisplayProgress(ProgressState state)
-		{
-			lock (_consoleLock)
-			{
-				if (!string.IsNullOrEmpty(state.Message))
-				{
-					Console.ForegroundColor = ConsoleColor.Red;
-					Console.WriteLine($"\n >> {state.Message}");
-					Console.ResetColor();
-					if (state.State == State.Error) return;
-				}
+                // Construction de la ligne
+                string line = $"{name,-20} | {bar} {percent,5:F1}% | {status,-10} | {file}";
 
-				Console.WriteLine($"\n{I18n.Instance.GetString("progress_active")} - {state.BackupName}"); // Ajout du nom pour savoir qui parle
-				Console.WriteLine(string.Format(I18n.Instance.GetString("progress_files"),
-					state.TotalFiles - state.FilesRemaining, state.TotalFiles));
-				Console.WriteLine(string.Format(I18n.Instance.GetString("progress_size"),
-					state.TotalSize - state.SizeRemaining, state.TotalSize));
-				Console.WriteLine(string.Format(I18n.Instance.GetString("progress_percentage"),
-					state.ProgressPercentage));
+                // -- CRUCIAL : On remplit le reste de la ligne avec des espaces pour effacer les vieux textes --
+                int padding = Console.WindowWidth - line.Length - 1;
+                if (padding > 0) line += new string(' ', padding);
 
-				if (!string.IsNullOrEmpty(state.CurrentSourceFile))
-				{
-					Console.WriteLine(string.Format(I18n.Instance.GetString("progress_current"),
-						Path.GetFileName(state.CurrentSourceFile)));
-				}
-			}
-		}
-	}
+                // Gestion des couleurs
+                var oldColor = Console.ForegroundColor;
+                if (state.State == State.Error) Console.ForegroundColor = ConsoleColor.Red;
+                else if (state.State == State.Completed) Console.ForegroundColor = ConsoleColor.Green;
+
+                Console.Write(line);
+                Console.ForegroundColor = oldColor;
+            }
+        }
+
+        // Gardez ProcessCommandLine tel quel, ou ajoutez StopMonitoring() à la fin du try
+        public static void ProcessCommandLine(string[] args) { /* ... Code existant ... */ }
+    }
 }

@@ -99,7 +99,7 @@ namespace EasyConsole.View.Commands
 			} while (loop);
 		}
 
-		public string GetI18nKey() => "menu_config";
+		public string GetI18nKey() => "menu_settings";
 
 		public int GetID() => 7;
 

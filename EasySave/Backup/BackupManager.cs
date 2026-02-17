@@ -59,7 +59,7 @@ namespace EasySave.Backup
 			);
 
 			// Initialisation des composants
-			_stateWriter = new StateWriter(Path.Combine(appData, "State"));
+			_stateWriter  = new StateWriter(Path.Combine(appData, "State"));
 			ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
 
 			MaxBackupJobs = ConfigManager.GetConfig<int>("MaxBackupJobs");

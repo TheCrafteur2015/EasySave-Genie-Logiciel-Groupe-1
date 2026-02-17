@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="FullSignature">
+  <Class Name="EasySave.Backup.BackupStrategyFactory">
+    <Position X="9.5" Y="16.5" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAA=</HashCode>
+      <FileName>Backup\BackupStrategyFactory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.Backup.CompleteBackupStrategy" BaseTypeListCollapsed="true">
+    <Position X="8.75" Y="18" Width="4.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Backup\CompleteBackupStrategy.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="EasySave.Backup.DifferentialBackupStrategy" BaseTypeListCollapsed="true">
+    <Position X="8.75" Y="19.5" Width="4.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Backup\DifferentialBackupStrategy.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="EasySave.Backup.ProgressState">
+    <Position X="4.25" Y="14" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AAAgACAAAAAAAgAAKAACEAAAAAAAAAAAAIAABAIAAAA=</HashCode>
+      <FileName>Backup\ProgressState.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.Extensions.ConsoleExt">
+    <Position X="3.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Extensions\ConsoleExt.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.Logger.AbstractLogger">
+    <Position X="0.5" Y="2.5" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAIAAAAAAAAAIAgAAAAAAAAGAAAAAAA=</HashCode>
+      <FileName>Logger\AbstractLogger.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EasySave.Logger.SimpleLogger">
+    <Position X="0.5" Y="5.75" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAgAAAAAAAAIAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Logger\SimpleLogger.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.Utils.ConfigurationManager">
+    <Position X="4.25" Y="11" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAIEUAAEAAAAAAAAAAAABAAAAAAAAAA=</HashCode>
+      <FileName>Utils\ConfigurationManager.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.Utils.ResourceManager">
+    <Position X="3.5" Y="6" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Utils\ResourceManager.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.Utils.StateWriter">
+    <Position X="14.5" Y="7.75" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAAAgAAACBgAAAAAAAAAAAAAAAAAAAABAAAAAA=</HashCode>
+      <FileName>Utils\StateWriter.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.View.Command.CommandContext">
+    <Position X="13.25" Y="4" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AIAEAAAAAAAAAAAAAQAAAAAAAAAAAAAAQAAAAAAAAAg=</HashCode>
+      <FileName>View\Command\CommandContext.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.View.Commands.CreateBackupJobCommand" BaseTypeListCollapsed="true">
+    <Position X="17" Y="4.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQAAAAAgAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\Commands\CreateBackupJobCommand.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="EasySave.View.Commands.ExecuteBackupJobCommand" BaseTypeListCollapsed="true">
+    <Position X="17" Y="3" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQAAAAAgAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\Commands\ExecuteBackupJobCommand.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="EasySave.View.Localization.I18n">
+    <Position X="3.5" Y="2.5" Width="5" />
+    <TypeIdentifier>
+      <HashCode>AAAEAAAACAIAAAQAAAACBEAAAAAAAAAAQAAAAAAACAA=</HashCode>
+      <FileName>View\Localization\I18n.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.View.ConsoleView">
+    <Position X="9.25" Y="4" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAkAAAAAAAAAAAAAAAAAAFgBAAAAAAAABEAAQAAEAAI=</HashCode>
+      <FileName>View\ConsoleView.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.Program">
+    <Position X="9.75" Y="2.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAA=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.Backup.BackupManager">
+    <Position X="8" Y="7.75" Width="6" />
+    <TypeIdentifier>
+      <HashCode>CAAEAAAAgCAAAAAgAAgAAgAAIAgAAJAJADAEAAAAAIA=</HashCode>
+      <FileName>Backup\BackupManager.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EasySave.Backup.BackupJob">
+    <Position X="8.5" Y="12.75" Width="5.25" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAQQAggAAAAQIAAAAAAAAAQAABBAAAAA=</HashCode>
+      <FileName>Backup\BackupJob.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="EasySave.Backup.IBackupStrategy">
+    <Position X="3.5" Y="0.5" Width="4.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Backup\IBackupStrategy.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EasySave.Logger.ILogger">
+    <Position X="0.5" Y="0.5" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAIAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Logger\ILogger.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EasySave.View.Command.ICommand">
+    <Position X="8.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQAAAAAgAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\Command\ICommand.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Enum Name="EasySave.Backup.BackupType">
+    <Position X="3.5" Y="9.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAgIAAAAAAAAAAAAAAAAAAAQAAAAAAAA=</HashCode>
+      <FileName>Backup\BackupType.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="EasySave.Backup.State">
+    <Position X="5.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAACAAAAAAAAQIAAAAAAAAAAAAAAAAgAAAAAAAAAAA=</HashCode>
+      <FileName>Backup\State.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="EasySave.Logger.Level">
+    <Position X="1" Y="8" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAYAAAAAAABAAAAAAAAAAAAAAAEAEAAA=</HashCode>
+      <FileName>Logger\Level.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

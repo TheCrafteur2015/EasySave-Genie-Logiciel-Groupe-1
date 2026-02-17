@@ -1,0 +1,58 @@
+{
+	"@language_name": "Français",
+	"menu_title": "EasySave - Gestionnaire de Sauvegarde",
+	"menu_create": "Créer un nouveau travail de sauvegarde",
+	"menu_execute": "Exécuter un travail de sauvegarde",
+	"menu_execute_all": "Exécuter tous les travaux de sauvegarde",
+	"menu_list": "Lister tous les travaux de sauvegarde",
+	"menu_delete": "Supprimer un travail de sauvegarde",
+	"menu_language": "Changer de langue",
+	"menu_exit": "Quitter",
+	"menu_choice": "Entrez votre choix ",
+
+	"create_name": "Entrez le nom du travail de sauvegarde ",
+	"create_source": "Entrez le répertoire source ",
+	"create_target": "Entrez le répertoire cible ",
+	"create_type": "Sélectionnez le type de sauvegarde (1=Complète, 2=Différentielle) ",
+	"create_success": "Travail de sauvegarde créé avec succès !",
+	"create_failure": "Échec de la création du travail de sauvegarde. Limite maximale atteinte ou données invalides.",
+
+	"execute_id": "Entrez l'ID du travail de sauvegarde à exécuter ",
+	"execute_success": "Travail de sauvegarde terminé avec succès !",
+	"execute_failure": "Échec de l'exécution du travail de sauvegarde ",
+	"execute_all_start": "Exécution de tous les travaux de sauvegarde...",
+
+	"list_title": "Travaux de Sauvegarde",
+	"list_empty": "Aucun travail de sauvegarde trouvé.",
+	"list_id": "ID ",
+	"list_name": "Nom ",
+	"list_source": "Source ",
+	"list_target": "Cible ",
+	"list_type": "Type ",
+	"list_state": "État ",
+	"list_last_exec": "Dernière Exécution ",
+
+	"delete_id": "Entrez l'ID du travail de sauvegarde à supprimer ",
+	"delete_success": "Travail de sauvegarde supprimé avec succès !",
+	"delete_failure": "Échec de la suppression du travail de sauvegarde.",
+
+	"language_select": "Sélectionnez la langue ",
+	"language_changed": "Langue changée avec succès !",
+
+	"progress_active": "État : Actif",
+	"progress_files": "Fichiers : {0}/{1}",
+	"progress_size": "Taille : {0}/{1} octets",
+	"progress_current": "Fichier actuel : {0}",
+	"progress_percentage": "Progression : {0:F2}%",
+
+	"press_enter": "Appuyez sur Entrée pour continuer...",
+	"invalid_choice": "Choix invalide. Veuillez réessayer.",
+	"error": "Erreur ",
+	"type_complete": "Complète",
+	"type_differential": "Différentielle",
+	"state_active": "Actif",
+	"state_inactive": "Inactif",
+	"state_completed": "Terminé",
+	"state_error": "Erreur",
+	"never": "Jamais"
+}

@@ -7,7 +7,7 @@ using System.Diagnostics;
 namespace EasySave.Backup
 {
     /// <summary>
-    /// Stratégie de sauvegarde différentielle - Copie uniquement les fichiers modifiés.
+    /// Stratégie de sauvegarde différentielle - Copie uniquement les fichiers nouveaux ou modifiés.
     /// </summary>
     public class DifferentialBackupStrategy : IBackupStrategy
     {
@@ -23,16 +23,26 @@ namespace EasySave.Backup
             if (!Directory.Exists(job.TargetDirectory))
                 Directory.CreateDirectory(job.TargetDirectory);
 
-            // 2. Chargement de la configuration
+            // 2. Chargement de la configuration (Crypto + Priorités + Limites)
             var config = BackupManager.GetBM().ConfigManager;
+            
+            // Gestion chemin CryptoSoft
             string rawPath = config.GetConfig("CryptoSoftPath")?.ToString() ?? "";
-            string cryptoPath = string.IsNullOrEmpty(rawPath) ? "" : Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rawPath));
+            string cryptoPath = string.IsNullOrEmpty(rawPath) 
+                ? "" 
+                : Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rawPath));
+            
             string cryptoKey = config.GetConfig("CryptoKey")?.ToString() ?? "Key";
             
+            // Gestion Priorités
             var extensionsArray = config.GetConfig("PriorityExtensions") as JArray;
             List<string> priorityExtensions = extensionsArray?.ToObject<List<string>>() ?? [];
 
-            // 3. Préparation des fichiers et Priorités (Optimisation : boucle sur sortedFiles)
+            // Optimisation : Calcul de la limite de taille une seule fois (v3.0)
+            long maxFileSizeConfig = (long)(config.GetConfig("MaxParallelTransferSize") ?? 1000000);
+            long maxFileSizeBytes = maxFileSizeConfig * 1024;
+
+            // 3. Préparation des fichiers et tri par priorité
             var files = Directory.GetFiles(job.SourceDirectory, "*", SearchOption.AllDirectories);
             var totalFiles = files.Length;
             long totalSize = files.Sum(f => new FileInfo(f).Length);
@@ -41,13 +51,10 @@ namespace EasySave.Backup
             var nonPriorityFiles = files.Where(f => !priorityExtensions.Contains(Path.GetExtension(f))).ToList();
             var sortedFiles = priorityFiles.Concat(nonPriorityFiles).ToList();
 
-            long maxFileSizeConfig = (long)(config.GetConfig("MaxParallelTransferSize") ?? 1000000);
-            long maxFileSizeBytes = maxFileSizeConfig * 1024;
-
             if (priorityFiles.Count > 0)
                 Interlocked.Add(ref BackupManager.GlobalPriorityFilesPending, priorityFiles.Count);
 
-            // 4. Gestion Logiciel Métier - Attente Active (Remplace l'Exception de la v2.0 par une gestion fluide)
+            // 4. Gestion Logiciel Métier - Attente Active (State = Paused)
             bool logSentStart = false;
             while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
             {
@@ -57,6 +64,7 @@ namespace EasySave.Backup
                     logSentStart = true;
                 }
                 
+                // On met l'état en Paused pour que l'UI réagisse correctement (v3.0)
                 job.State = State.Paused;
                 progressCallback?.Invoke(new ProgressState { BackupName = job.Name, State = State.Paused, Message = $"En attente : Fermeture de {BusinessSoftware}..." });
                 
@@ -73,31 +81,34 @@ namespace EasySave.Backup
             int processedFiles = 0;
             long processedSize = 0;
 
-            // 5. Boucle de sauvegarde (Utilisation de sortedFiles pour respecter les priorités)
+            // 5. Boucle de sauvegarde (Files sorted by priority)
             foreach (var sourceFile in sortedFiles)
             {
                 bool isPriority = priorityExtensions.Contains(Path.GetExtension(sourceFile));
 
-                // Contrôles Temps Réel (Pause/Stop)
+                // A. Contrôles Temps Réel (Pause/Stop Utilisateur)
                 if (job.Cts.IsCancellationRequested)
                 {
                     job.State = State.Error;
                     if (isPriority) Interlocked.Decrement(ref BackupManager.GlobalPriorityFilesPending);
+                    // Nettoyage du compteur global pour les fichiers restants
                     int remaining = sortedFiles.Skip(processedFiles + 1).Count(f => priorityExtensions.Contains(Path.GetExtension(f)));
                     if (remaining > 0) Interlocked.Add(ref BackupManager.GlobalPriorityFilesPending, -remaining);
                     break;
                 }
                 job.PauseWaitHandle.Wait();
 
-                // Re-vérification Logiciel Métier pendant la boucle
+                // B. Re-vérification Logiciel Métier pendant la boucle
                 while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
                 {
+                    // 
                     progressCallback?.Invoke(new ProgressState { BackupName = job.Name, State = State.Paused, Message = $"Logiciel métier détecté. Pause forcée..." });
                     Thread.Sleep(2000);
                     if (job.Cts.IsCancellationRequested) break;
                 }
 
-                // Attente de la Priorité Globale (Feature)
+                // C. Attente de la Priorité Globale
+                // Si je ne suis pas prioritaire, mais qu'il y a des fichiers prioritaires ailleurs -> J'attends.
                 if (!isPriority)
                 {
                     while (BackupManager.GlobalPriorityFilesPending > 0)
@@ -141,21 +152,24 @@ namespace EasySave.Backup
 
                     try
                     {
-                        // Gestion des gros fichiers (Sémaphore)
+                        // 1. Gestion des gros fichiers (Sémaphore)
                         if (sourceFileInfo.Length > maxFileSizeBytes)
                         {
                             BackupManager.BigFileSemaphore.Wait();
                             semaphoreAcquired = true;
                         }
 
+                        // 2. Copie physique
                         File.Copy(sourceFile, targetFile, true);
 
-                        // CryptoSoft (Mutex mono-instance + Log EncryptionTime)
+                        // 3. CryptoSoft (Mutex mono-instance)
                         string ext = Path.GetExtension(targetFile);
                         if (File.Exists(cryptoPath) && priorityExtensions.Contains(ext))
                         {
-                            BackupManager.CryptoSoftMutex.WaitOne();
-                            try {
+                            // Feature Branch: Protection stricte via Mutex
+                            BackupManager.CryptoSoftMutex.WaitOne(); 
+                            try 
+                            {
                                 var p = new Process();
                                 p.StartInfo.FileName = cryptoPath;
                                 p.StartInfo.Arguments = $"\"{targetFile}\" \"{cryptoKey}\"";
@@ -164,12 +178,16 @@ namespace EasySave.Backup
                                 p.Start();
                                 p.WaitForExit();
                                 encryptionTime = p.ExitCode;
-                            } finally {
+                            } 
+                            finally 
+                            {
                                 BackupManager.CryptoSoftMutex.ReleaseMutex();
                             }
                         }
 
                         stopwatch.Stop();
+                        
+                        // v3.0 Logging (Detailed)
                         BackupManager.GetLogger().Log(new LogEntry {
                             Name = job.Name,
                             SourceFile = PathUtils.ToUnc(sourceFile),
@@ -182,12 +200,13 @@ namespace EasySave.Backup
                     catch (Exception e)
                     {
                         stopwatch.Stop();
+                        // v3.0 Error Logging
                         BackupManager.GetLogger().Log(new LogEntry {
                             Name = job.Name,
                             SourceFile = PathUtils.ToUnc(sourceFile),
                             TargetFile = PathUtils.ToUnc(targetFile),
                             FileSize = sourceFileInfo.Length,
-                            ElapsedTime = -1, // Indique une erreur selon v2.0
+                            ElapsedTime = -1, // Convention v3.0 pour erreur
                             Level = Level.Error,
                             Message = $"Copy failed: {e.Message}"
                         });

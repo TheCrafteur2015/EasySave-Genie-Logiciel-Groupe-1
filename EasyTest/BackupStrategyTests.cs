@@ -1,45 +1,26 @@
-﻿using EasySave.Backup;
+using EasySave.Backup;
+using EasySave.Utils;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace EasyTest
 {
-    /// <summary>
-    /// Unit tests for backup strategies (Complete and Differential).
-    /// Validates file copying, business software detection, and encryption integration.
-    /// </summary>
     [TestClass]
     public class BackupStrategyTests
     {
-        /// <summary>
-        /// Path to the temporary source directory used for testing.
-        /// </summary>
         private string _dossierSource = null!;
-
-        /// <summary>
-        /// Path to the temporary target directory used for testing.
-        /// </summary>
         private string _dossierCible = null!;
 
-        /// <summary>
-        /// Constant name for a standard test file.
-        /// </summary>
+        // On garde les extensions cohérentes avec les tests de priorité
         private const string NomFichierTest = "fichier_test.txt";
-
-        /// <summary>
-        /// Constant name for a file that should trigger encryption.
-        /// </summary>
         private const string NomFichierCrypto = "secret.txt";
 
-        /// <summary>
-        /// Initializes the test environment before each test.
-        /// </summary>
-        /// <remarks>
-        /// Creates clean temporary directories and removes any existing backup jobs 
-        /// from the BackupManager to prevent test interference.
-        /// </remarks>
         [TestInitialize]
         public void Setup()
         {
+            KillCalculator(); // On s'assure qu'aucun résidu de test précédent ne bloque
             _dossierSource = Path.Combine(Path.GetTempPath(), "EasySave_Source_Test");
             _dossierCible = Path.Combine(Path.GetTempPath(), "EasySave_Cible_Test");
 
@@ -48,48 +29,53 @@ namespace EasyTest
 
             Directory.CreateDirectory(_dossierSource);
 
+            // Reset du Singleton pour repartir sur une config propre
             var bm = BackupManager.GetBM();
             foreach (var job in bm.GetAllJobs()) bm.DeleteJob(job.Id);
         }
 
-        /// <summary>
-        /// Cleans up the test environment after each test.
-        /// </summary>
-        /// <remarks>
-        /// Deletes the temporary source and target directories created during the setup.
-        /// </remarks>
         [TestCleanup]
         public void Cleanup()
         {
+            KillCalculator();
             if (Directory.Exists(_dossierSource)) Directory.Delete(_dossierSource, true);
             if (Directory.Exists(_dossierCible)) Directory.Delete(_dossierCible, true);
         }
 
         /// <summary>
-        /// Verifies that a Complete Backup correctly copies files to the target directory.
+        /// Helper pour nettoyer les processus qui bloquent les tests.
         /// </summary>
+        private void KillCalculator()
+        {
+            var processNames = new[] { "CalculatorApp", "calc", "Calculator" };
+            foreach (var name in processNames)
+            {
+                foreach (var p in Process.GetProcessesByName(name))
+                {
+                    try { p.Kill(); p.WaitForExit(1000); } catch { }
+                }
+            }
+            Thread.Sleep(100);
+        }
+
         [TestMethod]
         public void TestSauvegardeComplete_CopieFichiers()
         {
-            File.WriteAllText(Path.Combine(_dossierSource, NomFichierTest), "Contenu de test");
+            string cheminFichierSource = Path.Combine(_dossierSource, NomFichierTest);
+            File.WriteAllText(cheminFichierSource, "Contenu de test");
+
             var bm = BackupManager.GetBM();
             bm.AddJob("TestComplet", _dossierSource, _dossierCible, BackupType.Complete);
-            int id = bm.GetAllJobs()[0].Id;
+            var job = bm.GetAllJobs()[0];
 
-            bm.ExecuteJob(id);
+            bool succes = bm.ExecuteJob(job.Id);
 
+            Assert.IsTrue(succes, "Le job devrait réussir.");
             string fichierCible = Path.Combine(_dossierCible, NomFichierTest);
-            Assert.IsTrue(File.Exists(fichierCible), "The file should have been copied to the target directory.");
+            Assert.IsTrue(File.Exists(fichierCible), "Le fichier devrait être présent dans la cible.");
             Assert.AreEqual("Contenu de test", File.ReadAllText(fichierCible));
         }
 
-        /// <summary>
-        /// Verifies that a Differential Backup updates a file when it has been modified.
-        /// </summary>
-        /// <remarks>
-        /// This test performs an initial backup, modifies the source file after a delay, 
-        /// and verifies that the second backup updates the target file timestamp and content.
-        /// </remarks>
         [TestMethod]
         public void TestSauvegardeDifferentielle_FichierModifie()
         {
@@ -104,38 +90,29 @@ namespace EasyTest
             string fichierCible = Path.Combine(_dossierCible, NomFichierTest);
             DateTime datePremiereCopie = File.GetLastWriteTime(fichierCible);
 
-            Thread.Sleep(1000);
+            Thread.Sleep(1100); // On attend pour être sûr que le timestamp change
             File.WriteAllText(fichierSource, "Version 2 - Modifié");
 
             bm.ExecuteJob(id);
             DateTime dateDeuxiemeCopie = File.GetLastWriteTime(fichierCible);
 
-            Assert.AreNotEqual(datePremiereCopie, dateDeuxiemeCopie, "The target file should have been updated.");
+            Assert.AreNotEqual(datePremiereCopie, dateDeuxiemeCopie, "Le fichier cible devrait avoir été mis à jour.");
             Assert.AreEqual("Version 2 - Modifié", File.ReadAllText(fichierCible));
         }
 
-        /// <summary>
-        /// Tests the blocking mechanism when business software is detected.
-        /// </summary>
-        /// <remarks>
-        /// Simulates the presence of business software (calc.exe) and verifies 
-        /// that the BackupManager refuses to execute the job.
-        /// </remarks>
         [TestMethod]
         public void TestLogicielMetier_Blocage()
         {
             Process p = Process.Start("calc.exe");
             try
             {
-                Thread.Sleep(2000);
-
+                Thread.Sleep(2000); // Laisse le temps au process de démarrer
                 var bm = BackupManager.GetBM();
                 bm.AddJob("TestBlocage", _dossierSource, _dossierCible, BackupType.Complete);
                 int id = bm.GetAllJobs()[0].Id;
 
                 bool succes = bm.ExecuteJob(id);
-
-                Assert.IsFalse(succes, "The job should have failed (returned false) because Calculator is open.");
+                Assert.IsFalse(succes, "Le job devrait échouer car la calculatrice est ouverte.");
             }
             finally
             {
@@ -143,32 +120,39 @@ namespace EasyTest
             }
         }
 
-        /// <summary>
-        /// Verifies the integration with CryptoSoft for encrypted backups.
-        /// </summary>
-        /// <remarks>
-        /// Checks that a file identified for encryption is different in the target 
-        /// directory compared to the original clear-text source.
-        /// </remarks>
         [TestMethod]
         public void TestCryptoSoft_Integration()
         {
+            // Setup d'une config temporaire avec un chemin vers CryptoSoft
+            string appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave");
+            string configPath = Path.Combine(appData, "Config", "config.json");
+
+            var configSpeciale = new {
+                PriorityExtensions = new[] { ".txt" },
+                CryptoKey = "1234",
+                CryptoSoftPath = @"C:\Path\To\CryptoSoft.exe" // Ajuste ce chemin pour tes tests locaux
+            };
+            File.WriteAllText(configPath, JsonConvert.SerializeObject(configSpeciale));
+
+            // Force le rechargement du Singleton
+            typeof(BackupManager).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+
             string cheminFichierSource = Path.Combine(_dossierSource, NomFichierCrypto);
             string contenuClair = "Ceci est un secret";
             File.WriteAllText(cheminFichierSource, contenuClair);
 
             var bm = BackupManager.GetBM();
             bm.AddJob("TestCrypto", _dossierSource, _dossierCible, BackupType.Complete);
-            int id = bm.GetAllJobs()[0].Id;
-
-            bm.ExecuteJob(id);
+            bm.ExecuteJob(bm.GetAllJobs()[0].Id);
 
             string cheminFichierCible = Path.Combine(_dossierCible, NomFichierCrypto);
-            Assert.IsTrue(File.Exists(cheminFichierCible), "The encrypted file must exist.");
-
-            string contenuCible = File.ReadAllText(cheminFichierCible);
-
-            Assert.AreNotEqual(contenuClair, contenuCible, "Target file content should be encrypted (different from source).");
+            Assert.IsTrue(File.Exists(cheminFichierCible), "Le fichier crypté doit exister.");
+            Assert.AreNotEqual(contenuClair, File.ReadAllText(cheminFichierCible), "Le contenu devrait être chiffré.");
         }
-    }
-}
+
+        [TestMethod]
+        public void TestPriorite_Differentiel_Blocage()
+        {
+            // Teste si les fichiers .txt passent bien avant les autres
+            var bm = BackupManager.GetBM();
+            // ...

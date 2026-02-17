@@ -1,54 +1,42 @@
-﻿using EasySave.Backup;
+using EasySave.Backup;
 using EasyConsole.View.Command;
 using EasySave.View.Localization;
 
 namespace EasyConsole.View.Commands
 {
-    /// <summary>
-    /// Command to execute all configured backup jobs sequentially.
-    /// </summary>
     public class ExecuteAllBackupJobsCommand : ICommand
     {
-        /// <summary>
-        /// Executes the workflow for running all backup jobs.
-        /// </summary>
-        /// <remarks>
-        /// This method clears the console, notifies the user that execution is starting,
-        /// and triggers the execution of all jobs via the BackupManager.
-        /// It uses the ConsoleView.DisplayProgress method to show real-time progress.
-        /// </remarks>
+        public int GetID() => 3;
+        public string GetI18nKey() => "menu_execute_all";
+
         public void Execute()
         {
-            Console.Clear();
-            Console.WriteLine(I18n.Instance.GetString("execute_all_start"));
+            // Note: Le Console.Clear() est géré par ConsoleView.PrepareConsoleForMonitoring()
+            // dans le Run() principal avant d'arriver ici.
 
             try
             {
-                // On lance en asynchrone pour récupérer les tâches
+                // 1. On lance en asynchrone pour pouvoir interagir (Feature: interactions_temps_reel)
                 var tasks = BackupManager.GetBM().ExecuteAllJobsAsync(ConsoleView.DisplayProgress);
 
-                // On lance le moniteur interactif
+                // 2. On lance le moniteur interactif (P/R/S) qui attend la fin des tâches (Feature)
                 ConsoleView.MonitorJobs(tasks);
 
+                // 3. Une fois les tâches terminées ou stoppées, on replace le curseur en bas (v3.0)
+                ConsoleView.StopMonitoring();
+
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine(I18n.Instance.GetString("execute_success"));
+                Console.ResetColor();
             }
             catch (Exception e)
             {
-                Console.WriteLine(I18n.Instance.GetString("execute_failure") + e.Message);
+                // On s'assure de libérer le curseur même en cas de crash
+                ConsoleView.StopMonitoring();
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{I18n.Instance.GetString("execute_failure")}: {e.Message}");
+                Console.ResetColor();
             }
         }
-
-        /// <summary>
-        /// Gets the localization key for the "Execute all backup jobs" menu item.
-        /// </summary>
-        /// <returns>The string key "menu_execute_all".</returns>
-        public string GetI18nKey() => "menu_execute_all";
-
-
-        /// <summary>
-        /// Gets the unique identifier for the execute all jobs command.
-        /// </summary>
-        /// <returns>The integer ID 3.</returns>
-        public int GetID() => 3;
     }
 }

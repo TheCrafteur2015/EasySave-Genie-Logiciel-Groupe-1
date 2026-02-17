@@ -77,6 +77,23 @@ namespace EasySave.Backup
             foreach (var sourceFile in files)
             {
                 bool isPriority = priorityExtensions.Contains(Path.GetExtension(sourceFile));
+
+                if (job.Cts.IsCancellationRequested)
+                {
+                    job.State = State.Error; 
+                    BackupManager.GetLogger().Log(new LogEntry { Level = Level.Warning, Message = $"Job {job.Name} stopped by user." });
+                    if (isPriority) Interlocked.Decrement(ref BackupManager.GlobalPriorityFilesPending);
+                    int remaining = sortedFiles.Skip(processedFiles + 1)
+                               .Count(f => priorityExtensions.Contains(Path.GetExtension(f)));
+
+                    if (remaining > 0)
+                        Interlocked.Add(ref BackupManager.GlobalPriorityFilesPending, -remaining);
+                    break; 
+                }
+
+                job.PauseWaitHandle.Wait();
+
+
                 if (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
                 {
                     string msg = $"[STOP] Logiciel métier détecté : '{BusinessSoftware}'.";
@@ -84,7 +101,6 @@ namespace EasySave.Backup
                     job.State = State.Error;
                     progressCallback?.Invoke(new ProgressState { BackupName = job.Name, State = State.Error, Message = msg });
 
-                    // Si on s'arrête, on nettoie le compteur pour ce fichier et les suivants
                     if (isPriority) Interlocked.Decrement(ref BackupManager.GlobalPriorityFilesPending);
                     int remaining = sortedFiles.Skip(processedFiles + 1).Count(f => priorityExtensions.Contains(Path.GetExtension(f)));
                     if (remaining > 0) Interlocked.Add(ref BackupManager.GlobalPriorityFilesPending, -remaining);

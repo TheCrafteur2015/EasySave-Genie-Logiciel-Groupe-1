@@ -1,6 +1,4 @@
 ﻿using EasySave.Backup;
-using EasySave.Utils;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace EasyTest
 {
@@ -60,7 +58,8 @@ namespace EasyTest
             bm.AddJob("JobParallele_A", _source1, _target1, BackupType.Complete);
             bm.AddJob("JobParallele_B", _source2, _target2, BackupType.Complete);
 
-            bm.ExecuteAllJobs();
+            var tasks = bm.ExecuteAllJobsAsync();
+            Task.WaitAll(tasks.ToArray());
 
             int count1 = Directory.GetFiles(_target1).Length;
             int count2 = Directory.GetFiles(_target2).Length;

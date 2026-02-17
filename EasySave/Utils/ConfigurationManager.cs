@@ -126,9 +126,20 @@ namespace EasySave.Utils
 				var jobs = System.Text.Json.JsonSerializer.Deserialize<List<BackupJob>>(jsonContent);
 				return jobs ?? [];
 			}
-			catch (Exception e)
+			catch (Exception ex)
 			{
-				BackupManager.GetLogger().LogError(e);
+				// Log l'erreur pour debug
+				System.Diagnostics.Debug.WriteLine($"Error loading backup jobs: {ex.Message}");
+				System.Diagnostics.Debug.WriteLine($"Exception details: {ex}");
+
+				// Supprimer le fichier corrompu
+				try
+				{
+					File.Delete(_savedBackupJobPath);
+					System.Diagnostics.Debug.WriteLine($"Corrupted file deleted: {_savedBackupJobPath}");
+				}
+				catch { }
+				BackupManager.GetLogger().LogError(ex);
 				return [];
 			}
 		}

@@ -4,266 +4,199 @@ using Newtonsoft.Json.Linq;
 
 namespace EasySave.Backup
 {
-	/// <summary>
-	/// Backup Manager - Singleton pattern for managing backup operations
-	/// Acts as the ViewModel in MVVM architecture
-	/// </summary>
-	public class BackupManager
-	{
-		public static volatile int GlobalPriorityFilesPending = 0;
-        public static SemaphoreSlim BigFileSemaphore = new(1, 1);
-        private static BackupManager? _instance;
-		private static ILogger? _logger;
-		private static readonly object _lock = new();
-		
-		private readonly List<BackupJob> _backupJobs;
-		public readonly ConfigurationManager ConfigManager;
-		private readonly StateWriter _stateWriter;
-
-		public readonly int MaxBackupJobs;
-		private readonly string appData;
-
-
-		public Signal LatestSignal { get; private set; }
-    
     /// <summary>
-		/// Initializes a new instance of the BackupManager class and sets up required components and configuration.
-		/// </summary>
-		/// <remarks>This constructor is private and is intended to restrict instantiation of the BackupManager class
-		/// to within the class itself, typically to implement a singleton or controlled creation pattern.</remarks>
-		private BackupManager()
-		{
-			// Initialize paths
-			appData = Path.Combine(
-				Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-				"EasySave"
-			);
+    /// Backup Manager - Orchestrateur central des opérations de sauvegarde.
+    /// Implémente le pattern Singleton et sert de ViewModel dans l'architecture MVVM.
+    /// </summary>
+    public class BackupManager
+    {
+        // --- SYNCHRONISATION GLOBALE ---
 
-			// Initialize components
-			_stateWriter  = new StateWriter(Path.Combine(appData, "State"));
-			ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
+        /// <summary>
+        /// Mutex global pour garantir que CryptoSoft est une instance unique sur tout le système.
+        /// </summary>
+        public static readonly Mutex CryptoSoftMutex = new Mutex(false, @"Global\EasySave_CryptoSoft_Lock");
 
-			MaxBackupJobs = ConfigManager.GetConfig("MaxBackupJobs");
-			var useBackupJobLimit = ConfigManager.GetConfig("UseBackupJobLimit") as JValue;
-			if (useBackupJobLimit?.Value is bool val && val == false)
-				MaxBackupJobs = -1;
+        /// <summary>
+        /// Compteur volatile pour suivre le nombre de fichiers prioritaires en attente dans tous les jobs.
+        /// </summary>
+        public static volatile int GlobalPriorityFilesPending = 0;
 
-			// Load existing jobs
-			_backupJobs = ConfigManager.LoadBackupJobs();
+        /// <summary>
+        /// Sémaphore pour limiter le transfert simultané de gros fichiers (évite la saturation bande passante).
+        /// </summary>
+        public static SemaphoreSlim BigFileSemaphore = new(1, 1);
 
-			LatestSignal = Signal.None;
-		}
+        // --- SINGLETON & ETAT ---
+        private static BackupManager? _instance;
+        private static ILogger? _logger;
+        private static readonly object _lock = new();
 
-		/// <summary>
-		/// Retrieves the singleton instance of the BackupManager.
-		/// </summary>
-		/// <remarks>This method ensures that only one instance of BackupManager exists throughout the application's
-		/// lifetime. The instance is created on first access and is thread-safe.</remarks>
-		/// <returns>The single instance of the BackupManager used by the application.</returns>
-		public static BackupManager GetBM()
-		{
-			if (_instance == null)
-			{
-				lock (_lock)
-				{
-					_instance = new BackupManager();
-				}
-			}
-			return _instance;
-		}
-		
-		public static ILogger GetLogger()
-		{
-			if (_logger == null)
-			{
-				var BM = GetBM();
-				var format = BM.ConfigManager.GetConfig("LoggerFormat");
-				lock (_lock)
-				{
-					_logger = LoggerFactory.CreateLogger(format?.Value as string ?? "text", Path.Combine(BM.appData, "Logs"));
-				}
-			}
-			return _logger;
-		}
-		
-		/// <summary>
-		/// Retrieves a list of all configured backup jobs.
-		/// </summary>
-		/// <returns>A list of <see cref="BackupJob"/> objects representing all backup jobs. The list will be empty if no jobs are
-		/// configured.</returns>
-		public List<BackupJob> GetAllJobs() => [.. _backupJobs];
+        private readonly List<BackupJob> _backupJobs;
+        public readonly ConfigurationManager ConfigManager;
+        private readonly StateWriter _stateWriter;
+        public readonly int MaxBackupJobs;
+        private readonly string appData;
 
-		/// <summary>
-		/// Attempts to add a new backup job with the specified parameters.
-		/// </summary>
-		/// <remarks>The method will not add a job if the maximum allowed number of backup jobs has already been
-		/// reached. Parameter values must be valid and non-empty to successfully add a job.</remarks>
-		/// <param name="name">The name of the backup job. Cannot be null, empty, or consist only of white-space characters.</param>
-		/// <param name="sourceDir">The source directory to back up. Cannot be null, empty, or consist only of white-space characters.</param>
-		/// <param name="targetDir">The target directory where the backup will be stored. Cannot be null, empty, or consist only of white-space
-		/// characters.</param>
-		/// <param name="type">The type of backup to perform for the job.</param>
-		/// <returns>true if the backup job was added successfully; otherwise, false. Returns false if the maximum number of backup
-		/// jobs has been reached or if any parameter is invalid.</returns>
-		public bool AddJob(string? name, string? sourceDir, string? targetDir, BackupType type)
-		{
-			if (_backupJobs.Count >= MaxBackupJobs && MaxBackupJobs != -1)
-				return false;
+        public Signal LatestSignal { get; private set; }
 
-			if (string.IsNullOrWhiteSpace(name) ||
-				string.IsNullOrWhiteSpace(sourceDir) ||
-				string.IsNullOrWhiteSpace(targetDir))
-			{
-				return false;
-			}
+        private BackupManager()
+        {
+            // Initialisation des chemins
+            appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave");
 
-			if (string.IsNullOrEmpty(name) ||
-				string.IsNullOrEmpty(sourceDir) ||
-				string.IsNullOrEmpty(targetDir))
-			{
-				return false;
-			}
+            // Initialisation des composants
+            _stateWriter = new StateWriter(Path.Combine(appData, "State"));
+            ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
 
-			int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
+            // Gestion de la limite de jobs
+            MaxBackupJobs = ConfigManager.GetConfig("MaxBackupJobs");
+            var useBackupJobLimit = ConfigManager.GetConfig("UseBackupJobLimit") as JValue;
+            if (useBackupJobLimit?.Value is bool val && val == false) MaxBackupJobs = -1;
 
-			var job = new BackupJob(newId, name, sourceDir, targetDir, type);
-			_backupJobs.Add(job);
-			ConfigManager.SaveBackupJobs(_backupJobs);
-
-			return true;
-		}
-
-		/// <summary>
-		/// Deletes the backup job with the specified identifier.
-		/// </summary>
-		/// <param name="id">The unique identifier of the backup job to delete.</param>
-		/// <returns>true if the backup job was found and deleted; otherwise, false.</returns>
-		public bool DeleteJob(int id)
-		{
-			var job = _backupJobs.FirstOrDefault(j => j.Id == id);
-			if (job == null)
-				return false;
-
-			_backupJobs.Remove(job);
-			ConfigManager.SaveBackupJobs(_backupJobs);
-			return true;
-		}
-
-		/// <summary>
-		/// Executes the backup job with the specified identifier.
-		/// </summary>
-		/// <param name="id">The unique identifier of the backup job to execute.</param>
-		/// <param name="progressCallback">An optional callback that receives progress updates during job execution. If null, progress updates are not
-		/// reported.</param>
-		/// <exception cref="ArgumentException">Thrown if a backup job with the specified ID does not exist.</exception>
-		public bool ExecuteJob(int id, Action<ProgressState>? progressCallback = null)
-		{
-			var job = _backupJobs.FirstOrDefault(j => j.Id == id);
-			if (job == null)
-				throw new ArgumentException($"Backup job with ID {id} not found.");
-
-			ExecuteSingleJob(job, progressCallback);
-
-            return job.State != State.Error;
+            // Chargement des travaux
+            _backupJobs = ConfigManager.LoadBackupJobs();
+            LatestSignal = Signal.None;
         }
 
-		/// <summary>
-		/// Executes all backup jobs with IDs in the specified inclusive range, optionally reporting progress for each job.
-		/// </summary>
-		/// <param name="startId">The first job ID in the range to execute. Must be less than or equal to <paramref name="endId"/>.</param>
-		/// <param name="endId">The last job ID in the range to execute. Must be greater than or equal to <paramref name="startId"/>.</param>
-		/// <param name="progressCallback">An optional callback that receives progress updates for each job as it is executed. If <see langword="null"/>, no
-		/// progress is reported.</param>
-		public void ExecuteJobRange(int startId, int endId, Action<ProgressState>? progressCallback = null)
-		{
-            List<Task> tasks = new();
-            for (int i = startId; i <= endId; i++)
-			{
-				var job = _backupJobs.FirstOrDefault(j => j.Id == i);
-				if (job != null)
-				{
-                    tasks.Add(Task.Run(() => ExecuteSingleJob(job, progressCallback)));
+        public static BackupManager GetBM()
+        {
+            if (_instance == null)
+            {
+                lock (_lock)
+                {
+                    _instance ??= new BackupManager();
                 }
-			}
+            }
+            return _instance;
+        }
+
+        public static ILogger GetLogger()
+        {
+            if (_logger == null)
+            {
+                var BM = GetBM();
+                var format = BM.ConfigManager.GetConfig("LoggerFormat");
+                lock (_lock)
+                {
+                    _logger = LoggerFactory.CreateLogger(format?.Value as string ?? "text", Path.Combine(BM.appData, "Logs"));
+                }
+            }
+            return _logger;
+        }
+
+        // --- GESTION DES JOBS (CRUD) ---
+
+        public List<BackupJob> GetAllJobs() => [.. _backupJobs];
+
+        public bool AddJob(string? name, string? sourceDir, string? targetDir, BackupType type)
+        {
+            if (_backupJobs.Count >= MaxBackupJobs && MaxBackupJobs != -1) return false;
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(sourceDir) || string.IsNullOrWhiteSpace(targetDir)) return false;
+
+            int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
+            var job = new BackupJob(newId, name, sourceDir, targetDir, type);
+            _backupJobs.Add(job);
+            ConfigManager.SaveBackupJobs(_backupJobs);
+            return true;
+        }
+
+        public bool DeleteJob(int id)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            if (job == null) return false;
+            _backupJobs.Remove(job);
+            ConfigManager.SaveBackupJobs(_backupJobs);
+            return true;
+        }
+
+        // --- EXÉCUTION & CONTRÔLE (ASYNCHRONE) ---
+
+        /// <summary>
+        /// Exécute un job unique de manière asynchrone (utile pour le monitoring).
+        /// </summary>
+        public Task ExecuteJobAsync(int id, Action<ProgressState>? progressCallback = null)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            if (job == null) throw new ArgumentException($"Job {id} not found.");
+            
+            job.ResetControls(); // Reset Pause/Stop tokens
+            return Task.Run(() => ExecuteSingleJob(job, progressCallback));
+        }
+
+        public void ExecuteJob(int id, Action<ProgressState>? progressCallback = null)
+        {
+            ExecuteJobAsync(id, progressCallback).Wait();
+        }
+
+        public void ExecuteJobRange(int startId, int endId, Action<ProgressState>? progressCallback = null)
+        {
+            var tasks = _backupJobs.Where(j => j.Id >= startId && j.Id <= endId)
+                                   .Select(j => { j.ResetControls(); return Task.Run(() => ExecuteSingleJob(j, progressCallback)); });
             Task.WaitAll(tasks.ToArray());
         }
 
-		/// <summary>
-		/// Executes the backup jobs corresponding to the specified job IDs, optionally reporting progress for each job.
-		/// </summary>
-		/// <param name="ids">An array of job identifiers specifying which backup jobs to execute. Only jobs with matching IDs will be
-		/// processed.</param>
-		/// <param name="progressCallback">An optional callback that receives progress updates for each job as it executes. If null, progress is not
-		/// reported.</param>
-		public void ExecuteJobList(int[] ids, Action<ProgressState>? progressCallback = null)
-		{
-            List<Task> tasks = new();
-            foreach (var id in ids)
-			{
-				var job = _backupJobs.FirstOrDefault(j => j.Id == id);
-				if (job != null)
-				{
-                    tasks.Add(Task.Run(() => ExecuteSingleJob(job, progressCallback)));
-                }
-			}
+        public void ExecuteJobList(int[] ids, Action<ProgressState>? progressCallback = null)
+        {
+            var tasks = _backupJobs.Where(j => ids.Contains(j.Id))
+                                   .Select(j => { j.ResetControls(); return Task.Run(() => ExecuteSingleJob(j, progressCallback)); });
             Task.WaitAll(tasks.ToArray());
         }
 
-		/// <summary>
-		/// Executes all configured backup jobs in sequence, optionally reporting progress for each job.
-		/// </summary>
-		/// <remarks>Each backup job is executed in the order in which it was added. The method blocks until all jobs
-		/// have completed. If a progress callback is provided, it is invoked for each job's progress updates.</remarks>
-		/// <param name="progressCallback">An optional callback that receives progress updates for each job as a <see cref="ProgressState"/> instance. If
-		/// <see langword="null"/>, no progress is reported.</param>
-		public void ExecuteAllJobs(Action<ProgressState>? progressCallback = null)
-		{
+        /// <summary>
+        /// Déclenche l'exécution de tous les jobs et retourne la liste des tâches pour le moniteur.
+        /// </summary>
+        public List<Task> ExecuteAllJobsAsync(Action<ProgressState>? progressCallback = null)
+        {
             List<Task> tasks = new();
             foreach (var job in _backupJobs)
-			{
+            {
+                job.ResetControls();
                 tasks.Add(Task.Run(() => ExecuteSingleJob(job, progressCallback)));
             }
-            Task.WaitAll(tasks.ToArray());
+            return tasks;
         }
 
-		/// <summary>
-		/// Executes the specified backup job and updates progress using the provided callback.
-		/// </summary>
-		/// <remarks>If an exception occurs during job execution, the job is marked as failed and the error is logged
-		/// before the exception is rethrown. The job's progress state is removed after execution completes, regardless of
-		/// success or failure.</remarks>
-		/// <param name="job">The backup job to execute. Cannot be null.</param>
-		/// <param name="progressCallback">An optional callback that receives progress updates as the job executes. If null, progress updates are not
-		/// reported to the caller.</param>
-		private void ExecuteSingleJob(BackupJob job, Action<ProgressState>? progressCallback)
-		{
-			try
-			{
-				void ProgressHandler(ProgressState state)
-				{
-					_stateWriter.UpdateState(state);
-					progressCallback?.Invoke(state);
-				}
+        public void ExecuteAllJobs(Action<ProgressState>? progressCallback = null)
+        {
+            Task.WaitAll(ExecuteAllJobsAsync(progressCallback).ToArray());
+        }
 
-				job.Execute(ProgressHandler);
+        // --- MÉTHODES DE PILOTAGE ---
 
-				ConfigManager.SaveBackupJobs(_backupJobs);
-			}
-			catch (Exception e)
-			{
-				job.Error();
-				BackupManager.GetLogger().LogError(e);
-			}
-			finally
-			{
-				_stateWriter.RemoveState(job.Name);
-			}
-		}
+        public void PauseJob(int id) => _backupJobs.FirstOrDefault(j => j.Id == id)?.PauseWaitHandle.Reset();
+        public void ResumeJob(int id) => _backupJobs.FirstOrDefault(j => j.Id == id)?.PauseWaitHandle.Set();
+        public void StopJob(int id) => _backupJobs.FirstOrDefault(j => j.Id == id)?.Cts.Cancel();
 
-		public void TransmitSignal(Signal signal)
-		{
-			LatestSignal = signal;
-		}
+        public void PauseAllJobs() => _backupJobs.ForEach(j => j.PauseWaitHandle.Reset());
+        public void ResumeAllJobs() => _backupJobs.ForEach(j => j.PauseWaitHandle.Set());
+        public void StopAllJobs() => _backupJobs.ForEach(j => j.Cts.Cancel());
 
-	}
+        // --- LOGIQUE INTERNE ---
+
+        private void ExecuteSingleJob(BackupJob job, Action<ProgressState>? progressCallback)
+        {
+            try
+            {
+                void ProgressHandler(ProgressState state)
+                {
+                    _stateWriter.UpdateState(state);
+                    progressCallback?.Invoke(state);
+                }
+                job.Execute(ProgressHandler);
+                ConfigManager.SaveBackupJobs(_backupJobs);
+            }
+            catch (Exception e)
+            {
+                job.Error();
+                GetLogger().LogError(e);
+            }
+            finally
+            {
+                _stateWriter.RemoveState(job.Name);
+            }
+        }
+
+        public void TransmitSignal(Signal signal) => LatestSignal = signal;
+    }
 }

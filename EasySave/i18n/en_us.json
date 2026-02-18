@@ -74,6 +74,17 @@
 	"settings_window_maximized": "Fullscreen (Maximized)",
 	"settings_window_fullscreen": "Fullscreen (Borderless)",
 	"settings_applied": "Settings applied successfully!",
+
+	"settings_general": "General",
+	"settings_business_soft": "Business Software (Process):",
+	"settings_log_format": "Log Format:",
+	"settings_crypto": "Encryption (CryptoSoft)",
+	"settings_crypto_path": "Path to CryptoSoft:",
+	"settings_crypto_key": "Encryption Key:",
+	"settings_performance": "Performance & Priority",
+	"settings_max_size": "Max parallel transfer size (KB):",
+	"settings_priority_ext": "Priority Extensions (comma separated):",
+
 	"language_title": "Change Language",
 	"language_select": "Select language:",
 	"language_apply": "Apply",

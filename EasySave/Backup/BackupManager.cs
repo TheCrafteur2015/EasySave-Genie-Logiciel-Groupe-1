@@ -118,7 +118,11 @@ namespace EasySave.Backup
 			var job = _backupJobs.FirstOrDefault(j => j.Id == id);
 			if (job == null) return false;
 			_backupJobs.Remove(job);
-			ConfigManager.SaveBackupJobs(_backupJobs);
+            for (int i = 0; i < _backupJobs.Count; i++)
+            {
+                _backupJobs[i].Id = i + 1;
+            }
+            ConfigManager.SaveBackupJobs(_backupJobs);
 			return true;
 		}
 

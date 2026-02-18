@@ -3,7 +3,7 @@
 	"MaxBackupJobs": 5,
 	"UseBackupJobLimit": false,
 	"LoggerFormat": "text",
-	"CryptoSoftPath": "C:\\FISA_A3\\Bloc_Génie_Logiciel\\EasySave-Genie-Logiciel-Groupe-1\\EasyConsole\\bin\\Debug\\net8.0\\CryptoSoft.exe",
+	"CryptoSoftPath": "CryptoSoft.exe",
 	"CryptoKey": "1234",
 	"PriorityExtensions": [ ".txt", ".json", ".xml" ],
 	"BusinessSoftware": "CalculatorApp",

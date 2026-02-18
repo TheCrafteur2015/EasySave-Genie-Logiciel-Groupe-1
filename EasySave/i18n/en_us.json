@@ -125,5 +125,14 @@
 	"state_inactive": "Inactive",
 	"state_completed": "Completed",
 	"state_error": "Error",
-	"never": "Never"
+	"never": "Never",
+
+	"create_error_duplicate": "Error: A job with this name already exists.",
+	"status_paused_user": "⏸️ Paused by user",
+	"status_paused_all": "⏸️ All Paused",
+	"status_running": "Running...",
+	"btn_pause": "Pause",
+	"btn_resume": "Resume",
+	"btn_stop": "Stop"
+
 }

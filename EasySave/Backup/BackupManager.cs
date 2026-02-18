@@ -105,8 +105,9 @@ namespace EasySave.Backup
 		{
 			if (_backupJobs.Count >= MaxBackupJobs && MaxBackupJobs != -1) return false;
 			if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(sourceDir) || string.IsNullOrWhiteSpace(targetDir)) return false;
+            if (_backupJobs.Any(j => j.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) return false;
 
-			int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
+            int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
 			var job = new BackupJob(newId, name, sourceDir, targetDir, type);
 			_backupJobs.Add(job);
 			ConfigManager.SaveBackupJobs(_backupJobs);
@@ -178,19 +179,69 @@ namespace EasySave.Backup
 			Task.WaitAll(ExecuteAllJobsAsync(progressCallback).ToArray());
 		}
 
-		// --- M�THODES DE PILOTAGE ---
+        // --- M�THODES DE PILOTAGE ---
 
-		public void PauseJob(int id) => _backupJobs.FirstOrDefault(j => j.Id == id)?.PauseWaitHandle.Reset();
-		public void ResumeJob(int id) => _backupJobs.FirstOrDefault(j => j.Id == id)?.PauseWaitHandle.Set();
-		public void StopJob(int id) => _backupJobs.FirstOrDefault(j => j.Id == id)?.Cts.Cancel();
+        public void StopJob(int id)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            if (job != null)
+            {
+                job.Cts.Cancel();           // 1. On demande l'arrêt
+                job.PauseWaitHandle.Set();  // 2. IMPORTANT : On débloque le thread s'il dormait en pause !
+            }
+        }
 
-		public void PauseAllJobs() => _backupJobs.ForEach(j => j.PauseWaitHandle.Reset());
-		public void ResumeAllJobs() => _backupJobs.ForEach(j => j.PauseWaitHandle.Set());
-		public void StopAllJobs() => _backupJobs.ForEach(j => j.Cts.Cancel());
+        public void StopAllJobs()
+        {
+            foreach (var job in _backupJobs)
+            {
+                job.Cts.Cancel();           // 1. On demande l'arrêt
+                job.PauseWaitHandle.Set();  // 2. On réveille tout le monde pour qu'ils s'arrêtent
+            }
+        }
 
-		// --- LOGIQUE INTERNE ---
+        // --- MÉTHODES DE PILOTAGE CORRIGÉES ---
 
-		private void ExecuteSingleJob(BackupJob job, Action<ProgressState>? progressCallback)
+        public void PauseJob(int id)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            if (job != null)
+            {
+                job.State = State.Paused; // <--- C'EST CELLE-CI QUI FAIT MARCHER LE BOUTON
+                job.PauseWaitHandle.Reset();
+            }
+        }
+
+        public void ResumeJob(int id)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            if (job != null)
+            {
+                job.State = State.Active; // <--- LIGNE CRUCIALE AJOUTÉE
+                job.PauseWaitHandle.Set();
+            }
+        }
+
+        public void PauseAllJobs()
+        {
+            foreach (var job in _backupJobs)
+            {
+                job.State = State.Paused; // <--- FORÇAGE DE L'ÉTAT
+                job.PauseWaitHandle.Reset();
+            }
+        }
+
+        public void ResumeAllJobs()
+        {
+            foreach (var job in _backupJobs)
+            {
+                job.State = State.Active; // <--- FORÇAGE DE L'ÉTAT
+                job.PauseWaitHandle.Set();
+            }
+        }
+        // --- LOGIQUE INTERNE ---
+
+        private void ExecuteSingleJob(BackupJob job, Action<ProgressState>? progressCallback)
 		{
 			try
 			{

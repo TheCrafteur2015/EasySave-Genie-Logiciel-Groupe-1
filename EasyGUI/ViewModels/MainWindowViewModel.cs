@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
 using Avalonia.Threading;
@@ -17,6 +17,16 @@ namespace EasyGUI.ViewModels
 {
     public class JobProgressItem : ObservableObject
     {
+        // --- V3.0 Properties ---
+        public int JobId { get; set; }
+
+        private string _progressBytes = "";
+        public string ProgressBytes { get => _progressBytes; set => SetProperty(ref _progressBytes, value); }
+
+        private bool _isPaused = false;
+        public bool IsPaused { get => _isPaused; set => SetProperty(ref _isPaused, value); }
+
+        // --- Shared/Feature Properties ---
         private string _jobName = "";
         public string JobName { get => _jobName; set => SetProperty(ref _jobName, value); }
 
@@ -74,7 +84,15 @@ namespace EasyGUI.ViewModels
         private string _currentFileInfo = "";
         public string CurrentFileInfo { get => _currentFileInfo; set => SetProperty(ref _currentFileInfo, value); }
 
-        // --- SETTINGS PROPERTIES ---
+        // V3.0 Execution Extras
+        private string _currentSizeInfo = "";
+        public string CurrentSizeInfo { get => _currentSizeInfo; set => SetProperty(ref _currentSizeInfo, value); }
+
+        private bool _isSingleJobPaused = false;
+        public bool IsSingleJobPaused { get => _isSingleJobPaused; set => SetProperty(ref _isSingleJobPaused, value); }
+
+
+        // --- SETTINGS PROPERTIES (Merged Feature + V3) ---
         private int _selectedLanguage = 0;
         public int SelectedLanguage { get => _selectedLanguage; set => SetProperty(ref _selectedLanguage, value); }
 
@@ -103,11 +121,11 @@ namespace EasyGUI.ViewModels
         public ObservableCollection<string> BackupTypes { get; private set; }
         public ObservableCollection<string> WindowModes { get; private set; }
 
-        // --- TRADUCTIONS DYNAMIQUES (PROPERTIES) ---
-        // Ces propriétés servent de pont pour que l'interface se mette à jour instantanément
+        // --- DYNAMIC TRANSLATIONS (Properties from Feature Branch) ---
         private I18n _i18n = I18n.Instance;
 
         public string AppTitle => _i18n.GetString("app_title");
+        public string MenuTitle => _i18n.GetString("menu_title");
         public string MenuDashboard => _i18n.GetString("menu_dashboard");
         public string MenuActionsTitle => _i18n.GetString("menu_actions_title");
         public string MenuCreate => _i18n.GetString("menu_create");
@@ -117,23 +135,28 @@ namespace EasyGUI.ViewModels
         public string MenuDelete => _i18n.GetString("menu_delete");
         public string MenuSettings => _i18n.GetString("menu_settings");
         public string MenuExit => _i18n.GetString("menu_exit");
+        
         public string ThemeDark => _i18n.GetString("theme_dark");
         public string ThemeLight => _i18n.GetString("theme_light");
-
+        
         public string DashboardWelcome => _i18n.GetString("dashboard_welcome");
         public string DashboardSubtitle => _i18n.GetString("dashboard_subtitle");
-
+        
         public string CreateTitle => _i18n.GetString("create_title");
         public string CreateName => _i18n.GetString("create_name");
         public string CreateSource => _i18n.GetString("create_source");
         public string CreateTarget => _i18n.GetString("create_target");
         public string CreateType => _i18n.GetString("create_type");
+        public string CreateButton => _i18n.GetString("create_button");
         public string BtnSave => _i18n.GetString("btn_save");
         public string BtnCancel => _i18n.GetString("btn_cancel");
 
         public string ExecuteTitle => _i18n.GetString("execute_title");
         public string ExecuteSubtitle => _i18n.GetString("execute_subtitle");
+        public string ExecuteSelect => _i18n.GetString("execute_select");
         public string ExecutePlaceholder => _i18n.GetString("execute_placeholder");
+        public string ExecuteButton => _i18n.GetString("execute_button");
+        public string ExecuteNoJobs => _i18n.GetString("execute_no_jobs");
         public string BtnStart => _i18n.GetString("btn_start");
 
         public string ExecuteAllTitle => _i18n.GetString("execute_all_title");
@@ -141,11 +164,17 @@ namespace EasyGUI.ViewModels
         public string BtnStartAll => _i18n.GetString("btn_start_all");
 
         public string ListTitle => _i18n.GetString("list_title");
+        public string ListId => _i18n.GetString("list_id");
+        public string ListName => _i18n.GetString("list_name");
+        public string ListSource => _i18n.GetString("list_source");
+        public string ListTarget => _i18n.GetString("list_target");
+
         public string DeleteTitle => _i18n.GetString("delete_title");
         public string DeleteWarning => _i18n.GetString("delete_warning");
+        public string DeleteNoJobs => _i18n.GetString("delete_no_jobs");
         public string BtnDelete => _i18n.GetString("btn_delete");
 
-        // Paramètres (ceux qui posaient problème)
+        // Settings Strings
         public string SettingsTitle => _i18n.GetString("settings_title");
         public string SettingsLang => _i18n.GetString("settings_lang");
         public string SettingsWindowMode => _i18n.GetString("settings_window_mode");
@@ -159,6 +188,14 @@ namespace EasyGUI.ViewModels
         public string SettingsMaxSize => _i18n.GetString("settings_max_size");
         public string SettingsPriorityExt => _i18n.GetString("settings_priority_ext");
         public string BtnApply => _i18n.GetString("btn_apply");
+
+        public string LanguageTitle => _i18n.GetString("language_title");
+        public string LanguageSelect => _i18n.GetString("language_select");
+        public string LanguageApply => _i18n.GetString("language_apply");
+        public string ButtonBack => _i18n.GetString("button_back");
+
+        public string TypeComplete => _i18n.GetString("type_complete");
+        public string TypeDifferential => _i18n.GetString("type_differential");
 
 
         // --- COMMANDS ---
@@ -177,17 +214,33 @@ namespace EasyGUI.ViewModels
         public ICommand DeleteSelectedJobCommand { get; }
         public ICommand ApplySettingsCommand { get; }
 
+        // V3.0 Control Commands
+        public ICommand PauseJobCommand { get; }
+        public ICommand ResumeJobCommand { get; }
+        public ICommand StopJobCommand { get; }
+        public ICommand PauseAllCommand { get; }
+        public ICommand ResumeAllCommand { get; }
+        public ICommand StopAllCommand { get; }
+        public ICommand TogglePauseJobCommand { get; }
+
         public MainWindowViewModel()
         {
             _backupManager = BackupManager.GetBM();
+
             var jobsFromManager = _backupManager.GetAllJobs();
             BackupJobs = new ObservableCollection<BackupJob>(jobsFromManager);
             JobsProgress = new ObservableCollection<JobProgressItem>();
 
-            BackupTypes = new ObservableCollection<string> { "Complete", "Differential" };
-            WindowModes = new ObservableCollection<string>();
+            // Initialize Collections
+            BackupTypes = new ObservableCollection<string> { TypeComplete, TypeDifferential };
+            WindowModes = new ObservableCollection<string>
+            {
+                _i18n.GetString("settings_window_windowed"),
+                _i18n.GetString("settings_window_maximized"),
+                _i18n.GetString("settings_window_fullscreen")
+            };
 
-            // Initialize commands
+            // Standard Commands
             SwitchThemeCommand = new RelayCommand<string>(SwitchTheme);
             CreateBackupJobCommand = new RelayCommand(() => { CurrentView = "CreateJob"; StatusMessage = ""; });
             ExecuteBackupJobCommand = new RelayCommand(() => { RefreshBackupJobs(); CurrentView = "ExecuteJob"; StatusMessage = ""; });
@@ -202,6 +255,15 @@ namespace EasyGUI.ViewModels
             ExecuteSelectedJobCommand = new RelayCommand(ExecuteSelectedJob);
             DeleteSelectedJobCommand = new RelayCommand(DeleteSelectedJob);
             ApplySettingsCommand = new RelayCommand(ApplySettings);
+
+            // V3.0 Control Commands
+            PauseJobCommand = new RelayCommand<int>(id => _backupManager.PauseJob(id));
+            ResumeJobCommand = new RelayCommand<int>(id => _backupManager.ResumeJob(id));
+            StopJobCommand = new RelayCommand<int>(id => _backupManager.StopJob(id));
+            PauseAllCommand = new RelayCommand(() => _backupManager.PauseAllJobs());
+            ResumeAllCommand = new RelayCommand(() => _backupManager.ResumeAllJobs());
+            StopAllCommand = new RelayCommand(() => _backupManager.StopAllJobs());
+            TogglePauseJobCommand = new RelayCommand<int>(TogglePauseJob);
 
             LoadPersistentSettings();
         }
@@ -231,6 +293,30 @@ namespace EasyGUI.ViewModels
             Dispatcher.UIThread.Post(async () => {
                 await ApplyWindowModeLogic(SelectedWindowMode);
             }, DispatcherPriority.Loaded);
+        }
+
+        // --- METHODS ---
+
+        private void SwitchTheme(string? theme)
+        {
+            if (Application.Current is not null)
+            {
+                Application.Current.RequestedThemeVariant = theme switch
+                {
+                    "Light" => ThemeVariant.Light,
+                    "Dark" => ThemeVariant.Dark,
+                    _ => ThemeVariant.Default
+                };
+            }
+        }
+
+        private void RefreshBackupJobs()
+        {
+            BackupJobs.Clear();
+            foreach (var job in _backupManager.GetAllJobs())
+            {
+                BackupJobs.Add(job);
+            }
         }
 
         private async Task ApplyWindowModeLogic(int mode)
@@ -264,9 +350,254 @@ namespace EasyGUI.ViewModels
             }
         }
 
+        private async void SaveNewJob()
+        {
+            if (_backupManager.GetAllJobs().Any(j => j.Name.Equals(NewJobName, StringComparison.OrdinalIgnoreCase)))
+            {
+                StatusMessage = "✗ " + _i18n.GetString("create_error_duplicate");
+                return;
+            }
+
+            BackupType type = SelectedBackupType == 0 ? BackupType.Complete : BackupType.Differential;
+
+            bool success = _backupManager.AddJob(NewJobName, NewJobSource, NewJobTarget, type);
+
+            if (success)
+            {
+                RefreshBackupJobs();
+                StatusMessage = "✓ " + (_i18n.GetString("create_success") ?? "Job created successfully!");
+                await Task.Delay(2000);
+                NewJobName = "";
+                NewJobSource = "";
+                NewJobTarget = "";
+                SelectedBackupType = 0;
+                StatusMessage = "";
+            }
+            else
+            {
+                StatusMessage = "✗ " + (_i18n.GetString("create_failure") ?? "Failed to create job.");
+            }
+        }
+
+        private async void ExecuteSelectedJob()
+        {
+            if (SelectedJob != null)
+            {
+                IsExecuting = true;
+                CurrentProgress = 0;
+                CurrentSizeInfo = "Calculating...";
+                IsSingleJobPaused = false;
+                int jobId = SelectedJob.Id;
+                string jobName = SelectedJob.Name;
+                StatusMessage = $"Executing '{jobName}'...";
+
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        _backupManager.ExecuteJob(jobId, progress =>
+                        {
+                            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                            {
+                                // --- V3.0 Logic: Byte Calculation ---
+                                long processedBytes = progress.TotalSize - progress.SizeRemaining;
+
+                                // Safety check for division by zero
+                                if (progress.TotalSize > 0)
+                                {
+                                    CurrentProgress = (double)processedBytes / progress.TotalSize * 100;
+                                }
+                                else
+                                {
+                                    CurrentProgress = 0;
+                                }
+
+                                string processedStr = FormatBytes(processedBytes);
+                                string totalStr = FormatBytes(progress.TotalSize);
+                                CurrentSizeInfo = $"{processedStr} / {totalStr}";
+
+                                // Pause State Management
+                                if (progress.State == State.Paused) IsSingleJobPaused = true;
+                                else if (progress.State == State.Active) IsSingleJobPaused = false;
+
+                                if (!string.IsNullOrEmpty(progress.Message))
+                                {
+                                    if (progress.State == State.Paused) StatusMessage = "⏸️ " + progress.Message;
+                                    else if (progress.State == State.Error) StatusMessage = "✗ " + progress.Message;
+                                    else StatusMessage = progress.Message;
+                                }
+                                else
+                                {
+                                    StatusMessage = $"Running: {CurrentProgress:F1}%";
+                                }
+                            });
+                        });
+
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            RefreshBackupJobs();
+                            SelectedJob = BackupJobs.FirstOrDefault(j => j.Id == jobId);
+                            if (SelectedJob?.State == State.Completed)
+                            {
+                                StatusMessage = $"✓ '{jobName}' completed!";
+                                CurrentProgress = 100;
+                            }
+                            else if (SelectedJob?.State == State.Error)
+                            {
+                                StatusMessage = $"✗ '{jobName}' stopped or error.";
+                            }
+                            IsExecuting = false;
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            IsExecuting = false;
+                            StatusMessage = $"✗ Error: {ex.Message}";
+                        });
+                    }
+                });
+            }
+            else
+            {
+                StatusMessage = "Please select a job.";
+            }
+        }
+
+        private void ExecuteAllBackupJobs()
+        {
+            JobsProgress.Clear();
+            foreach (var job in BackupJobs)
+            {
+                JobsProgress.Add(new JobProgressItem
+                {
+                    JobId = job.Id,
+                    JobName = job.Name,
+                    Status = _i18n.GetString("execute_waiting") ?? "Waiting...",
+                    ProgressPercentage = 0
+                });
+            }
+
+            CurrentView = "ExecuteAll";
+            IsExecuting = false;
+            StatusMessage = "";
+        }
+
+        private bool _allPaused = false;
+
+        private async void StartAllBackupJobs()
+        {
+            IsExecuting = true;
+            StatusMessage = "";
+            _allPaused = false;
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    _backupManager.ExecuteAllJobs(progress =>
+                    {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            var item = JobsProgress.FirstOrDefault(j => j.JobName == progress.BackupName);
+                            if (item != null)
+                            {
+                                long processedBytes = progress.TotalSize - progress.SizeRemaining;
+
+                                if (progress.TotalSize > 0)
+                                    item.ProgressPercentage = (double)processedBytes / progress.TotalSize * 100;
+                                else
+                                    item.ProgressPercentage = 0;
+
+                                string processedStr = FormatBytes(processedBytes);
+                                string totalStr = FormatBytes(progress.TotalSize);
+                                item.ProgressBytes = $"{processedStr} / {totalStr}";
+
+                                if (progress.State == State.Paused) item.IsPaused = true;
+                                else if (progress.State == State.Active) item.IsPaused = false;
+
+                                if (!string.IsNullOrEmpty(progress.Message))
+                                {
+                                    item.Status = progress.Message;
+                                    if (progress.State == State.Paused) item.Status = "⏸️ " + progress.Message;
+                                    else if (progress.State == State.Error) { item.HasError = true; item.Status = "✗ " + progress.Message; }
+                                }
+                                else
+                                {
+                                    item.Status = $"{item.ProgressPercentage:F1}%";
+                                }
+
+                                if (item.ProgressPercentage >= 100 && progress.State == State.Completed)
+                                {
+                                    item.IsCompleted = true;
+                                    item.Status = "Completed!";
+                                }
+                            }
+                        });
+                    });
+
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        foreach (var item in JobsProgress.Where(j => !j.IsCompleted && !j.HasError))
+                        {
+                            item.IsCompleted = true;
+                            item.ProgressPercentage = 100;
+                            item.Status = "Completed!";
+                        }
+                        RefreshBackupJobs();
+                        StatusMessage = "✓ All jobs completed!";
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        StatusMessage = $"✗ Error: {ex.Message}";
+                        foreach (var item in JobsProgress.Where(j => !j.IsCompleted))
+                        {
+                            item.HasError = true;
+                            item.Status = "Error";
+                        }
+                    });
+                }
+                finally
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => IsExecuting = false);
+                }
+            });
+        }
+
+        private async void DeleteSelectedJob()
+        {
+            if (SelectedJob != null)
+            {
+                string jobName = SelectedJob.Name;
+                bool success = _backupManager.DeleteJob(SelectedJob.Id);
+                if (success)
+                {
+                    RefreshBackupJobs();
+                    StatusMessage = $"✓ '{jobName}' deleted!";
+                    await Task.Delay(2000);
+                    SelectedJob = null;
+                    StatusMessage = "";
+                }
+                else
+                {
+                    StatusMessage = "✗ Failed to delete.";
+                }
+            }
+            else
+            {
+                StatusMessage = "Select a job first.";
+            }
+        }
+
         private void OpenSettings()
         {
             var config = _backupManager.ConfigManager;
+            
+            // Load detailed settings (Feature Branch)
             ConfigBusinessSoftware = config.GetConfig<string>("BusinessSoftware") ?? "";
             ConfigCryptoPath = config.GetConfig<string>("CryptoSoftPath") ?? "";
             ConfigCryptoKey = config.GetConfig<string>("CryptoKey") ?? "";
@@ -279,7 +610,18 @@ namespace EasyGUI.ViewModels
             SelectedLogFormat = logFormat.ToLower() == "xml" ? 1 : 0;
 
             SelectedLanguage = I18n.Instance.Language == "fr_fr" ? 1 : 0;
-            // Ne pas écraser SelectedWindowMode ici, il est déjà bindé.
+
+            // Load Window Mode (V3 Logic)
+            if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                var mainWindow = desktop.MainWindow;
+                if (mainWindow != null)
+                {
+                    if (mainWindow.ExtendClientAreaToDecorationsHint) SelectedWindowMode = 2;
+                    else if (mainWindow.WindowState == WindowState.Maximized) SelectedWindowMode = 1;
+                    else SelectedWindowMode = 0;
+                }
+            }
 
             CurrentView = "Settings";
             StatusMessage = "";
@@ -289,19 +631,20 @@ namespace EasyGUI.ViewModels
         {
             try
             {
-                // Sauvegarde l'état actuel du mode fenêtre car RefreshTranslations va reset la collection
                 int modeToApply = SelectedWindowMode;
-
                 var i18n = I18n.Instance;
+
+                // 1. Language
                 string languageCode = SelectedLanguage == 0 ? "en_us" : "fr_fr";
                 i18n.SetLanguage(languageCode);
 
                 RefreshTranslations();
 
-                // On s'assure que le mode fenêtre est ré-appliqué visuellement
+                // 2. Window Mode
                 SelectedWindowMode = modeToApply;
                 await ApplyWindowModeLogic(SelectedWindowMode);
 
+                // 3. Save Configuration
                 var config = _backupManager.ConfigManager;
                 config.SetConfig("AppLanguage", languageCode);
                 config.SetConfig("AppWindowMode", SelectedWindowMode);
@@ -362,7 +705,7 @@ namespace EasyGUI.ViewModels
             OnPropertyChanged(nameof(DeleteWarning));
             OnPropertyChanged(nameof(BtnDelete));
 
-            // Paramètres (CRITIQUE pour votre demande)
+            // Paramètres
             OnPropertyChanged(nameof(SettingsTitle));
             OnPropertyChanged(nameof(SettingsLang));
             OnPropertyChanged(nameof(SettingsWindowMode));
@@ -377,6 +720,9 @@ namespace EasyGUI.ViewModels
             OnPropertyChanged(nameof(SettingsPriorityExt));
             OnPropertyChanged(nameof(BtnApply));
 
+            OnPropertyChanged(nameof(TypeComplete));
+            OnPropertyChanged(nameof(TypeDifferential));
+
             // Listes
             BackupTypes.Clear();
             BackupTypes.Add(_i18n.GetString("type_complete"));
@@ -388,79 +734,61 @@ namespace EasyGUI.ViewModels
             WindowModes.Add(_i18n.GetString("settings_window_fullscreen"));
         }
 
-        // --- AUTRES MÉTHODES (Simplifiées pour la lisibilité) ---
-        private void SwitchTheme(string? theme)
+        private void Exit()
         {
-            if (Application.Current != null)
-                Application.Current.RequestedThemeVariant = theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
+            if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop) 
+                desktop.Shutdown();
         }
 
-        private void RefreshBackupJobs()
-        {
-            BackupJobs.Clear();
-            foreach (var job in _backupManager.GetAllJobs()) BackupJobs.Add(job);
-        }
+        // --- HELPER METHODS FROM V3.0 ---
 
-        private async void SaveNewJob()
+        private void TogglePauseJob(int id)
         {
-            bool success = _backupManager.AddJob(NewJobName, NewJobSource, NewJobTarget, SelectedBackupType == 0 ? BackupType.Complete : BackupType.Differential);
-            StatusMessage = success ? "✓ " + _i18n.GetString("create_success") : "✗ " + _i18n.GetString("create_failure");
-            if (success) { RefreshBackupJobs(); await Task.Delay(2000); StatusMessage = ""; }
-        }
-
-        private void ExecuteAllBackupJobs()
-        {
-            JobsProgress.Clear();
-            foreach (var job in BackupJobs) JobsProgress.Add(new JobProgressItem { JobName = job.Name, Status = "Waiting..." });
-            CurrentView = "ExecuteAll";
-        }
-
-        private async void StartAllBackupJobs()
-        {
-            IsExecuting = true;
-            await Task.Run(() => {
-                _backupManager.ExecuteAllJobs(p => {
-                    var item = JobsProgress.FirstOrDefault(j => j.JobName == p.BackupName);
-                    if (item != null)
-                    {
-                        item.ProgressPercentage = p.ProgressPercentage;
-                        item.Status = !string.IsNullOrEmpty(p.Message) ? p.Message : $"{p.ProgressPercentage:F0}%";
-                        if (p.State == State.Completed) item.IsCompleted = true;
-                    }
-                });
-                Avalonia.Threading.Dispatcher.UIThread.Post(() => { IsExecuting = false; StatusMessage = "Completed!"; });
-            });
-        }
-
-        private async void ExecuteSelectedJob()
-        {
-            if (SelectedJob == null) return;
-            IsExecuting = true;
-            await Task.Run(() => {
-                _backupManager.ExecuteJob(SelectedJob.Id, p => {
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() => {
-                        CurrentProgress = p.ProgressPercentage;
-                        StatusMessage = !string.IsNullOrEmpty(p.Message) ? p.Message : $"{p.ProgressPercentage:F0}%";
-                    });
-                });
-                Avalonia.Threading.Dispatcher.UIThread.Post(() => { IsExecuting = false; StatusMessage = "Done!"; });
-            });
-        }
-
-        private async void DeleteSelectedJob()
-        {
-            if (SelectedJob != null && _backupManager.DeleteJob(SelectedJob.Id))
+            var job = _backupManager.GetAllJobs().FirstOrDefault(j => j.Id == id);
+            if (job != null)
             {
-                RefreshBackupJobs();
-                StatusMessage = "Deleted!";
-                await Task.Delay(1000);
-                StatusMessage = "";
+                if (job.State == State.Paused)
+                {
+                    _backupManager.ResumeJob(id);
+                    UpdateUiState(id, false, _i18n.GetString("status_running") ?? "Running");
+                }
+                else
+                {
+                    _backupManager.PauseJob(id);
+                    UpdateUiState(id, true, _i18n.GetString("status_paused_user") ?? "Paused by user");
+                }
             }
         }
 
-        private void Exit()
+        private void UpdateUiState(int jobId, bool isPaused, string message)
         {
-            if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop) desktop.Shutdown();
+            // 1. Update Single View (ExecuteJob)
+            if (SelectedJob?.Id == jobId)
+            {
+                IsSingleJobPaused = isPaused;
+                StatusMessage = message;
+            }
+
+            // 2. Update List View (ExecuteAll)
+            var item = JobsProgress.FirstOrDefault(j => j.JobId == jobId);
+            if (item != null)
+            {
+                item.IsPaused = isPaused;
+                item.Status = message;
+            }
+        }
+
+        private string FormatBytes(long bytes)
+        {
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            int counter = 0;
+            decimal number = (decimal)bytes;
+            while (Math.Round(number / 1024) >= 1)
+            {
+                number = number / 1024;
+                counter++;
+            }
+            return string.Format("{0:n2} {1}", number, suffixes[counter]);
         }
     }
 }

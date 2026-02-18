@@ -89,3 +89,5 @@ ServiceFabricBackup/
 .DS_Store
 
 publish/
+
+repomix-output.xml

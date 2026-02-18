@@ -105,8 +105,9 @@ namespace EasySave.Backup
 		{
 			if (_backupJobs.Count >= MaxBackupJobs && MaxBackupJobs != -1) return false;
 			if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(sourceDir) || string.IsNullOrWhiteSpace(targetDir)) return false;
+            if (_backupJobs.Any(j => j.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) return false;
 
-			int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
+            int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
 			var job = new BackupJob(newId, name, sourceDir, targetDir, type);
 			_backupJobs.Add(job);
 			ConfigManager.SaveBackupJobs(_backupJobs);

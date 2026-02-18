@@ -45,7 +45,10 @@ namespace EasySave.Backup
                 Interlocked.Add(ref BackupManager.GlobalPriorityFilesPending, priorityFiles.Count);
             }
 
-            // 4. Attente active du logiciel métier
+            int processedFiles = 0;
+            long processedSize = 0;
+
+            // 4. Attente active du logiciel métier (Avant de commencer)
             bool logSentStart = false;
             while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
             {
@@ -60,7 +63,11 @@ namespace EasySave.Backup
                 {
                     BackupName = job.Name,
                     State = State.Paused,
-                    Message = $"En attente de fermeture de : {BusinessSoftware}"
+                    Message = $"En attente de fermeture de : {BusinessSoftware}",
+                    TotalFiles = totalFiles,
+                    TotalSize = totalSize,
+                    FilesRemaining = totalFiles,
+                    SizeRemaining = totalSize
                 });
 
                 Thread.Sleep(2000);
@@ -72,9 +79,6 @@ namespace EasySave.Backup
                     return;
                 }
             }
-
-            int processedFiles = 0;
-            long processedSize = 0;
 
             // 5. Boucle de copie
             foreach (var sourceFile in sortedFiles)
@@ -91,9 +95,19 @@ namespace EasySave.Backup
                 }
                 job.PauseWaitHandle.Wait();
 
+                // Re-vérification Logiciel Métier pendant la boucle (entre les fichiers)
                 while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
                 {
-                    progressCallback?.Invoke(new ProgressState { BackupName = job.Name, State = State.Paused, Message = $"Logiciel métier détecté. Pause forcée..." });
+                    progressCallback?.Invoke(new ProgressState
+                    {
+                        BackupName = job.Name,
+                        State = State.Paused,
+                        Message = $"Logiciel métier détecté. Pause forcée...",
+                        TotalFiles = totalFiles,
+                        TotalSize = totalSize,
+                        FilesRemaining = totalFiles - processedFiles,
+                        SizeRemaining = totalSize - processedSize
+                    });
                     Thread.Sleep(2000);
                     if (job.Cts.IsCancellationRequested) break;
                 }
@@ -143,9 +157,7 @@ namespace EasySave.Backup
                         semaphoreAcquired = true;
                     }
 
-                    // --- NOUVEAU : COPIE PAR STREAM (CHUNK BY CHUNK) ---
-                    // Remplace File.Copy pour permettre la progression fluide
-
+                    // --- COPIE PAR STREAM (CHUNK BY CHUNK) ---
                     long currentFileCopied = 0;
                     byte[] buffer = new byte[4 * 1024 * 1024]; // Buffer de 4 Mo
                     int bytesRead;
@@ -160,14 +172,19 @@ namespace EasySave.Backup
                             if (job.Cts.IsCancellationRequested) break;
                             job.PauseWaitHandle.Wait();
 
-                            // Vérification Logiciel métier (Arrêt immédiat V3.0)
+                            // Vérification Logiciel métier (PENDANT la copie)
                             while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
                             {
                                 progressCallback?.Invoke(new ProgressState
                                 {
                                     BackupName = job.Name,
                                     State = State.Paused,
-                                    Message = $"Pause : {BusinessSoftware}..."
+                                    Message = $"Pause : {BusinessSoftware}...",
+                                    TotalFiles = totalFiles,
+                                    TotalSize = totalSize,
+                                    FilesRemaining = totalFiles - processedFiles,
+                                    // Calcul précis du restant
+                                    SizeRemaining = totalSize - (processedSize + currentFileCopied)
                                 });
                                 Thread.Sleep(2000);
                                 if (job.Cts.IsCancellationRequested) break;
@@ -189,7 +206,6 @@ namespace EasySave.Backup
                                     TotalFiles = totalFiles,
                                     TotalSize = totalSize,
                                     FilesRemaining = totalFiles - processedFiles,
-                                    // CALCUL DYNAMIQUE DU RESTE À FAIRE EN OCTETS
                                     SizeRemaining = totalSize - (processedSize + currentFileCopied),
                                     CurrentSourceFile = sourceFile,
                                     CurrentTargetFile = targetFile,

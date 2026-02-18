@@ -165,8 +165,8 @@ namespace EasySave.Utils
 				// Supprimer le fichier corrompu
 				try
 				{
-					File.Delete(_savedBackupJobPath);
-					System.Diagnostics.Debug.WriteLine($"Corrupted file deleted: {_savedBackupJobPath}");
+					File.Delete(savedBackupJobPath);
+					System.Diagnostics.Debug.WriteLine($"Corrupted file deleted: {savedBackupJobPath}");
 				}
 				catch { }
 				BackupManager.GetLogger().LogError(ex);
@@ -183,12 +183,12 @@ namespace EasySave.Utils
 		{
 			try
 			{
-                lock (_saveLock)
-                {
-                    string jsonContent = JsonSerializer.Serialize(jobs, JSON_OPTIONS);
-                    File.WriteAllText(savedBackupJobPath, jsonContent);
-                }
-            }
+				lock (_saveLock)
+				{
+					string jsonContent = JsonSerializer.Serialize(jobs, JSON_OPTIONS);
+					File.WriteAllText(savedBackupJobPath, jsonContent);
+				}
+			}
 			catch (Exception ex)
 			{
 				throw new Exception($"Failed to save configuration: {ex.Message}");

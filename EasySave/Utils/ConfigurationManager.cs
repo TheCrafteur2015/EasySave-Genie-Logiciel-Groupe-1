@@ -165,8 +165,8 @@ namespace EasySave.Utils
 				// Supprimer le fichier corrompu
 				try
 				{
-					File.Delete(_savedBackupJobPath);
-					System.Diagnostics.Debug.WriteLine($"Corrupted file deleted: {_savedBackupJobPath}");
+					File.Delete(savedBackupJobPath);
+					System.Diagnostics.Debug.WriteLine($"Corrupted file deleted: {savedBackupJobPath}");
 				}
 				catch { }
 				BackupManager.GetLogger().LogError(ex);

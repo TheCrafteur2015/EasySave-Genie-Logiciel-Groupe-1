@@ -74,6 +74,17 @@
 	"settings_window_maximized": "Plein écran (Maximisé)",
 	"settings_window_fullscreen": "Plein écran (Sans bordure)",
 	"settings_applied": "Paramètres appliqués avec succès !",
+
+	"settings_general": "Général",
+	"settings_business_soft": "Logiciel Métier (Nom du processus) :",
+	"settings_log_format": "Format des Logs :",
+	"settings_crypto": "Cryptage (CryptoSoft)",
+	"settings_crypto_path": "Chemin vers CryptoSoft :",
+	"settings_crypto_key": "Clé de chiffrement :",
+	"settings_performance": "Performance & Priorité",
+	"settings_max_size": "Taille max transfert simultané (Ko) :",
+	"settings_priority_ext": "Extensions prioritaires (séparées par des virgules) :",
+
 	"language_title": "Changer de langue",
 	"language_select": "Sélectionnez la langue :",
 	"language_apply": "Appliquer",

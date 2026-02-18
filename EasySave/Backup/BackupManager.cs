@@ -1,6 +1,5 @@
 using EasyLog.Logging;
 using EasySave.Utils;
-using Newtonsoft.Json.Linq;
 
 namespace EasySave.Backup
 {

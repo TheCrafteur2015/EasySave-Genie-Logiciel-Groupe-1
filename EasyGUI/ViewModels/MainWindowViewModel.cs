@@ -373,7 +373,7 @@ namespace EasyGUI.ViewModels
         {
             if (_backupManager.GetAllJobs().Any(j => j.Name.Equals(NewJobName, StringComparison.OrdinalIgnoreCase)))
             {
-                StatusMessage = "✗ Error: A job with this name already exists.";
+                StatusMessage = "✗ " + _i18n.GetString("create_error_duplicate");
                 return;
             }
 
@@ -795,13 +795,13 @@ namespace EasyGUI.ViewModels
                 {
                     _backupManager.ResumeJob(id);
                     // On force l'interface à afficher "Running" tout de suite
-                    UpdateUiState(id, false, "Running...");
+                    UpdateUiState(id, false, _i18n.GetString("status_running"));
                 }
                 else
                 {
                     _backupManager.PauseJob(id);
                     // On force l'interface à afficher "Paused" tout de suite
-                    UpdateUiState(id, true, "⏸️ Paused by user");
+                    UpdateUiState(id, true, _i18n.GetString("status_paused_user"));
                 }
             }
         }
@@ -816,7 +816,7 @@ namespace EasyGUI.ViewModels
                 foreach (var item in JobsProgress)
                 {
                     item.IsPaused = false;
-                    item.Status = "Running...";
+                    item.Status = _i18n.GetString("status_running");
                 }
             }
             else
@@ -826,7 +826,7 @@ namespace EasyGUI.ViewModels
                 foreach (var item in JobsProgress)
                 {
                     item.IsPaused = true;
-                    item.Status = "⏸️ Paused All";
+                    item.Status = _i18n.GetString("status_paused_all");
                 }
             }
         }

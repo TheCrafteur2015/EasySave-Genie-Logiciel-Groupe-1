@@ -1,5 +1,5 @@
 {
-	"Version": "1.1.0",
+	"Version": "1.3.0",
 	"MaxBackupJobs": 5,
 	"UseBackupJobLimit": false,
 	"LoggerFormat": "text",
@@ -7,5 +7,6 @@
 	"CryptoKey": "1234",
 	"PriorityExtensions": [ ".txt", ".json", ".xml" ],
 	"BusinessSoftware": "CalculatorApp",
-	"MaxParallelTransferSize": 1000
+	"MaxParallelTransferSize": 1000,
+	"AppLanguage": "English"
 }

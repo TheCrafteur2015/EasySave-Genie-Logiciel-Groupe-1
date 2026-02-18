@@ -58,5 +58,5 @@ namespace EasyConsole.View.Commands
         /// <returns>The string key "menu_execute".</returns>
         public string GetI18nKey() => "menu_execute";
 
-    }
+	}
 }

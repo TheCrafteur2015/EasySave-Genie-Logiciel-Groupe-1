@@ -124,14 +124,14 @@ namespace EasySave.View.Localization
 				{
 					properties[pair.Key] = JsonConvert
 						.DeserializeObject<Dictionary<string, string>>(ResourceManager.ReadResourceFile(pair.Value))
-						.Where(p => p.Key.StartsWith("@"))
-						.ToDictionary<string, string>();
+						?.Where(p => p.Key.StartsWith('@'))
+						?.ToDictionary<string, string>() ?? [];
 				}
 			}
 			return properties;
 		}
 
 		[GeneratedRegex(@".*(\w{2}_\w{2}\.json?)")]
-        private static partial Regex LocaleRegex();
-    }
+		private static partial Regex LocaleRegex();
+	}
 }

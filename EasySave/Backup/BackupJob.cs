@@ -59,7 +59,7 @@ namespace EasySave.Backup
 		/// <param name="progressCallback">A callback method that receives progress updates as a <see cref="ProgressState"/> object. Cannot be null.</param>
 		public void Execute(Action<ProgressState> progressCallback)
 		{
-			string BusinessSoftware = BackupManager.GetBM().ConfigManager.GetConfig("BusinessSoftware");
+			string BusinessSoftware = BackupManager.GetBM().ConfigManager.GetConfig<string>("BusinessSoftware");
 			State = State.Active;
 			Strategy.Execute(this, BusinessSoftware, progressCallback);
 
@@ -101,17 +101,13 @@ namespace EasySave.Backup
 
 		public override int GetHashCode()
 		{
-			return HashCode.Combine(Id, Name, SourceDirectory, TargetDirectory, Type, Strategy?.GetType(), State);
+			return HashCode.Combine(Id, Name, SourceDirectory, TargetDirectory, Type, Strategy, LastExecution, State);
 		}
 
 		public override string ToString()
 		{
 			return $"Backup ID: {Id}, name: {Name}, Source: {SourceDirectory}, Destination: {TargetDirectory}, Type: {Type}, Strategy: {Strategy == null}, Last Execution: {LastExecution}, State: {State}";
 		}
-
-		public override int GetHashCode()
-		{
-			return HashCode.Combine(Id, Name, SourceDirectory, TargetDirectory, Type, Strategy, LastExecution, State);
-		}
+		
 	}
 }

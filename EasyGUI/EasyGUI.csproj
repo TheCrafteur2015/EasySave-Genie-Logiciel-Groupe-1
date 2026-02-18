@@ -16,7 +16,6 @@
 		<PackageReference Include="Avalonia.Desktop" Version="11.3.12" />
 		<PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.12" />
 		<PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.12" />
-		<!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
 		<PackageReference Include="Avalonia.Diagnostics" Version="11.3.12">
 			<IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
 			<PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
@@ -28,4 +27,21 @@
 		<ProjectReference Include="..\EasyLog\EasyLog.csproj" />
 		<ProjectReference Include="..\EasySave\EasySave.csproj" />
 	</ItemGroup>
+
+	<Target Name="BuildAndCopyCryptoSoft" AfterTargets="Build">
+		<Message Text="Compiling and Copying CryptoSoft..." Importance="high" />
+
+		<MSBuild Projects="..\CryptoSoft\CryptoSoft.csproj"
+				 Targets="Restore;Build"
+				 Properties="Configuration=$(Configuration);SelfContained=false" />
+
+		<Copy SourceFiles="..\CryptoSoft\bin\$(Configuration)\net8.0\CryptoSoft.exe"
+			  DestinationFolder="$(OutDir)"
+			  SkipUnchangedFiles="true" />
+
+		<Copy SourceFiles="..\CryptoSoft\bin\$(Configuration)\net8.0\CryptoSoft.runtimeconfig.json"
+			  DestinationFolder="$(OutDir)"
+			  SkipUnchangedFiles="true" />
+	</Target>
+
 </Project>

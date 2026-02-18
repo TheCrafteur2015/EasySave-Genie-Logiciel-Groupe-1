@@ -371,7 +371,14 @@ namespace EasyGUI.ViewModels
 
         private async void SaveNewJob()
         {
+            if (_backupManager.GetAllJobs().Any(j => j.Name.Equals(NewJobName, StringComparison.OrdinalIgnoreCase)))
+            {
+                StatusMessage = "✗ Error: A job with this name already exists.";
+                return;
+            }
+
             BackupType type = SelectedBackupType == 0 ? BackupType.Complete : BackupType.Differential;
+
             bool success = _backupManager.AddJob(NewJobName, NewJobSource, NewJobTarget, type);
 
             if (success)
@@ -387,7 +394,7 @@ namespace EasyGUI.ViewModels
             }
             else
             {
-                StatusMessage = "✗ " + (_i18n.GetString("create_failure") ?? "Failed to create job. Check inputs or max limit.");
+                StatusMessage = "✗ " + (_i18n.GetString("create_failure") ?? "Failed to create job.");
             }
         }
 

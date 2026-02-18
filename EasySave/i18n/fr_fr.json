@@ -114,5 +114,13 @@
 	"state_inactive": "Inactif",
 	"state_completed": "Terminé",
 	"state_error": "Erreur",
-	"never": "Jamais"
+	"never": "Jamais",
+
+	"create_error_duplicate": "Erreur : Un travail portant ce nom existe déjà.",
+	"status_paused_user": "⏸️ Pause utilisateur",
+	"status_paused_all": "⏸️ Tout en pause",
+	"status_running": "En cours...",
+	"btn_pause": "Pause",
+	"btn_resume": "Reprendre",
+	"btn_stop": "Arrêter"
 }

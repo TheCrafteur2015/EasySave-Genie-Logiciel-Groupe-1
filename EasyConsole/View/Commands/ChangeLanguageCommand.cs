@@ -41,18 +41,17 @@ namespace EasyConsole.View.Commands
             }
             var choice = ConsoleExt.ReadDec();
 
-            i = 0;
-            foreach (var lang in langProperties)
-            {
-                i++;
-                if (i == choice)
-                {
-                    I18n.Instance.SetLanguage(lang.Key);
-                    Console.WriteLine(I18n.Instance.GetString("language_changed"));
-                    break;
-                }
-            }
-            //_ = Console.ReadKey();
-        }
-    }
+			i = 0;
+			foreach (var lang in langProperties)
+			{
+				i++;
+				if (i == choice)
+				{
+					I18n.Instance.SetLanguage(lang.Key);
+					Console.WriteLine(I18n.Instance.GetString("language_changed"));
+					break;
+				}
+			}
+		}
+	}
 }

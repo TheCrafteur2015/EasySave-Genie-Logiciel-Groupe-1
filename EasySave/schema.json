@@ -1,0 +1,12 @@
+{
+	"Version": "string",
+	"MaxBackupJobs": "int",
+	"UseBackupJobLimit": "bool",
+	"LoggerFormat": "string",
+	"CryptoSoftPath": "string",
+	"CryptoKey": "string",
+	"PriorityExtensions": "string[]",
+	"BusinessSoftware": "string",
+	"MaxParallelTransferSize": "int",
+	"AppLanguage": "string"
+}

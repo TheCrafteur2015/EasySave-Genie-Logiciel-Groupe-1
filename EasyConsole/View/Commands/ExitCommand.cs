@@ -14,11 +14,7 @@ namespace EasyConsole.View.Commands
         /// <returns>The string key "menu_exit".</returns>
         public string GetI18nKey() => "menu_exit";
 
-        /// <summary>
-        /// Gets the unique identifier for the exit command.
-        /// </summary>
-        /// <returns>The integer ID 7.</returns>
-        public int GetID() => 7;
+		public int GetID() => 8;
 
         /// <summary>
         /// Executes the exit workflow.

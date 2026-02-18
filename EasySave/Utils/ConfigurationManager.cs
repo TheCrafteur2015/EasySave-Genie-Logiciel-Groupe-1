@@ -28,7 +28,7 @@ namespace EasySave.Utils
         /// </summary>
         /// <remarks>The returned object provides access to configuration settings whose structure may vary at
         /// runtime. Use dynamic member access to retrieve specific configuration values as needed.</remarks>
-        private dynamic ConfigValues { get; set; }
+        private dynamic? ConfigValues { get; set; }
 
 		/// <summary>
 		/// Initializes a new instance of the ConfigurationManager class using the specified configuration directory. Ensures
@@ -66,6 +66,11 @@ namespace EasySave.Utils
 	/// </summary>
 	private void MigrateConfigurationIfNeeded()
 	{
+		if (ConfigValues == null)
+		{
+			return;
+		}
+
 		var defaultConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JObject>(
 			ResourceManager.ReadResourceFile("default.json"));
 		
@@ -101,10 +106,14 @@ namespace EasySave.Utils
 		}
 	}
 
-		public dynamic GetConfig(string key)
+	public dynamic GetConfig(string key)
+	{
+		if (ConfigValues == null)
 		{
-			return ConfigValues[key] ?? throw new ArgumentException("This configuration key doesn't exists!");
+			throw new InvalidOperationException("Configuration is not loaded.");
 		}
+		return ConfigValues[key] ?? throw new ArgumentException("This configuration key doesn't exists!");
+	}
 
 		/// <summary>
 		/// Loads all saved backup jobs from persistent storage.

@@ -133,70 +133,119 @@ namespace EasySave.Backup
 				});
 
 				if (needsCopy)
-				{
-					var stopwatch = Stopwatch.StartNew();
-					int encryptionTime = 0;
-					bool semaphoreAcquired = false;
+                {
+                    var stopwatch = Stopwatch.StartNew();
+                    int encryptionTime = 0;
+                    bool semaphoreAcquired = false;
 
-					try
-					{
-						// Gestion des gros fichiers (Sémaphore)
-						if (sourceFileInfo.Length > maxFileSizeBytes)
-						{
-							BackupManager.BigFileSemaphore.Wait();
-							semaphoreAcquired = true;
-						}
+                    try
+                    {
+                        // Gestion des gros fichiers (Sémaphore)
+                        if (sourceFileInfo.Length > maxFileSizeBytes)
+                        {
+                            BackupManager.BigFileSemaphore.Wait();
+                            semaphoreAcquired = true;
+                        }
 
-						File.Copy(sourceFile, targetFile, true);
+                        // --- DÉBUT MODIFICATION : COPIE FLUIDE (STREAM) ---
+                        long currentFileCopied = 0;
+                        byte[] buffer = new byte[4 * 1024 * 1024]; // 4 Mo
+                        int bytesRead;
+                        long lastUpdateTick = 0;
 
-						// CryptoSoft (Mutex mono-instance + Log EncryptionTime)
-						string ext = Path.GetExtension(targetFile);
-						if (File.Exists(cryptoPath) && priorityExtensions.Contains(ext))
-						{
-							BackupManager.CryptoSoftMutex.WaitOne();
-							try {
-								var p = new Process();
-								p.StartInfo.FileName = cryptoPath;
-								p.StartInfo.Arguments = $"\"{targetFile}\" \"{cryptoKey}\"";
-								p.StartInfo.UseShellExecute = false;
-								p.StartInfo.CreateNoWindow = true;
-								p.Start();
-								p.WaitForExit();
-								encryptionTime = p.ExitCode;
-							} finally {
-								BackupManager.CryptoSoftMutex.ReleaseMutex();
-							}
-						}
+                        using (FileStream fsSource = new FileStream(sourceFile, FileMode.Open, FileAccess.Read))
+                        using (FileStream fsDest = new FileStream(targetFile, FileMode.Create, FileAccess.Write))
+                        {
+                            while ((bytesRead = fsSource.Read(buffer, 0, buffer.Length)) > 0)
+                            {
+                                // 1. Vérif Stop
+                                if (job.Cts.IsCancellationRequested) break;
+                                
+                                // 2. Vérif Pause
+                                job.PauseWaitHandle.Wait();
 
-						stopwatch.Stop();
-						BackupManager.GetLogger().Log(new LogEntry {
-							Name = job.Name,
-							SourceFile = PathUtils.ToUnc(sourceFile),
-							TargetFile = PathUtils.ToUnc(targetFile),
-							FileSize = sourceFileInfo.Length,
-							ElapsedTime = stopwatch.ElapsedMilliseconds,
-							EncryptionTime = encryptionTime
-						});
-					}
-					catch (Exception e)
-					{
-						stopwatch.Stop();
-						BackupManager.GetLogger().Log(new LogEntry {
-							Name = job.Name,
-							SourceFile = PathUtils.ToUnc(sourceFile),
-							TargetFile = PathUtils.ToUnc(targetFile),
-							FileSize = sourceFileInfo.Length,
-							ElapsedTime = -1, // Indique une erreur selon v2.0
-							Level = Level.Error,
-							Message = $"Copy failed: {e.Message}"
-						});
-						BackupManager.GetLogger().LogError(e);
-					}
-					finally
-					{
-						if (semaphoreAcquired) BackupManager.BigFileSemaphore.Release();
-					}
-				}
+                                // 3. Vérif Logiciel Métier
+                                while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
+                                {
+                                    progressCallback?.Invoke(new ProgressState { 
+                                        BackupName = job.Name, State = State.Paused, Message = $"Pause : {BusinessSoftware}..." 
+                                    });
+                                    Thread.Sleep(2000);
+                                    if (job.Cts.IsCancellationRequested) break;
+                                }
+                                if (job.Cts.IsCancellationRequested) break;
+
+                                // 4. Écriture
+                                fsDest.Write(buffer, 0, bytesRead);
+                                currentFileCopied += bytesRead;
+
+                                // 5. Mise à jour UI (limité pour éviter de spammer)
+                                long currentTick = DateTime.Now.Ticks;
+                                if (currentTick - lastUpdateTick > 1000000 || currentFileCopied == sourceFileInfo.Length) 
+                                {
+                                    progressCallback?.Invoke(new ProgressState
+                                    {
+                                        BackupName = job.Name,
+                                        State = State.Active,
+                                        TotalFiles = totalFiles,
+                                        TotalSize = totalSize,
+                                        FilesRemaining = totalFiles - processedFiles,
+                                        // Calcul précis des octets restants
+                                        SizeRemaining = totalSize - (processedSize + currentFileCopied),
+                                        CurrentSourceFile = sourceFile,
+                                        CurrentTargetFile = targetFile,
+                                        ProgressPercentage = 0 // Le ViewModel recalcule le % réel
+                                    });
+                                    lastUpdateTick = currentTick;
+                                }
+                            }
+                        }
+                        // --- FIN MODIFICATION ---
+
+                        // CryptoSoft (Code existant inchangé, juste repositionné après le stream)
+                        string ext = Path.GetExtension(targetFile);
+                        if (File.Exists(cryptoPath) && priorityExtensions.Contains(ext))
+                        {
+                            BackupManager.CryptoSoftMutex.WaitOne();
+                            try {
+                                var p = new Process();
+                                p.StartInfo.FileName = cryptoPath;
+                                p.StartInfo.Arguments = $"\"{targetFile}\" \"{cryptoKey}\"";
+                                p.StartInfo.UseShellExecute = false;
+                                p.StartInfo.CreateNoWindow = true;
+                                p.Start();
+                                p.WaitForExit();
+                                encryptionTime = p.ExitCode;
+                            } finally {
+                                BackupManager.CryptoSoftMutex.ReleaseMutex();
+                            }
+                        }
+
+                        stopwatch.Stop();
+                        BackupManager.GetLogger().Log(new LogEntry {
+                            Name = job.Name,
+                            SourceFile = PathUtils.ToUnc(sourceFile),
+                            TargetFile = PathUtils.ToUnc(targetFile),
+                            FileSize = sourceFileInfo.Length,
+                            ElapsedTime = stopwatch.ElapsedMilliseconds,
+                            EncryptionTime = encryptionTime
+                        });
+                    }
+                    catch (Exception e)
+                    {
+                        stopwatch.Stop();
+                        BackupManager.GetLogger().Log(new LogEntry {
+                            Level = Level.Error,
+                            Message = $"Copy failed: {e.Message}",
+                            ElapsedTime = -1
+                        });
+                        BackupManager.GetLogger().LogError(e);
+                    }
+                    finally
+                    {
+                        if (semaphoreAcquired) BackupManager.BigFileSemaphore.Release();
+                    }
+                }
 
 				// Libération systématique du compteur de priorité
 				if (isPriority) Interlocked.Decrement(ref BackupManager.GlobalPriorityFilesPending);

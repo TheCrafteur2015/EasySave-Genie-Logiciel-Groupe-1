@@ -87,11 +87,11 @@ namespace EasySave.View.Localization
 		/// <exception cref="ArgumentException">Thrown if the specified language name does not exist in the available languages.</exception>
 		public void SetLanguage(string languageName)
 		{
-			if (!availableLanguages.ContainsKey(languageName))
+			if (!availableLanguages.TryGetValue(languageName, out string? value))
 				throw new ArgumentException("This language does not exists!");
 			Language = languageName;
-			string jsonContent = ResourceManager.ReadResourceFile(availableLanguages[languageName]);
-			translations = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent) ?? new Dictionary<string, string>();
+			string jsonContent = ResourceManager.ReadResourceFile(value);
+			translations = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent) ?? [];
 
 			// Notifier que toute l'instance a changé
 			OnPropertyChanged(string.Empty); // Notifie TOUTES les propriétés

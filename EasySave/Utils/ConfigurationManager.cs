@@ -156,11 +156,11 @@ namespace EasySave.Utils
 				var jobs = JsonSerializer.Deserialize<List<BackupJob>>(jsonContent);
 				return jobs ?? [];
 			}
-			catch (Exception ex)
+			catch (Exception e1)
 			{
 				// Log l'erreur pour debug
-				System.Diagnostics.Debug.WriteLine($"Error loading backup jobs: {ex.Message}");
-				System.Diagnostics.Debug.WriteLine($"Exception details: {ex}");
+				System.Diagnostics.Debug.WriteLine($"Error loading backup jobs: {e1.Message}");
+				System.Diagnostics.Debug.WriteLine($"Exception details: {e1}");
 
 				// Supprimer le fichier corrompu
 				try
@@ -168,8 +168,11 @@ namespace EasySave.Utils
 					File.Delete(savedBackupJobPath);
 					System.Diagnostics.Debug.WriteLine($"Corrupted file deleted: {savedBackupJobPath}");
 				}
-				catch { }
-				BackupManager.GetLogger().LogError(ex);
+				catch(Exception e2)
+				{
+					BackupManager.GetLogger().LogError(e2);
+				}
+				BackupManager.GetLogger().LogError(e1);
 				return [];
 			}
 		}
@@ -189,9 +192,10 @@ namespace EasySave.Utils
 					File.WriteAllText(savedBackupJobPath, jsonContent);
 				}
 			}
-			catch (Exception ex)
+			catch (Exception e)
 			{
-				throw new Exception($"Failed to save configuration: {ex.Message}");
+				BackupManager.GetLogger().LogError(e);
+				throw new Exception($"Failed to save configuration: {e.Message}");
 			}
 		}
 

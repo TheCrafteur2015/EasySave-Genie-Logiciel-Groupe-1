@@ -1,8 +1,4 @@
 using EasySave.Backup;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.IO;
-using System.Threading.Tasks;
-using System.Linq;
 
 namespace EasyTest
 {

@@ -1,6 +1,7 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EasySave.Backup;
@@ -17,106 +18,61 @@ namespace EasyGUI.ViewModels
     /// <summary>
     /// Represents the progress status of a specific backup job.
     /// Used to track and display real-time updates in the UI for individual jobs.
-    /// </summary>
-    using Avalonia;
-    using Avalonia.Controls;
-    using Avalonia.Styling;
-    using CommunityToolkit.Mvvm.ComponentModel;
-    using CommunityToolkit.Mvvm.Input;
-    using EasySave.Backup;
-    using EasySave.View.Localization;
-    using System;
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using System.Windows.Input;
-
-
-    /// <summary>
-    /// Represents the progress status of a specific backup job.
-    /// Used to track and display real-time updates in the UI for individual jobs.
     /// This class inherits from ObservableObject to support data binding in the GUI.
     /// </summary>
     public class JobProgressItem : ObservableObject
     {
+        // --- V3.0 Properties ---
         /// <summary>
         /// Gets or sets the unique identifier of the backup job.
         /// Required for individual control commands such as Pause, Resume, or Stop.
         /// </summary>
         public int JobId { get; set; }
 
-        private string _jobName = "";
-        /// <summary>
-        /// Gets or sets the display name of the backup job.
-        /// </summary>
-        public string JobName
-        {
-            get => _jobName;
-            set => SetProperty(ref _jobName, value);
-        }
-
         private string _progressBytes = "";
         /// <summary>
         /// Gets or sets the formatted string representing the progress in bytes (e.g., "50MB / 100MB").
         /// </summary>
-        public string ProgressBytes
-        {
-            get => _progressBytes;
-            set => SetProperty(ref _progressBytes, value);
-        }
+        public string ProgressBytes { get => _progressBytes; set => SetProperty(ref _progressBytes, value); }
+
+        private bool _isPaused = false;
+        /// <summary>
+        /// Gets or sets a value indicating whether the backup job is currently paused.
+        /// </summary>
+        public bool IsPaused { get => _isPaused; set => SetProperty(ref _isPaused, value); }
+
+        // --- Shared/Feature Properties ---
+        private string _jobName = "";
+        /// <summary>
+        /// Gets or sets the display name of the backup job.
+        /// </summary>
+        public string JobName { get => _jobName; set => SetProperty(ref _jobName, value); }
 
         private double _progressPercentage = 0;
         /// <summary>
         /// Gets or sets the numerical progress percentage (0 to 100).
         /// Used primarily to update progress bars in the user interface.
         /// </summary>
-        public double ProgressPercentage
-        {
-            get => _progressPercentage;
-            set => SetProperty(ref _progressPercentage, value);
-        }
+        public double ProgressPercentage { get => _progressPercentage; set => SetProperty(ref _progressPercentage, value); }
 
         private string _status = "Waiting...";
         /// <summary>
         /// Gets or sets the current textual status message of the job.
         /// Defaults to "Waiting..." before execution starts.
         /// </summary>
-        public string Status
-        {
-            get => _status;
-            set => SetProperty(ref _status, value);
-        }
+        public string Status { get => _status; set => SetProperty(ref _status, value); }
 
         private bool _isCompleted = false;
         /// <summary>
         /// Gets or sets a value indicating whether the backup job has successfully finished.
         /// </summary>
-        public bool IsCompleted
-        {
-            get => _isCompleted;
-            set => SetProperty(ref _isCompleted, value);
-        }
+        public bool IsCompleted { get => _isCompleted; set => SetProperty(ref _isCompleted, value); }
 
         private bool _hasError = false;
         /// <summary>
         /// Gets or sets a value indicating whether an error occurred during the backup process.
         /// </summary>
-        public bool HasError
-        {
-            get => _hasError;
-            set => SetProperty(ref _hasError, value);
-        }
-
-        private bool _isPaused = false;
-        /// <summary>
-        /// Gets or sets a value indicating whether the backup job is currently paused.
-        /// </summary>
-        public bool IsPaused
-        {
-            get => _isPaused;
-            set => SetProperty(ref _isPaused, value);
-        }
+        public bool HasError { get => _hasError; set => SetProperty(ref _hasError, value); }
     }
 
 
@@ -135,11 +91,6 @@ namespace EasyGUI.ViewModels
         public I18n L => I18n.Instance;
 
         /// <summary>
-        /// Gets the default welcome message displayed in the view.
-        /// </summary>
-        public string Greeting { get; } = "Welcome to EasySave!";
-
-        /// <summary>
         /// Private reference to the core Backup Manager logic.
         /// </summary>
         private readonly BackupManager _backupManager;
@@ -149,8 +100,13 @@ namespace EasyGUI.ViewModels
         /// This collection is bound to the job list in the user interface.
         /// </summary>
         public ObservableCollection<BackupJob> BackupJobs { get; set; }
+        
+        /// <summary>
+        /// Gets the collection of progress items for active backup jobs.
+        /// This collection is updated in real-time to reflect the status of each running job in the UI.
+        /// </summary>
+        public ObservableCollection<JobProgressItem> JobsProgress { get; private set; }
 
-        // Navigation
 
         private string _currentView = "Menu";
         /// <summary>
@@ -167,185 +123,134 @@ namespace EasyGUI.ViewModels
         /// <summary>
         /// Gets or sets the name of the new backup job being created or edited.
         /// </summary>
-        public string NewJobName
-        {
-            get => _newJobName;
-            set => SetProperty(ref _newJobName, value);
-        }
-
-        private string _currentSizeInfo = "";
-        /// <summary>
-        /// Gets or sets information about the total size of the current backup selection.
-        /// </summary>
-        public string CurrentSizeInfo
-        {
-            get => _currentSizeInfo;
-            set => SetProperty(ref _currentSizeInfo, value);
-        }
+        public string NewJobName { get => _newJobName; set => SetProperty(ref _newJobName, value); }
 
         private string _newJobSource = "";
         /// <summary>
         /// Gets or sets the source directory path for the backup job.
         /// </summary>
-        public string NewJobSource
-        {
-            get => _newJobSource;
-            set => SetProperty(ref _newJobSource, value);
-        }
+        public string NewJobSource { get => _newJobSource; set => SetProperty(ref _newJobSource, value); }
 
         private string _newJobTarget = "";
         /// <summary>
         /// Gets or sets the target destination path for the backup job.
         /// </summary>
-        public string NewJobTarget
-        {
-            get => _newJobTarget;
-            set => SetProperty(ref _newJobTarget, value);
-        }
+        public string NewJobTarget { get => _newJobTarget; set => SetProperty(ref _newJobTarget, value); }
 
         private int _selectedBackupType = 0;
         /// <summary>
         /// Gets or sets the type of backup selected (e.g., 0 for Full, 1 for Differential).
         /// </summary>
-        public int SelectedBackupType
-        {
-            get => _selectedBackupType;
-            set => SetProperty(ref _selectedBackupType, value);
-        }
+        public int SelectedBackupType { get => _selectedBackupType; set => SetProperty(ref _selectedBackupType, value); }
 
         private BackupJob? _selectedJob;
         /// <summary>
         /// Gets or sets the backup job currently selected in the user interface list.
         /// </summary>
-        public BackupJob? SelectedJob
-        {
-            get => _selectedJob;
-            set => SetProperty(ref _selectedJob, value);
-        }
+        public BackupJob? SelectedJob { get => _selectedJob; set => SetProperty(ref _selectedJob, value); }
 
-        // --- SETTINGS PROPERTIES (COMPLET V1.1, V2.0, V3.0) ---
-
-        private int _selectedLanguage = 0;
-        /// <summary>
-        /// Gets or sets the application language index (e.g., 0 for French, 1 for English).
-        /// </summary>
-        public int SelectedLanguage
-        {
-            get => _selectedLanguage;
-            set => SetProperty(ref _selectedLanguage, value);
-        }
-
-        private int _selectedWindowMode = 1;
-        /// <summary>
-        /// Gets or sets the UI theme or window mode (Light/Dark mode).
-        /// </summary>
-        public int SelectedWindowMode
-        {
-            get => _selectedWindowMode;
-            set => SetProperty(ref _selectedWindowMode, value);
-        }
-
-        // V1.1 : Format Log (JSON/XML)
-        private int _selectedLogFormat = 0; // 0=JSON, 1=XML
-        /// <summary>
-        /// Gets or sets the format used for log files (0 for JSON, 1 for XML).
-        /// Introduced in V1.1.
-        /// </summary>
-        public int SelectedLogFormat
-        {
-            get => _selectedLogFormat;
-            set => SetProperty(ref _selectedLogFormat, value);
-        }
-
-        // V2.0/V3.0 : Logiciel Métier
-        private string _businessSoftware = "";
-        /// <summary>
-        /// Gets or sets the process name of the business software that must trigger a backup pause if running.
-        /// Introduced in V2.0.
-        /// </summary>
-        public string BusinessSoftware
-        {
-            get => _businessSoftware;
-            set => SetProperty(ref _businessSoftware, value);
-        }
-
-        // V2.0/V3.0 : Extensions Prioritaires / Cryptées
-        private string _priorityExtensions = "";
-        /// <summary>
-        /// Gets or sets the list of file extensions that should be treated with priority during backup.
-        /// Introduced in V2.0.
-        /// </summary>
-        public string PriorityExtensions
-        {
-            get => _priorityExtensions;
-            set => SetProperty(ref _priorityExtensions, value);
-        }
-
+        // --- EXECUTION PROPERTIES ---
+        
         private string _statusMessage = "";
         /// <summary>
         /// Gets or sets the current global status message displayed in the UI footer.
         /// </summary>
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set => SetProperty(ref _statusMessage, value);
-        }
+        public string StatusMessage { get => _statusMessage; set => SetProperty(ref _statusMessage, value); }
 
         private bool _isExecuting = false;
         /// <summary>
         /// Gets or sets a value indicating whether a backup operation is currently in progress.
         /// </summary>
-        public bool IsExecuting
-        {
-            get => _isExecuting;
-            set => SetProperty(ref _isExecuting, value);
-        }
+        public bool IsExecuting { get => _isExecuting; set => SetProperty(ref _isExecuting, value); }
 
         private double _currentProgress = 0;
         /// <summary>
         /// Gets or sets the global progress percentage of the current execution.
         /// </summary>
-        public double CurrentProgress
-        {
-            get => _currentProgress;
-            set => SetProperty(ref _currentProgress, value);
-        }
+        public double CurrentProgress { get => _currentProgress; set => SetProperty(ref _currentProgress, value); }
 
         private string _currentFileInfo = "";
         /// <summary>
         /// Gets or sets information about the file currently being processed.
         /// </summary>
-        public string CurrentFileInfo
-        {
-            get => _currentFileInfo;
-            set => SetProperty(ref _currentFileInfo, value);
-        }
+        public string CurrentFileInfo { get => _currentFileInfo; set => SetProperty(ref _currentFileInfo, value); }
+
+        // V3.0 Execution Extras
+        
+        private string _currentSizeInfo = "";
+        /// <summary>
+        /// Gets or sets information about the total size of the current backup selection.
+        /// </summary>
+        public string CurrentSizeInfo { get => _currentSizeInfo; set => SetProperty(ref _currentSizeInfo, value); }
 
         private bool _isSingleJobPaused = false;
         /// <summary>
         /// Gets or sets a value indicating whether the current single job execution is paused.
         /// </summary>
-        public bool IsSingleJobPaused
-        {
-            get => _isSingleJobPaused;
-            set => SetProperty(ref _isSingleJobPaused, value);
-        }
+        public bool IsSingleJobPaused { get => _isSingleJobPaused; set => SetProperty(ref _isSingleJobPaused, value); }
 
+
+        // --- SETTINGS PROPERTIES (Merged Feature + V3) ---
+        
+        private int _selectedLanguage = 0;
         /// <summary>
-        /// Gets the collection of progress items for active backup jobs.
-        /// This collection is updated in real-time to reflect the status of each running job in the UI.
+        /// Gets or sets the application language index (e.g., 0 for French, 1 for English).
         /// </summary>
-        public ObservableCollection<JobProgressItem> JobsProgress { get; private set; }
+        public int SelectedLanguage { get => _selectedLanguage; set => SetProperty(ref _selectedLanguage, value); }
 
+        private int _selectedWindowMode = 1;
+        /// <summary>
+        /// Gets or sets the UI theme or window mode (Light/Dark mode).
+        /// </summary>
+        public int SelectedWindowMode { get => _selectedWindowMode; set => SetProperty(ref _selectedWindowMode, value); }
+
+        private string _configBusinessSoftware = "";
+        /// <summary>
+        /// Gets or sets the process name of the business software that must trigger a backup pause if running.
+        /// </summary>
+        public string ConfigBusinessSoftware { get => _configBusinessSoftware; set => SetProperty(ref _configBusinessSoftware, value); }
+
+        private string _configCryptoPath = "";
+        public string ConfigCryptoPath { get => _configCryptoPath; set => SetProperty(ref _configCryptoPath, value); }
+
+        private string _configCryptoKey = "";
+        public string ConfigCryptoKey { get => _configCryptoKey; set => SetProperty(ref _configCryptoKey, value); }
+
+        private long _configMaxSize = 1000;
+        public long ConfigMaxSize { get => _configMaxSize; set => SetProperty(ref _configMaxSize, value); }
+
+        private string _configPriorityExtensions = "";
+        /// <summary>
+        /// Gets or sets the list of file extensions that should be treated with priority during backup.
+        /// </summary>
+        public string ConfigPriorityExtensions { get => _configPriorityExtensions; set => SetProperty(ref _configPriorityExtensions, value); }
+
+        private int _selectedLogFormat = 0;
+        /// <summary>
+        /// Gets or sets the format used for log files (0 for JSON, 1 for XML).
+        /// </summary>
+        public int SelectedLogFormat { get => _selectedLogFormat; set => SetProperty(ref _selectedLogFormat, value); }
+
+        public ObservableCollection<string> LogFormats { get; } = new() { "JSON", "XML" };
+        
+        /// <summary>Gets the list of available backup types for selection.</summary>
+        public ObservableCollection<string> BackupTypes { get; private set; }
+        
+        /// <summary>Gets the list of available window display modes.</summary>
+        public ObservableCollection<string> WindowModes { get; private set; }
+
+        // --- DYNAMIC TRANSLATIONS (Properties from Feature Branch) ---
+        
         /// <summary>
         /// Private instance of the localization service used to retrieve translated strings.
         /// </summary>
         private I18n _i18n = I18n.Instance;
 
-        // Localized Strings
-
+        public string AppTitle => _i18n.GetString("app_title");
         /// <summary>Localized string for the main menu title.</summary>
         public string MenuTitle => _i18n.GetString("menu_title");
+        public string MenuDashboard => _i18n.GetString("menu_dashboard");
+        public string MenuActionsTitle => _i18n.GetString("menu_actions_title");
         /// <summary>Localized string for the "Create" menu option.</summary>
         public string MenuCreate => _i18n.GetString("menu_create");
         /// <summary>Localized string for the "Execute" menu option.</summary>
@@ -356,14 +261,19 @@ namespace EasyGUI.ViewModels
         public string MenuList => _i18n.GetString("menu_list");
         /// <summary>Localized string for the "Delete" menu option.</summary>
         public string MenuDelete => _i18n.GetString("menu_delete");
-        /// <summary>Localized string for the "Language" menu option.</summary>
-        public string MenuLanguage => _i18n.GetString("menu_language");
+        /// <summary>Localized string for the "Settings" menu option.</summary>
+        public string MenuSettings => _i18n.GetString("menu_settings");
         /// <summary>Localized string for the "Exit" menu option.</summary>
         public string MenuExit => _i18n.GetString("menu_exit");
+        
         /// <summary>Localized string for the Dark theme label.</summary>
         public string ThemeDark => _i18n.GetString("theme_dark");
         /// <summary>Localized string for the Light theme label.</summary>
         public string ThemeLight => _i18n.GetString("theme_light");
+        
+        public string DashboardWelcome => _i18n.GetString("dashboard_welcome");
+        public string DashboardSubtitle => _i18n.GetString("dashboard_subtitle");
+        
         /// <summary>Localized string for the job creation view title.</summary>
         public string CreateTitle => _i18n.GetString("create_title");
         /// <summary>Localized string for the job name label.</summary>
@@ -376,14 +286,26 @@ namespace EasyGUI.ViewModels
         public string CreateType => _i18n.GetString("create_type");
         /// <summary>Localized string for the job creation button.</summary>
         public string CreateButton => _i18n.GetString("create_button");
+        public string BtnSave => _i18n.GetString("btn_save");
+        /// <summary>Localized string for the general cancel button.</summary>
+        public string BtnCancel => _i18n.GetString("btn_cancel");
+
         /// <summary>Localized string for the execution view title.</summary>
         public string ExecuteTitle => _i18n.GetString("execute_title");
+        public string ExecuteSubtitle => _i18n.GetString("execute_subtitle");
         /// <summary>Localized string for the job selection label in execution view.</summary>
         public string ExecuteSelect => _i18n.GetString("execute_select");
+        public string ExecutePlaceholder => _i18n.GetString("execute_placeholder");
         /// <summary>Localized string for the run button.</summary>
         public string ExecuteButton => _i18n.GetString("execute_button");
         /// <summary>Localized string displayed when no jobs are available for execution.</summary>
         public string ExecuteNoJobs => _i18n.GetString("execute_no_jobs");
+        public string BtnStart => _i18n.GetString("btn_start");
+
+        public string ExecuteAllTitle => _i18n.GetString("execute_all_title");
+        public string ExecuteAllSubtitle => _i18n.GetString("execute_all_subtitle");
+        public string BtnStartAll => _i18n.GetString("btn_start_all");
+
         /// <summary>Localized string for the job list view title.</summary>
         public string ListTitle => _i18n.GetString("list_title");
         /// <summary>Localized string for the ID column header.</summary>
@@ -394,6 +316,7 @@ namespace EasyGUI.ViewModels
         public string ListSource => _i18n.GetString("list_source");
         /// <summary>Localized string for the target path column header.</summary>
         public string ListTarget => _i18n.GetString("list_target");
+
         /// <summary>Localized string for the deletion view title.</summary>
         public string DeleteTitle => _i18n.GetString("delete_title");
         /// <summary>Localized string for the job selection label in deletion view.</summary>
@@ -404,28 +327,38 @@ namespace EasyGUI.ViewModels
         public string DeleteWarning => _i18n.GetString("delete_warning");
         /// <summary>Localized string displayed when no jobs are available for deletion.</summary>
         public string DeleteNoJobs => _i18n.GetString("delete_no_jobs");
+        public string BtnDelete => _i18n.GetString("btn_delete");
+
+        // Settings Strings
+        /// <summary>Localized string for the application settings title.</summary>
+        public string SettingsTitle => _i18n.GetString("settings_title");
+        public string SettingsLang => _i18n.GetString("settings_lang");
+        public string SettingsWindowMode => _i18n.GetString("settings_window_mode");
+        public string SettingsGeneral => _i18n.GetString("settings_general");
+        public string SettingsBusinessSoft => _i18n.GetString("settings_business_soft");
+        public string SettingsLogFormat => _i18n.GetString("settings_log_format");
+        public string SettingsCrypto => _i18n.GetString("settings_crypto");
+        public string SettingsCryptoPath => _i18n.GetString("settings_crypto_path");
+        public string SettingsCryptoKey => _i18n.GetString("settings_crypto_key");
+        public string SettingsPerformance => _i18n.GetString("settings_performance");
+        public string SettingsMaxSize => _i18n.GetString("settings_max_size");
+        public string SettingsPriorityExt => _i18n.GetString("settings_priority_ext");
+        public string BtnApply => _i18n.GetString("btn_apply");
+
         /// <summary>Localized string for the language settings title.</summary>
         public string LanguageTitle => _i18n.GetString("language_title");
         /// <summary>Localized string for the language selection label.</summary>
         public string LanguageSelect => _i18n.GetString("language_select");
         /// <summary>Localized string for the apply language button.</summary>
         public string LanguageApply => _i18n.GetString("language_apply");
-        /// <summary>Localized string for the general cancel button.</summary>
-        public string ButtonCancel => _i18n.GetString("button_cancel");
         /// <summary>Localized string for the general back button.</summary>
         public string ButtonBack => _i18n.GetString("button_back");
+
         /// <summary>Localized string for the "Full" backup type.</summary>
         public string TypeComplete => _i18n.GetString("type_complete");
         /// <summary>Localized string for the "Differential" backup type.</summary>
         public string TypeDifferential => _i18n.GetString("type_differential");
 
-        /// <summary>Command to toggle between pause and resume for a specific job.</summary>
-        public ICommand TogglePauseJobCommand { get; }
-
-        /// <summary>Gets the list of available backup types for selection.</summary>
-        public ObservableCollection<string> BackupTypes { get; private set; }
-        /// <summary>Gets the list of available window display modes.</summary>
-        public ObservableCollection<string> WindowModes { get; private set; }
 
         // --- COMMANDS ---
 
@@ -443,8 +376,6 @@ namespace EasyGUI.ViewModels
         public ICommand ListAllBackupJobsCommand { get; }
         /// <summary>Command to navigate to the backup job deletion view.</summary>
         public ICommand DeleteBackupJobCommand { get; }
-        /// <summary>Command to navigate to the language selection view.</summary>
-        public ICommand ChangeLanguageCommand { get; }
         /// <summary>Command to navigate to the application settings view.</summary>
         public ICommand OpenSettingsCommand { get; }
         /// <summary>Command to close the application.</summary>
@@ -457,13 +388,10 @@ namespace EasyGUI.ViewModels
         public ICommand ExecuteSelectedJobCommand { get; }
         /// <summary>Command to delete the currently selected backup job.</summary>
         public ICommand DeleteSelectedJobCommand { get; }
-        /// <summary>Command to apply the selected language settings.</summary>
-        public ICommand ApplyLanguageCommand { get; }
         /// <summary>Command to apply the general application settings.</summary>
         public ICommand ApplySettingsCommand { get; }
 
-        // V3.0 : Commandes de contrôle Temps Réel
-
+        // V3.0 Control Commands
         /// <summary>Command to pause a specific backup job by its ID.</summary>
         public ICommand PauseJobCommand { get; }
         /// <summary>Command to resume a specific backup job by its ID.</summary>
@@ -476,6 +404,8 @@ namespace EasyGUI.ViewModels
         public ICommand ResumeAllCommand { get; }
         /// <summary>Command to stop all currently running backup jobs.</summary>
         public ICommand StopAllCommand { get; }
+        /// <summary>Command to toggle between pause and resume for a specific job.</summary>
+        public ICommand TogglePauseJobCommand { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MainWindowViewModel"/> class.
@@ -489,41 +419,68 @@ namespace EasyGUI.ViewModels
             BackupJobs = new ObservableCollection<BackupJob>(jobsFromManager);
             JobsProgress = new ObservableCollection<JobProgressItem>();
 
+            // Initialize Collections
             BackupTypes = new ObservableCollection<string> { TypeComplete, TypeDifferential };
             WindowModes = new ObservableCollection<string>
-        {
-            _i18n.GetString("settings_window_windowed"),
-            _i18n.GetString("settings_window_maximized"),
-            _i18n.GetString("settings_window_fullscreen")
-        };
+            {
+                _i18n.GetString("settings_window_windowed"),
+                _i18n.GetString("settings_window_maximized"),
+                _i18n.GetString("settings_window_fullscreen")
+            };
 
             // Standard Commands
             SwitchThemeCommand = new RelayCommand<string>(SwitchTheme);
-            CreateBackupJobCommand = new RelayCommand(CreateBackupJob);
-            ExecuteBackupJobCommand = new RelayCommand(ExecuteBackupJob);
+            CreateBackupJobCommand = new RelayCommand(() => { CurrentView = "CreateJob"; StatusMessage = ""; });
+            ExecuteBackupJobCommand = new RelayCommand(() => { RefreshBackupJobs(); CurrentView = "ExecuteJob"; StatusMessage = ""; });
             ExecuteAllBackupJobsCommand = new RelayCommand(ExecuteAllBackupJobs);
             StartAllBackupJobsCommand = new RelayCommand(StartAllBackupJobs);
-            ListAllBackupJobsCommand = new RelayCommand(ListAllBackupJobs);
-            DeleteBackupJobCommand = new RelayCommand(DeleteBackupJob);
-            ChangeLanguageCommand = new RelayCommand(ChangeLanguage);
+            ListAllBackupJobsCommand = new RelayCommand(() => { RefreshBackupJobs(); CurrentView = "ListJobs"; StatusMessage = ""; });
+            DeleteBackupJobCommand = new RelayCommand(() => { RefreshBackupJobs(); CurrentView = "DeleteJob"; StatusMessage = ""; });
             OpenSettingsCommand = new RelayCommand(OpenSettings);
             ExitCommand = new RelayCommand(Exit);
-            BackToMenuCommand = new RelayCommand(BackToMenu);
+            BackToMenuCommand = new RelayCommand(() => { CurrentView = "Menu"; StatusMessage = ""; });
             SaveNewJobCommand = new RelayCommand(SaveNewJob);
             ExecuteSelectedJobCommand = new RelayCommand(ExecuteSelectedJob);
             DeleteSelectedJobCommand = new RelayCommand(DeleteSelectedJob);
-            ApplyLanguageCommand = new RelayCommand(ApplyLanguage);
             ApplySettingsCommand = new RelayCommand(ApplySettings);
 
             // V3.0 Control Commands
             PauseJobCommand = new RelayCommand<int>(id => _backupManager.PauseJob(id));
             ResumeJobCommand = new RelayCommand<int>(id => _backupManager.ResumeJob(id));
             StopJobCommand = new RelayCommand<int>(id => _backupManager.StopJob(id));
-
             PauseAllCommand = new RelayCommand(() => _backupManager.PauseAllJobs());
             ResumeAllCommand = new RelayCommand(() => _backupManager.ResumeAllJobs());
             StopAllCommand = new RelayCommand(() => _backupManager.StopAllJobs());
             TogglePauseJobCommand = new RelayCommand<int>(TogglePauseJob);
+
+            LoadPersistentSettings();
+        }
+
+        private void LoadPersistentSettings()
+        {
+            var config = _backupManager.ConfigManager;
+            string savedLang = config.GetConfig<string>("AppLanguage") ?? "en_us";
+
+            try
+            {
+                I18n.Instance.SetLanguage(savedLang);
+            }
+            catch (ArgumentException)
+            {
+                I18n.Instance.SetLanguage("en_us");
+                config.SetConfig("AppLanguage", "en_us");
+                config.SaveConfiguration();
+                savedLang = "en_us";
+            }
+
+            SelectedLanguage = savedLang == "fr_fr" ? 1 : 0;
+            RefreshTranslations();
+
+            SelectedWindowMode = config.GetConfig<int>("AppWindowMode");
+
+            Dispatcher.UIThread.Post(async () => {
+                await ApplyWindowModeLogic(SelectedWindowMode);
+            }, DispatcherPriority.Loaded);
         }
 
         /// <summary>
@@ -557,27 +514,35 @@ namespace EasyGUI.ViewModels
             }
         }
 
-        /// <summary>
-        /// Navigates back to the main menu view and resets the global status message.
-        /// </summary>
-        private void BackToMenu()
+        private async Task ApplyWindowModeLogic(int mode)
         {
-            CurrentView = "Menu";
-            StatusMessage = "";
-        }
-
-        /// <summary>
-        /// Prepares the interface for creating a new backup job.
-        /// Switches the view and resets all input fields to their default values.
-        /// </summary>
-        private void CreateBackupJob()
-        {
-            CurrentView = "CreateJob";
-            NewJobName = "";
-            NewJobSource = "";
-            NewJobTarget = "";
-            SelectedBackupType = 0;
-            StatusMessage = "";
+            if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                var mainWindow = desktop.MainWindow;
+                if (mainWindow != null)
+                {
+                    switch (mode)
+                    {
+                        case 0: // Windowed
+                            mainWindow.ExtendClientAreaToDecorationsHint = false;
+                            mainWindow.WindowState = WindowState.Normal;
+                            mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                            break;
+                        case 1: // Maximized
+                            mainWindow.ExtendClientAreaToDecorationsHint = false;
+                            await Task.Delay(50);
+                            mainWindow.WindowState = WindowState.Maximized;
+                            break;
+                        case 2: // Fullscreen
+                            mainWindow.ExtendClientAreaToDecorationsHint = true;
+                            mainWindow.ExtendClientAreaTitleBarHeightHint = -1;
+                            mainWindow.ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;
+                            await Task.Delay(50);
+                            mainWindow.WindowState = WindowState.Maximized;
+                            break;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -614,17 +579,6 @@ namespace EasyGUI.ViewModels
         }
 
         /// <summary>
-        /// Navigates to the job execution view.
-        /// Refreshes the job list to ensure the user can select from the latest configuration.
-        /// </summary>
-        private void ExecuteBackupJob()
-        {
-            RefreshBackupJobs();
-            StatusMessage = "";
-            CurrentView = "ExecuteJob";
-        }
-
-        /// <summary>
         /// Executes the currently selected backup job asynchronously.
         /// Manages real-time progress updates, byte calculations, and UI state transitions 
         /// using the Avalonia Dispatcher to ensure thread safety.
@@ -649,8 +603,10 @@ namespace EasyGUI.ViewModels
                         {
                             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                             {
+                                // --- V3.0 Logic: Byte Calculation ---
                                 long processedBytes = progress.TotalSize - progress.SizeRemaining;
 
+                                // Safety check for division by zero
                                 if (progress.TotalSize > 0)
                                 {
                                     CurrentProgress = (double)processedBytes / progress.TotalSize * 100;
@@ -659,12 +615,12 @@ namespace EasyGUI.ViewModels
                                 {
                                     CurrentProgress = 0;
                                 }
-                                // -----------------------------------------------------
 
                                 string processedStr = FormatBytes(processedBytes);
                                 string totalStr = FormatBytes(progress.TotalSize);
                                 CurrentSizeInfo = $"{processedStr} / {totalStr}";
 
+                                // Pause State Management
                                 if (progress.State == State.Paused) IsSingleJobPaused = true;
                                 else if (progress.State == State.Active) IsSingleJobPaused = false;
 
@@ -724,7 +680,7 @@ namespace EasyGUI.ViewModels
             {
                 JobsProgress.Add(new JobProgressItem
                 {
-                    JobId = job.Id, // V3.0: Important for individual command binding
+                    JobId = job.Id,
                     JobName = job.Name,
                     Status = _i18n.GetString("execute_waiting") ?? "Waiting...",
                     ProgressPercentage = 0
@@ -735,6 +691,8 @@ namespace EasyGUI.ViewModels
             IsExecuting = false;
             StatusMessage = "";
         }
+
+        private bool _allPaused = false;
 
         /// <summary>
         /// Starts the asynchronous execution of all backup jobs.
@@ -757,14 +715,12 @@ namespace EasyGUI.ViewModels
                             var item = JobsProgress.FirstOrDefault(j => j.JobName == progress.BackupName);
                             if (item != null)
                             {
-                                // --- MODIFICATION : BYTE-BASED PERCENTAGE CALCULATION ---
                                 long processedBytes = progress.TotalSize - progress.SizeRemaining;
 
                                 if (progress.TotalSize > 0)
                                     item.ProgressPercentage = (double)processedBytes / progress.TotalSize * 100;
                                 else
                                     item.ProgressPercentage = 0;
-                                // -----------------------------------------------------
 
                                 string processedStr = FormatBytes(processedBytes);
                                 string totalStr = FormatBytes(progress.TotalSize);
@@ -825,26 +781,6 @@ namespace EasyGUI.ViewModels
         }
 
         /// <summary>
-        /// Navigates to the backup job list view after refreshing data from the manager.
-        /// </summary>
-        private void ListAllBackupJobs()
-        {
-            RefreshBackupJobs();
-            StatusMessage = "";
-            CurrentView = "ListJobs";
-        }
-
-        /// <summary>
-        /// Navigates to the backup job deletion view.
-        /// </summary>
-        private void DeleteBackupJob()
-        {
-            RefreshBackupJobs();
-            StatusMessage = "";
-            CurrentView = "DeleteJob";
-        }
-
-        /// <summary>
         /// Asynchronously deletes the currently selected backup job from the manager.
         /// Resets the selection and updates the UI upon success.
         /// </summary>
@@ -874,23 +810,28 @@ namespace EasyGUI.ViewModels
         }
 
         /// <summary>
-        /// Initializes the language selection view based on current settings.
-        /// </summary>
-        private void ChangeLanguage()
-        {
-            SelectedLanguage = I18n.Instance.Language == "fr_fr" ? 1 : 0;
-            CurrentView = "ChangeLanguage";
-            StatusMessage = "";
-        }
-
-        /// <summary>
         /// Loads all application settings from the ConfigManager into the ViewModel properties.
         /// Includes window mode, log format, business software, and priority extensions.
         /// </summary>
         private void OpenSettings()
         {
-            // Language and WindowMode
+            var config = _backupManager.ConfigManager;
+            
+            // Load detailed settings (Feature Branch)
+            ConfigBusinessSoftware = config.GetConfig<string>("BusinessSoftware") ?? "";
+            ConfigCryptoPath = config.GetConfig<string>("CryptoSoftPath") ?? "";
+            ConfigCryptoKey = config.GetConfig<string>("CryptoKey") ?? "";
+            ConfigMaxSize = config.GetConfig<long?>("MaxParallelTransferSize") ?? 1000;
+
+            var extensions = config.GetConfig<List<string>>("PriorityExtensions") ?? new List<string>();
+            ConfigPriorityExtensions = string.Join(", ", extensions);
+
+            string logFormat = config.GetConfig<string>("LoggerFormat") ?? "json";
+            SelectedLogFormat = logFormat.ToLower() == "xml" ? 1 : 0;
+
             SelectedLanguage = I18n.Instance.Language == "fr_fr" ? 1 : 0;
+
+            // Load Window Mode (V3 Logic)
             if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
             {
                 var mainWindow = desktop.MainWindow;
@@ -901,15 +842,6 @@ namespace EasyGUI.ViewModels
                     else SelectedWindowMode = 0;
                 }
             }
-
-            // Loading Version-specific settings (V1.1 / V2.0 / V3.0)
-            string currentFormat = _backupManager.ConfigManager.GetConfig<string>("LoggerFormat");
-            SelectedLogFormat = currentFormat == "xml" ? 1 : 0;
-
-            BusinessSoftware = _backupManager.ConfigManager.GetConfig<string>("BusinessSoftware") ?? "";
-
-            var extensions = _backupManager.ConfigManager.GetConfig<List<string>>("PriorityExtensions");
-            PriorityExtensions = extensions != null ? string.Join(", ", extensions) : "";
 
             CurrentView = "Settings";
             StatusMessage = "";
@@ -923,60 +855,33 @@ namespace EasyGUI.ViewModels
         {
             try
             {
-                int savedWindowMode = SelectedWindowMode;
+                int modeToApply = SelectedWindowMode;
                 var i18n = I18n.Instance;
 
                 // 1. Language
                 string languageCode = SelectedLanguage == 0 ? "en_us" : "fr_fr";
                 i18n.SetLanguage(languageCode);
+
                 RefreshTranslations();
 
                 // 2. Window Mode
-                SelectedWindowMode = savedWindowMode;
-                if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
-                {
-                    var mainWindow = desktop.MainWindow;
-                    if (mainWindow != null)
-                    {
-                        switch (SelectedWindowMode)
-                        {
-                            case 0:
-                                mainWindow.ExtendClientAreaToDecorationsHint = false;
-                                await Task.Delay(50);
-                                mainWindow.WindowState = WindowState.Normal;
-                                break;
-                            case 1:
-                                mainWindow.ExtendClientAreaToDecorationsHint = false;
-                                await Task.Delay(50);
-                                mainWindow.WindowState = WindowState.Maximized;
-                                break;
-                            case 2:
-                                mainWindow.ExtendClientAreaToDecorationsHint = true;
-                                mainWindow.ExtendClientAreaTitleBarHeightHint = -1;
-                                mainWindow.ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;
-                                await Task.Delay(50);
-                                mainWindow.WindowState = WindowState.Maximized;
-                                break;
-                        }
-                    }
-                }
+                SelectedWindowMode = modeToApply;
+                await ApplyWindowModeLogic(SelectedWindowMode);
 
-                // 3. Log Format (V1.1)
-                string newFormat = SelectedLogFormat == 1 ? "xml" : "json";
-                _backupManager.ConfigManager.SetConfig("LoggerFormat", newFormat);
+                // 3. Save Configuration
+                var config = _backupManager.ConfigManager;
+                config.SetConfig("AppLanguage", languageCode);
+                config.SetConfig("AppWindowMode", SelectedWindowMode);
+                config.SetConfig("BusinessSoftware", ConfigBusinessSoftware);
+                config.SetConfig("CryptoSoftPath", ConfigCryptoPath);
+                config.SetConfig("CryptoKey", ConfigCryptoKey);
+                config.SetConfig("MaxParallelTransferSize", ConfigMaxSize);
+                config.SetConfig("LoggerFormat", SelectedLogFormat == 1 ? "xml" : "json");
 
-                // 4. Business Software (V2.0/V3.0)
-                _backupManager.ConfigManager.SetConfig("BusinessSoftware", BusinessSoftware);
+                var extList = ConfigPriorityExtensions.Split(',').Select(e => e.Trim()).Where(e => !string.IsNullOrEmpty(e)).ToList();
+                config.SetConfig("PriorityExtensions", extList);
 
-                // 5. Extensions (V2.0/V3.0)
-                var extList = PriorityExtensions.Split(',')
-                                                .Select(e => e.Trim())
-                                                .Where(e => !string.IsNullOrEmpty(e))
-                                                .ToList();
-                _backupManager.ConfigManager.SetConfig("PriorityExtensions", extList);
-
-                // Disk persistence
-                _backupManager.ConfigManager.SaveConfiguration();
+                config.SaveConfiguration();
 
                 StatusMessage = "✓ " + i18n.GetString("settings_applied");
                 await Task.Delay(2000);
@@ -989,43 +894,72 @@ namespace EasyGUI.ViewModels
         }
 
         /// <summary>
-        /// Applies the selected language and refreshes all UI translations.
-        /// </summary>
-        private void ApplyLanguage()
-        {
-            try
-            {
-                var i18n = I18n.Instance;
-                string languageCode = SelectedLanguage == 0 ? "en_us" : "fr_fr";
-                i18n.SetLanguage(languageCode);
-                RefreshTranslations();
-                StatusMessage = i18n.GetString("language_changed");
-                System.Threading.Thread.Sleep(1000);
-                CurrentView = "Menu";
-                StatusMessage = "";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"✗ Error changing language: {ex.Message}";
-            }
-        }
-
-        /// <summary>
         /// Triggers property change notifications for all localized strings and collections.
         /// Essential for updating the UI after a language switch.
         /// </summary>
         private void RefreshTranslations()
         {
-            OnPropertyChanged(nameof(L));
+            // Rafraichit toutes les propriétés liées aux textes
+            OnPropertyChanged(nameof(AppTitle));
+            OnPropertyChanged(nameof(MenuDashboard));
+            OnPropertyChanged(nameof(MenuActionsTitle));
+            OnPropertyChanged(nameof(MenuCreate));
+            OnPropertyChanged(nameof(MenuExecute));
+            OnPropertyChanged(nameof(MenuExecuteAll));
+            OnPropertyChanged(nameof(MenuList));
+            OnPropertyChanged(nameof(MenuDelete));
+            OnPropertyChanged(nameof(MenuSettings));
+            OnPropertyChanged(nameof(MenuExit));
+            OnPropertyChanged(nameof(ThemeDark));
+            OnPropertyChanged(nameof(ThemeLight));
+            OnPropertyChanged(nameof(DashboardWelcome));
+            OnPropertyChanged(nameof(DashboardSubtitle));
+            OnPropertyChanged(nameof(CreateTitle));
+            OnPropertyChanged(nameof(CreateName));
+            OnPropertyChanged(nameof(CreateSource));
+            OnPropertyChanged(nameof(CreateTarget));
+            OnPropertyChanged(nameof(CreateType));
+            OnPropertyChanged(nameof(BtnSave));
+            OnPropertyChanged(nameof(BtnCancel));
+            OnPropertyChanged(nameof(ExecuteTitle));
+            OnPropertyChanged(nameof(ExecuteSubtitle));
+            OnPropertyChanged(nameof(ExecutePlaceholder));
+            OnPropertyChanged(nameof(BtnStart));
+            OnPropertyChanged(nameof(ExecuteAllTitle));
+            OnPropertyChanged(nameof(ExecuteAllSubtitle));
+            OnPropertyChanged(nameof(BtnStartAll));
+            OnPropertyChanged(nameof(ListTitle));
+            OnPropertyChanged(nameof(DeleteTitle));
+            OnPropertyChanged(nameof(DeleteWarning));
+            OnPropertyChanged(nameof(BtnDelete));
+
+            // Paramètres
+            OnPropertyChanged(nameof(SettingsTitle));
+            OnPropertyChanged(nameof(SettingsLang));
+            OnPropertyChanged(nameof(SettingsWindowMode));
+            OnPropertyChanged(nameof(SettingsGeneral));
+            OnPropertyChanged(nameof(SettingsBusinessSoft));
+            OnPropertyChanged(nameof(SettingsLogFormat));
+            OnPropertyChanged(nameof(SettingsCrypto));
+            OnPropertyChanged(nameof(SettingsCryptoPath));
+            OnPropertyChanged(nameof(SettingsCryptoKey));
+            OnPropertyChanged(nameof(SettingsPerformance));
+            OnPropertyChanged(nameof(SettingsMaxSize));
+            OnPropertyChanged(nameof(SettingsPriorityExt));
+            OnPropertyChanged(nameof(BtnApply));
+
+            OnPropertyChanged(nameof(TypeComplete));
+            OnPropertyChanged(nameof(TypeDifferential));
+
+            // Listes
             BackupTypes.Clear();
-            BackupTypes.Add(TypeComplete);
-            BackupTypes.Add(TypeDifferential);
+            BackupTypes.Add(_i18n.GetString("type_complete"));
+            BackupTypes.Add(_i18n.GetString("type_differential"));
+
             WindowModes.Clear();
             WindowModes.Add(_i18n.GetString("settings_window_windowed"));
             WindowModes.Add(_i18n.GetString("settings_window_maximized"));
             WindowModes.Add(_i18n.GetString("settings_window_fullscreen"));
-            OnPropertyChanged(nameof(TypeComplete));
-            OnPropertyChanged(nameof(TypeDifferential));
         }
 
         /// <summary>
@@ -1033,13 +967,11 @@ namespace EasyGUI.ViewModels
         /// </summary>
         private void Exit()
         {
-            if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
-            {
+            if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop) 
                 desktop.Shutdown();
-            }
         }
 
-        // --- NEW METHODS FOR PLAY/PAUSE BUTTON ---
+        // --- HELPER METHODS FROM V3.0 ---
 
         /// <summary>
         /// Toggles the pause/resume state for a specific backup job by ID.
@@ -1054,40 +986,12 @@ namespace EasyGUI.ViewModels
                 if (job.State == State.Paused)
                 {
                     _backupManager.ResumeJob(id);
-                    UpdateUiState(id, false, _i18n.GetString("status_running"));
+                    UpdateUiState(id, false, _i18n.GetString("status_running") ?? "Running");
                 }
                 else
                 {
                     _backupManager.PauseJob(id);
-                    UpdateUiState(id, true, _i18n.GetString("status_paused_user"));
-                }
-            }
-        }
-
-        private bool _allPaused = false;
-        /// <summary>
-        /// Toggles the pause/resume state for all currently running backup jobs.
-        /// </summary>
-        private void TogglePauseAll()
-        {
-            if (_allPaused)
-            {
-                _backupManager.ResumeAllJobs();
-                _allPaused = false;
-                foreach (var item in JobsProgress)
-                {
-                    item.IsPaused = false;
-                    item.Status = _i18n.GetString("status_running");
-                }
-            }
-            else
-            {
-                _backupManager.PauseAllJobs();
-                _allPaused = true;
-                foreach (var item in JobsProgress)
-                {
-                    item.IsPaused = true;
-                    item.Status = _i18n.GetString("status_paused_all");
+                    UpdateUiState(id, true, _i18n.GetString("status_paused_user") ?? "Paused by user");
                 }
             }
         }

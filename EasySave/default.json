@@ -8,5 +8,6 @@
 	"PriorityExtensions": [ ".txt", ".json", ".xml" ],
 	"BusinessSoftware": "CalculatorApp",
 	"MaxParallelTransferSize": 1000,
-	"AppLanguage": "English"
+	"AppLanguage": "en_us",
+	"AppWindowMode": 1
 }

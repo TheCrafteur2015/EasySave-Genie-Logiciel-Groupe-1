@@ -1,4 +1,4 @@
-﻿namespace EasySave.Backup
+namespace EasySave.Backup
 {
 	/// <summary>
 	/// Represents control signals used to manage the application's flow and state.

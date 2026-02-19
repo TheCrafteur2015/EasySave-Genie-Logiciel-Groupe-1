@@ -1,4 +1,4 @@
-﻿namespace EasySave.Utils
+namespace EasySave.Utils
 {
 	public class Version : IComparable<Version>
 	{

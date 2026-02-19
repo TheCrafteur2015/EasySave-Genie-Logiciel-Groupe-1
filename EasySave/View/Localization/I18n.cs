@@ -1,4 +1,4 @@
-﻿using EasySave.Utils;
+using EasySave.Utils;
 using Newtonsoft.Json;
 using System.ComponentModel;
 using System.Reflection;

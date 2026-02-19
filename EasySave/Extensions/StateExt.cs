@@ -1,4 +1,4 @@
-﻿using EasySave.Backup;
+using EasySave.Backup;
 using EasySave.View.Localization;
 
 namespace EasySave.Extensions

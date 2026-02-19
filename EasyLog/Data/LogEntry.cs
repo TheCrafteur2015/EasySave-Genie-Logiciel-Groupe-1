@@ -1,4 +1,4 @@
-﻿using EasyLog.Logging;
+using EasyLog.Logging;
 
 namespace EasyLog.Data
 {

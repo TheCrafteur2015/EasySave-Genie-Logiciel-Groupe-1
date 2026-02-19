@@ -1,4 +1,4 @@
-﻿namespace EasySave.Extensions
+namespace EasySave.Extensions
 {
 	/// <summary>
 	/// Provides helper methods for console interactions, specifically for reading and parsing user input.

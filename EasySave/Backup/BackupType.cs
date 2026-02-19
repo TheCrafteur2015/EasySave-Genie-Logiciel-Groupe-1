@@ -1,4 +1,4 @@
-﻿namespace EasySave.Backup
+namespace EasySave.Backup
 {
 	/// <summary>
 	/// Backup job types

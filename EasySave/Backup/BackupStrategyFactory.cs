@@ -3,10 +3,8 @@ namespace EasySave.Backup
 	/// <summary>
 	/// Factory for creating backup strategies (Factory Pattern)
 	/// </summary>
-	public class BackupStrategyFactory
+	public static class BackupStrategyFactory
 	{
-
-		private BackupStrategyFactory() {}
 
 		/// <summary>
 		/// Creates a backup strategy instance based on the specified backup type.
@@ -22,7 +20,7 @@ namespace EasySave.Backup
 				BackupType.Complete     => new CompleteBackupStrategy(),
 				BackupType.Differential => new DifferentialBackupStrategy(),
 				BackupType.Incremental  => throw new NotImplementedException("This backup type is not yet implemented!"),
-				_ => throw new ArgumentException($"Unknown backup type: {type}")
+				_                       => throw new ArgumentException($"Unknown backup type: {type}")
 			};
 		}
 	}

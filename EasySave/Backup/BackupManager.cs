@@ -14,7 +14,7 @@ namespace EasySave.Backup
 		/// <summary>
 		/// Mutex global pour garantir que CryptoSoft est une instance unique sur tout le syst�me.
 		/// </summary>
-		public static readonly Mutex CryptoSoftMutex = new Mutex(false, @"Global\EasySave_CryptoSoft_Lock");
+		public static readonly Mutex CryptoSoftMutex = new(false, @"Global\EasySave_CryptoSoft_Lock");
 
 		/// <summary>
 		/// Compteur volatile pour suivre le nombre de fichiers prioritaires en attente dans tous les jobs.
@@ -73,24 +73,21 @@ namespace EasySave.Backup
 
 		public static BackupManager GetBM()
 		{
-			if (_instance == null)
+			lock (_lock)
 			{
-				lock (_lock)
-				{
-					_instance = new BackupManager();
-				}
+				_instance ??= new BackupManager();
 			}
 			return _instance;
 		}
 
 		public static ILogger GetLogger()
 		{
-			if (_logger == null)
+			lock (_lock)
 			{
-				var BM = GetBM();
-				var format = BM.ConfigManager.GetConfig<string>("LoggerFormat");
-				lock (_lock)
+				if (_logger == null)
 				{
+					var BM = GetBM();
+					var format = BM.ConfigManager.GetConfig<string>("LoggerFormat");
 					_logger = LoggerFactory.CreateLogger(format ?? "text", Path.Combine(BM.appData, "Logs"));
 				}
 			}
@@ -105,9 +102,9 @@ namespace EasySave.Backup
 		{
 			if (_backupJobs.Count >= MaxBackupJobs && MaxBackupJobs != -1) return false;
 			if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(sourceDir) || string.IsNullOrWhiteSpace(targetDir)) return false;
-            if (_backupJobs.Any(j => j.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) return false;
+			if (_backupJobs.Any(j => j.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) return false;
 
-            int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
+			int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
 			var job = new BackupJob(newId, name, sourceDir, targetDir, type);
 			_backupJobs.Add(job);
 			ConfigManager.SaveBackupJobs(_backupJobs);
@@ -119,11 +116,11 @@ namespace EasySave.Backup
 			var job = _backupJobs.FirstOrDefault(j => j.Id == id);
 			if (job == null) return false;
 			_backupJobs.Remove(job);
-            for (int i = 0; i < _backupJobs.Count; i++)
-            {
-                _backupJobs[i].Id = i + 1;
-            }
-            ConfigManager.SaveBackupJobs(_backupJobs);
+			for (int i = 0; i < _backupJobs.Count; i++)
+			{
+				_backupJobs[i].Id = i + 1;
+			}
+			ConfigManager.SaveBackupJobs(_backupJobs);
 			return true;
 		}
 
@@ -134,9 +131,7 @@ namespace EasySave.Backup
 		/// </summary>
 		public Task ExecuteJobAsync(int id, Action<ProgressState>? progressCallback = null)
 		{
-			var job = _backupJobs.FirstOrDefault(j => j.Id == id);
-			if (job == null) throw new ArgumentException($"Job {id} not found.");
-			
+			var job = _backupJobs.FirstOrDefault(j => j.Id == id) ?? throw new ArgumentException($"Job {id} not found.");
 			job.ResetControls(); // Reset Pause/Stop tokens
 			return Task.Run(() => ExecuteSingleJob(job, progressCallback));
 		}
@@ -150,14 +145,14 @@ namespace EasySave.Backup
 		{
 			var tasks = _backupJobs.Where(j => j.Id >= startId && j.Id <= endId)
 								   .Select(j => { j.ResetControls(); return Task.Run(() => ExecuteSingleJob(j, progressCallback)); });
-			Task.WaitAll(tasks.ToArray());
+			Task.WaitAll([.. tasks]);
 		}
 
 		public void ExecuteJobList(int[] ids, Action<ProgressState>? progressCallback = null)
 		{
 			var tasks = _backupJobs.Where(j => ids.Contains(j.Id))
 								   .Select(j => { j.ResetControls(); return Task.Run(() => ExecuteSingleJob(j, progressCallback)); });
-			Task.WaitAll(tasks.ToArray());
+			Task.WaitAll([.. tasks]);
 		}
 
 		/// <summary>
@@ -165,7 +160,7 @@ namespace EasySave.Backup
 		/// </summary>
 		public List<Task> ExecuteAllJobsAsync(Action<ProgressState>? progressCallback = null)
 		{
-			List<Task> tasks = new();
+			List<Task> tasks = [];
 			foreach (var job in _backupJobs)
 			{
 				job.ResetControls();
@@ -176,72 +171,72 @@ namespace EasySave.Backup
 
 		public void ExecuteAllJobs(Action<ProgressState>? progressCallback = null)
 		{
-			Task.WaitAll(ExecuteAllJobsAsync(progressCallback).ToArray());
+			Task.WaitAll([.. ExecuteAllJobsAsync(progressCallback)]);
 		}
 
-        // --- M�THODES DE PILOTAGE ---
+		// --- M�THODES DE PILOTAGE ---
 
-        public void StopJob(int id)
-        {
-            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
-            if (job != null)
-            {
-                job.Cts.Cancel();           // 1. On demande l'arrêt
-                job.PauseWaitHandle.Set();  // 2. IMPORTANT : On débloque le thread s'il dormait en pause !
-            }
-        }
+		public void StopJob(int id)
+		{
+			var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+			if (job != null)
+			{
+				job.Cts.Cancel();          // 1. On demande l'arrêt
+				job.PauseWaitHandle.Set(); // 2. IMPORTANT : On débloque le thread s'il dormait en pause !
+			}
+		}
 
-        public void StopAllJobs()
-        {
-            foreach (var job in _backupJobs)
-            {
-                job.Cts.Cancel();           // 1. On demande l'arrêt
-                job.PauseWaitHandle.Set();  // 2. On réveille tout le monde pour qu'ils s'arrêtent
-            }
-        }
+		public void StopAllJobs()
+		{
+			foreach (var job in _backupJobs)
+			{
+				job.Cts.Cancel();          // 1. On demande l'arrêt
+				job.PauseWaitHandle.Set(); // 2. On réveille tout le monde pour qu'ils s'arrêtent
+			}
+		}
 
-        // --- MÉTHODES DE PILOTAGE CORRIGÉES ---
+		// --- MÉTHODES DE PILOTAGE CORRIGÉES ---
 
-        public void PauseJob(int id)
-        {
-            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
-            if (job != null)
-            {
-                job.State = State.Paused; // <--- C'EST CELLE-CI QUI FAIT MARCHER LE BOUTON
-                job.PauseWaitHandle.Reset();
-            }
-        }
+		public void PauseJob(int id)
+		{
+			var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+			if (job != null)
+			{
+				job.State = State.Paused; // <--- C'EST CELLE-CI QUI FAIT MARCHER LE BOUTON
+				job.PauseWaitHandle.Reset();
+			}
+		}
 
-        public void ResumeJob(int id)
-        {
-            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
-            if (job != null)
-            {
-                job.State = State.Active; // <--- LIGNE CRUCIALE AJOUTÉE
-                job.PauseWaitHandle.Set();
-            }
-        }
+		public void ResumeJob(int id)
+		{
+			var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+			if (job != null)
+			{
+				job.State = State.Active; // <--- LIGNE CRUCIALE AJOUTÉE
+				job.PauseWaitHandle.Set();
+			}
+		}
 
-        public void PauseAllJobs()
-        {
-            foreach (var job in _backupJobs)
-            {
-                job.State = State.Paused; // <--- FORÇAGE DE L'ÉTAT
-                job.PauseWaitHandle.Reset();
-            }
-        }
+		public void PauseAllJobs()
+		{
+			foreach (var job in _backupJobs)
+			{
+				job.State = State.Paused; // <--- FORÇAGE DE L'ÉTAT
+				job.PauseWaitHandle.Reset();
+			}
+		}
 
-        public void ResumeAllJobs()
-        {
-            foreach (var job in _backupJobs)
-            {
-                job.State = State.Active; // <--- FORÇAGE DE L'ÉTAT
-                job.PauseWaitHandle.Set();
-            }
-        }
-        // --- LOGIQUE INTERNE ---
+		public void ResumeAllJobs()
+		{
+			foreach (var job in _backupJobs)
+			{
+				job.State = State.Active; // <--- FORÇAGE DE L'ÉTAT
+				job.PauseWaitHandle.Set();
+			}
+		}
+		// --- LOGIQUE INTERNE ---
 
-        private void ExecuteSingleJob(BackupJob job, Action<ProgressState>? progressCallback)
+		private void ExecuteSingleJob(BackupJob job, Action<ProgressState>? progressCallback)
 		{
 			try
 			{

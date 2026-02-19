@@ -1,4 +1,4 @@
-﻿using EasyConsole.View.Command;
+using EasyConsole.View.Command;
 using EasySave.Backup;
 using EasySave.View.Localization;
 using System.Diagnostics;

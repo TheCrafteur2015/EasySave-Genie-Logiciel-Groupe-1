@@ -6,12 +6,31 @@ using System.Text;
 
 namespace EasyConsole.View
 {
+    /// <summary>
+    /// Represents the main view controller for the Console application.
+    /// Manages user interaction, command-line arguments, and the real-time monitoring dashboard.
+    /// </summary>
     public class ConsoleView
     {
+        /// <summary>
+        /// Stores the console line index assigned to each backup job name for dynamic updates.
+        /// </summary>
         private static readonly Dictionary<string, int> _jobLines = [];
+
+        /// <summary>
+        /// The starting line index in the console where the job list begins.
+        /// </summary>
         private static int _baseLineIndex = 0;
+
+        /// <summary>
+        /// Lock object used to synchronize console output and prevent text overlapping in multi-threaded scenarios.
+        /// </summary>
         private static readonly object _consoleLock = new();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConsoleView"/> class.
+        /// Triggers the initialization of core managers and localization.
+        /// </summary>
         public ConsoleView()
         {
             _ = BackupManager.GetBM();
@@ -19,9 +38,12 @@ namespace EasyConsole.View
             _ = I18n.Instance;
         }
 
+        /// <summary>
+        /// Starts the main application loop or processes command-line arguments.
+        /// </summary>
+        /// <param name="args">The command-line arguments passed to the application.</param>
         public static void Run(string[] args)
         {
-            // 1. Support Ligne de Commande (CLI)
             if (args.Length > 0)
             {
                 ProcessCommandLine(args);
@@ -35,17 +57,16 @@ namespace EasyConsole.View
                 context.DisplayCommands();
 
                 int choice;
-                try 
-                { 
-                    choice = ConsoleExt.ReadDec(); 
-                } 
-                catch(FormatException) 
+                try
+                {
+                    choice = ConsoleExt.ReadDec();
+                }
+                catch (FormatException)
                 {
                     Console.WriteLine(I18n.Instance.GetString("invalid_choice"));
                     continue;
                 }
 
-                // Préparation de l'écran pour les commandes d'exécution (ex: 2, 3, 10)
                 if (choice == 2 || choice == 3 || choice == 10)
                 {
                     PrepareConsoleForMonitoring();
@@ -62,13 +83,18 @@ namespace EasyConsole.View
             }
         }
 
+        /// <summary>
+        /// Parses and executes commands provided via command-line arguments.
+        /// Supports ranges (1-3), lists (1;3;5), or single IDs.
+        /// </summary>
+        /// <param name="args">The array of string arguments.</param>
         public static void ProcessCommandLine(string[] args)
         {
             try
             {
                 string argument = args[0];
                 var bm = BackupManager.GetBM();
-                
+
                 PrepareConsoleForMonitoring();
 
                 if (argument.Contains('-'))
@@ -98,8 +124,11 @@ namespace EasyConsole.View
             }
         }
 
-        // --- FONCTIONNALITÉS DASHBOARD (v3.0) ---
 
+        /// <summary>
+        /// Sets up the console interface for the real-time monitoring dashboard.
+        /// Clears the screen, hides the cursor, and draws the table header.
+        /// </summary>
         public static void PrepareConsoleForMonitoring()
         {
             lock (_consoleLock)
@@ -112,13 +141,15 @@ namespace EasyConsole.View
 
                 _baseLineIndex = Console.CursorTop;
                 _jobLines.Clear();
-                
-                // On réserve une zone pour les instructions en bas
                 Console.SetCursorPosition(0, Console.WindowHeight - 2);
                 Console.Write("[CONTROLS] P: Pause | R: Resume | S: Stop | Esc: Quit");
             }
         }
 
+        /// <summary>
+        /// Restores the console state after monitoring is finished.
+        /// Re-enables the cursor and moves it to the bottom of the display.
+        /// </summary>
         public static void StopMonitoring()
         {
             lock (_consoleLock)
@@ -129,6 +160,10 @@ namespace EasyConsole.View
             }
         }
 
+        /// <summary>
+        /// Updates the progress information for a specific backup job on the dashboard.
+        /// </summary>
+        /// <param name="state">The current progress state of the backup job.</param>
         public static void DisplayProgress(ProgressState state)
         {
             lock (_consoleLock)
@@ -139,7 +174,7 @@ namespace EasyConsole.View
                 }
 
                 int currentRow = _jobLines[state.BackupName];
-                if (currentRow >= Console.BufferHeight - 3) return; // Sécurité pour ne pas écraser les contrôles
+                if (currentRow >= Console.BufferHeight - 3) return; 
 
                 Console.SetCursorPosition(0, currentRow);
 
@@ -154,8 +189,7 @@ namespace EasyConsole.View
                 if (file.Length > 30) file = "..." + file[^27..];
 
                 string line = $"{name,-20} | {bar} {percent,5:F1}% | {status,-10} | {file}";
-                
-                // Nettoyage de la fin de ligne
+
                 int padding = Console.WindowWidth - line.Length - 1;
                 if (padding > 0) line += new string(' ', padding);
 
@@ -169,11 +203,14 @@ namespace EasyConsole.View
             }
         }
 
-        // --- FONCTIONNALITÉS INTERACTION TEMPS RÉEL (Feature) ---
 
+        /// <summary>
+        /// Monitors keyboard input while backup tasks are running in the background.
+        /// Allows the user to pause, resume, or stop jobs in real-time.
+        /// </summary>
+        /// <param name="tasks">A list of running tasks to monitor.</param>
         public static void MonitorJobs(List<Task> tasks)
         {
-            // Cette boucle surveille les touches pendant que les Task s'exécutent en arrière-plan
             while (!Task.WaitAll(tasks.ToArray(), 50))
             {
                 if (Console.KeyAvailable)
@@ -186,11 +223,10 @@ namespace EasyConsole.View
 
                         if (key == ConsoleKey.P || key == ConsoleKey.R || key == ConsoleKey.S)
                         {
-                            // On place le curseur sur la ligne de commande temporaire
                             Console.SetCursorPosition(0, Console.WindowHeight - 1);
-                            Console.Write(new string(' ', Console.WindowWidth - 1)); // Clear line
+                            Console.Write(new string(' ', Console.WindowWidth - 1));
                             Console.SetCursorPosition(0, Console.WindowHeight - 1);
-                            
+
                             Console.Write($"Action ({key}) > ID (0=ALL): ");
                             if (int.TryParse(Console.ReadLine(), out int id))
                             {
@@ -202,7 +238,6 @@ namespace EasyConsole.View
                                     case ConsoleKey.S: if (id == 0) bm.StopAllJobs(); else bm.StopJob(id); break;
                                 }
                             }
-                            // On efface la ligne de saisie après l'action
                             Console.SetCursorPosition(0, Console.WindowHeight - 1);
                             Console.Write(new string(' ', Console.WindowWidth - 1));
                         }

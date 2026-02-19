@@ -6,6 +6,10 @@ using System.Linq;
 
 namespace EasyTest
 {
+    /// <summary>
+    /// Contains unit tests to verify the stability and correctness of backup jobs 
+    /// executing in parallel.
+    /// </summary>
     [TestClass]
     public class BackupParallelTests
     {
@@ -14,6 +18,10 @@ namespace EasyTest
         private string _source2 = null!;
         private string _target2 = null!;
 
+        /// <summary>
+        /// Initializes the test environment before each test execution.
+        /// Resets the BackupManager and prepares temporary directories.
+        /// </summary>
         [TestInitialize]
         public void Setup()
         {
@@ -39,6 +47,9 @@ namespace EasyTest
             Directory.CreateDirectory(_source2);
         }
 
+        /// <summary>
+        /// Cleans up the temporary test environment after each test execution.
+        /// </summary>
         [TestCleanup]
         public void Cleanup()
         {
@@ -48,6 +59,10 @@ namespace EasyTest
             if (Directory.Exists(_target2)) Directory.Delete(_target2, true);
         }
 
+        /// <summary>
+        /// Tests the stability of the system when running multiple backup jobs simultaneously.
+        /// Verifies that all files are correctly copied and job states are updated properly.
+        /// </summary>
         [TestMethod]
         public void TestExecutionParallele_Stabilite()
         {
@@ -68,12 +83,12 @@ namespace EasyTest
             int count1 = Directory.GetFiles(_target1).Length;
             int count2 = Directory.GetFiles(_target2).Length;
 
-            Assert.AreEqual(50, count1, "Le Job A aurait dû copier 50 fichiers.");
-            Assert.AreEqual(50, count2, "Le Job B aurait dû copier 50 fichiers.");
+            Assert.AreEqual(50, count1, "Job A should have copied 50 files.");
+            Assert.AreEqual(50, count2, "Job B should have copied 50 files.");
 
             var jobs = bm.GetAllJobs();
-            Assert.AreEqual(State.Completed, jobs[0].State, "Le Job A doit être terminé.");
-            Assert.AreEqual(State.Completed, jobs[1].State, "Le Job B doit être terminé.");
+            Assert.AreEqual(State.Completed, jobs[0].State, "Job A state should be Completed.");
+            Assert.AreEqual(State.Completed, jobs[1].State, "Job B state should be Completed.");
         }
     }
 }

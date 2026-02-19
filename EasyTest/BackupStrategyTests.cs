@@ -13,6 +13,10 @@ using System;
 
 namespace EasyTest
 {
+    /// <summary>
+    /// Contains comprehensive integration and unit tests for backup strategies.
+    /// Covers full/differential backups, CryptoSoft integration, and real-time interaction (Pause/Resume/Stop).
+    /// </summary>
     [TestClass]
     public class BackupStrategyTests
     {
@@ -22,6 +26,10 @@ namespace EasyTest
         private const string NomFichierTest = "fichier_test.txt";
         private const string NomFichierCrypto = "secret.txt";
 
+        /// <summary>
+        /// Sets up the test environment before each test method execution.
+        /// Cleans up processes, temporary directories, and resets the BackupManager singleton.
+        /// </summary>
         [TestInitialize]
         public void Setup()
         {
@@ -39,9 +47,14 @@ namespace EasyTest
             var jobsIds = bm.GetAllJobs().Select(j => j.Id).ToList();
             foreach (var id in jobsIds) bm.DeleteJob(id);
 
+            // Reflection used to reset the singleton instance for a clean state
             typeof(BackupManager).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
         }
 
+        /// <summary>
+        /// Cleans up the test environment after each test method execution.
+        /// Ensures all monitored processes are closed.
+        /// </summary>
         [TestCleanup]
         public void Cleanup()
         {
@@ -49,15 +62,13 @@ namespace EasyTest
         }
 
         /// <summary>
-        /// Méthode robuste pour trouver la racine de la solution (.sln)
+        /// Robustly locates the solution root directory by searching for the .sln file.
         /// </summary>
-        /// <summary>
-        /// Méthode robuste pour trouver la racine de la solution (.sln)
-        /// </summary>
+        /// <returns>The full path to the solution directory.</returns>
         private string GetSolutionDirectory()
         {
             var currentDirectory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
-            // On remonte jusqu'à trouver le fichier .sln
+            // Traverse up the directory tree until a .sln file is found
             while (currentDirectory != null && !currentDirectory.GetFiles("*.sln").Any())
             {
                 currentDirectory = currentDirectory.Parent;
@@ -65,6 +76,10 @@ namespace EasyTest
             return currentDirectory?.FullName ?? AppDomain.CurrentDomain.BaseDirectory;
         }
 
+        /// <summary>
+        /// Tests the integration with the external CryptoSoft tool.
+        /// Verifies that files with specified extensions are encrypted during the backup process.
+        /// </summary>
         [TestMethod]
         public void TestCryptoSoft_Integration()
         {
@@ -75,26 +90,28 @@ namespace EasyTest
 
             string solutionDir = GetSolutionDirectory();
 
+            // Locate the CryptoSoft executable, excluding build artifacts (obj folders)
             var foundFiles = Directory.GetFiles(solutionDir, "CryptoSoft.exe", SearchOption.AllDirectories)
-                                      .Where(p => !p.Contains("obj")) 
+                                      .Where(p => !p.Contains("obj"))
                                       .Select(p => new FileInfo(p))
                                       .OrderByDescending(f => f.LastWriteTime)
                                       .ToList();
 
             if (foundFiles.Count == 0)
             {
-                Assert.Inconclusive($"🚨 CryptoSoft.exe est introuvable dans tout le dossier : {solutionDir}\n" +
-                                    $"👉 ACTION : Faites un Clic-Droit sur le projet 'CryptoSoft' dans l'explorateur de solutions -> 'Générer' (Build).");
+                Assert.Inconclusive($"🚨 CryptoSoft.exe not found in: {solutionDir}\n" +
+                                    $"👉 ACTION: Please Build the 'CryptoSoft' project in the Solution Explorer.");
             }
 
             string cryptoPath = foundFiles.First().FullName;
-            Console.WriteLine($"✅ CryptoSoft trouvé ici : {cryptoPath}");
+            Console.WriteLine($"✅ CryptoSoft found at: {cryptoPath}");
 
+            // Create a specific configuration for the encryption test
             var configSpeciale = new
             {
                 Version = "3.0.0",
                 MaxBackupJobs = 5,
-                PriorityExtensions = new[] { ".txt" }, 
+                PriorityExtensions = new[] { ".txt" },
                 CryptoKey = "MaCleSecrete",
                 CryptoSoftPath = cryptoPath
             };
@@ -113,12 +130,15 @@ namespace EasyTest
             bm.ExecuteJobAsync(id).Wait();
 
             string cheminFichierCible = Path.Combine(_dossierCible, NomFichierCrypto);
-            Assert.IsTrue(File.Exists(cheminFichierCible), "Le fichier cible doit exister.");
+            Assert.IsTrue(File.Exists(cheminFichierCible), "The target file must exist.");
 
             string contenuCible = File.ReadAllText(cheminFichierCible);
-            Assert.AreNotEqual(contenuClair, contenuCible, "Le fichier cible devrait être crypté (contenu différent de la source).");
+            Assert.AreNotEqual(contenuClair, contenuCible, "The target file should be encrypted (content differs from source).");
         }
 
+        /// <summary>
+        /// Tests the full backup strategy to ensure files are correctly copied.
+        /// </summary>
         [TestMethod]
         public void TestSauvegardeComplete_CopieFichiers()
         {
@@ -137,6 +157,10 @@ namespace EasyTest
             Assert.AreEqual("Contenu de test", File.ReadAllText(fichierCible));
         }
 
+        /// <summary>
+        /// Tests the differential backup strategy.
+        /// Verifies that modified files are updated in the target directory while unchanged files are ignored.
+        /// </summary>
         [TestMethod]
         public void TestSauvegardeDifferentielle_FichierModifie()
         {
@@ -151,7 +175,7 @@ namespace EasyTest
             string fichierCible = Path.Combine(_dossierCible, NomFichierTest);
             DateTime datePremiereCopie = File.GetLastWriteTime(fichierCible);
 
-            Thread.Sleep(1100);
+            Thread.Sleep(1100); // Ensure timestamp difference
             File.WriteAllText(fichierSource, "Version 2 - Modifié");
 
             bm.ExecuteJobAsync(id).Wait();
@@ -161,6 +185,10 @@ namespace EasyTest
             Assert.AreEqual("Version 2 - Modifié", File.ReadAllText(fichierCible));
         }
 
+        /// <summary>
+        /// Tests the parallel transfer limits for large files.
+        /// Verifies that the system correctly manages concurrent tasks when specific file size thresholds are met.
+        /// </summary>
         [TestMethod]
         public void TestLimiteTransfert_GrosFichiers()
         {
@@ -230,6 +258,10 @@ namespace EasyTest
             try { Directory.Delete(tgtPetit, true); } catch { }
         }
 
+        /// <summary>
+        /// Tests manual user interactions: Pause, Resume, and Stop.
+        /// Verifies that the backup thread respects control signals and stops/resumes progress accordingly.
+        /// </summary>
         [TestMethod]
         public void TestInteraction_PauseResumeStop()
         {
@@ -283,28 +315,32 @@ namespace EasyTest
 
             Thread.Sleep(1000);
 
-            Assert.AreEqual(fichiersRestantsPendantPause, fichiersRestants, "Le job ne doit pas progresser pendant la pause.");
+            Assert.AreEqual(fichiersRestantsPendantPause, fichiersRestants, "Job should not progress during pause.");
 
             bm.ResumeJob(job.Id);
             Thread.Sleep(1000);
 
-            Assert.AreNotEqual(fichiersRestantsPendantPause, fichiersRestants, "Le job doit reprendre sa progression après Resume.");
-            Assert.IsTrue(fichiersRestants < fichiersRestantsPendantPause, "Le nombre de fichiers restants doit diminuer.");
+            Assert.AreNotEqual(fichiersRestantsPendantPause, fichiersRestants, "Job should resume progress after Resume signal.");
+            Assert.IsTrue(fichiersRestants < fichiersRestantsPendantPause, "Remaining file count should decrease.");
 
             bm.StopJob(job.Id);
 
             task.Wait(2000);
 
-            Assert.IsTrue(task.IsCompleted, "La tâche doit être terminée après un Stop.");
-            Assert.AreEqual(State.Error, job.State, "L'état du job doit être 'Error' (ou Stopped) après une interruption utilisateur.");
+            Assert.IsTrue(task.IsCompleted, "Task should complete (terminate) after Stop signal.");
+            Assert.AreEqual(State.Error, job.State, "Job state should be 'Error' or stopped after user interruption.");
 
             int fichiersCopies = Directory.Exists(cible) ? Directory.GetFiles(cible).Length : 0;
-            Assert.IsTrue(fichiersCopies < 1000, $"Le job aurait dû être stoppé avant la fin (Copiés: {fichiersCopies}/1000).");
+            Assert.IsTrue(fichiersCopies < 1000, $"Job should have stopped before completion (Copied: {fichiersCopies}/1000).");
 
             try { Directory.Delete(source, true); } catch { }
             try { Directory.Delete(cible, true); } catch { }
         }
 
+        /// <summary>
+        /// Tests automatic pause and resume based on business software detection.
+        /// Verifies that the backup thread pauses when a specific process (e.g., notepad) is detected.
+        /// </summary>
         [TestMethod]
         public void TestLogicielMetier_PauseEtReprise()
         {
@@ -312,7 +348,7 @@ namespace EasyTest
             string configDir = Path.Combine(appData, "Config");
             Directory.CreateDirectory(configDir);
 
-            // Utilisation de notepad qui est plus fiable que calc pour les tests auto
+            // Using notepad for reliability in automated tests
             var configSpeciale = new
             {
                 Version = "1.1.0",
@@ -348,13 +384,13 @@ namespace EasyTest
 
                 Thread.Sleep(3000);
 
-                Assert.IsFalse(task.IsCompleted, "Le job doit être en pause (non fini) car Notepad est ouvert.");
+                Assert.IsFalse(task.IsCompleted, "Job should be paused (unfinished) because Notepad is open.");
 
                 KillProcesses();
 
-                task.Wait(8000); // Délai un peu plus long pour la reprise
+                task.Wait(8000); // Allow time for detection loop to resume
 
-                Assert.IsTrue(task.IsCompleted, "Le job aurait dû reprendre et finir après la fermeture de Notepad.");
+                Assert.IsTrue(task.IsCompleted, "Job should have resumed and finished after Notepad closure.");
                 Assert.AreEqual(State.Completed, job.State);
                 Assert.AreEqual(5, Directory.GetFiles(cible).Length);
             }
@@ -366,6 +402,9 @@ namespace EasyTest
             }
         }
 
+        /// <summary>
+        /// Forcefully terminates known test-related processes to ensure a clean state.
+        /// </summary>
         private void KillProcesses()
         {
             var names = new[] { "CalculatorApp", "calc", "Calculator", "win32calc", "notepad" };
@@ -378,6 +417,10 @@ namespace EasyTest
             }
         }
 
+        /// <summary>
+        /// Robustly deletes a directory and its contents, handling potential file locks.
+        /// </summary>
+        /// <param name="path">The directory path to delete.</param>
         private void DeleteDirectorySafe(string path)
         {
             if (Directory.Exists(path))
@@ -396,7 +439,9 @@ namespace EasyTest
             }
         }
 
-        // Garder pour compatibilité si nécessaire, redirige vers KillProcesses
+        /// <summary>
+        /// Utility method to kill calculator processes, kept for backward compatibility.
+        /// </summary>
         private void KillCalculator() => KillProcesses();
     }
 }

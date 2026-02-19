@@ -20,7 +20,7 @@ namespace EasyLog.Logging
 		/// <remarks>The error message and stack trace are both written to the log file. This method is
 		/// thread-safe.</remarks>
 		/// <param name="e">The exception to log.</param>
-		virtual void LogError(Exception e) => Log(new LogEntry { Level = Level.Error, Message = e.Message, Stacktrace = e.StackTrace });
+		virtual void LogError(Exception e) => Log(new() { Level = Level.Error, Message = e.Message, Stacktrace = e.StackTrace });
 		
 	}
 }

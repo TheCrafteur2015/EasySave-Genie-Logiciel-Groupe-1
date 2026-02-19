@@ -1,4 +1,4 @@
-﻿namespace EasyLog.Logging
+namespace EasyLog.Logging
 {
 	/// <summary>
 	/// Specifies the severity level of a log message.

@@ -1,5 +1,4 @@
 using EasySave.Backup;
-using Newtonsoft.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -28,41 +27,43 @@ namespace EasySave.Utils
 		/// runtime. Use dynamic member access to retrieve specific configuration values as needed.</remarks>
 		public dynamic ConfigValues { get; private set; }
 
-        /// <summary>
-        /// Initializes a new instance of the ConfigurationManager class using the specified configuration directory. Ensures
-        /// that the configuration files are created and loaded from the given directory.
-        /// </summary>
-        /// <remarks>If the configuration file does not exist or is empty, a default configuration is loaded. This
-        /// constructor ensures that the configuration environment is set up and ready for use.</remarks>
-        /// <param name="configDirectory">The path to the directory where configuration files are stored. If the directory does not exist, it will be
-        /// created. Cannot be null or empty.</param>
-        public ConfigurationManager(string configDirectory)
-        {
-            _configDirectory = configDirectory;
+		/// <summary>
+		/// Initializes a new instance of the ConfigurationManager class using the specified configuration directory. Ensures
+		/// that the configuration files are created and loaded from the given directory.
+		/// </summary>
+		/// <remarks>If the configuration file does not exist or is empty, a default configuration is loaded. This
+		/// constructor ensures that the configuration environment is set up and ready for use.</remarks>
+		/// <param name="configDirectory">The path to the directory where configuration files are stored. If the directory does not exist, it will be
+		/// created. Cannot be null or empty.</param>
+		public ConfigurationManager(string configDirectory)
+		{
+			_configDirectory = configDirectory;
+			
+			if (!Directory.Exists(_configDirectory))
+			{
+				Directory.CreateDirectory(_configDirectory);
+			}
 
-            if (!Directory.Exists(_configDirectory))
-            {
-                Directory.CreateDirectory(_configDirectory);
-            }
+			_configFilePath     = Path.Combine(_configDirectory, "config.json");
+			_savedBackupJobPath = Path.Combine(_configDirectory, "backups.json");
+			if (!File.Exists(_configFilePath))
+				File.Create(_configFilePath);
+			if (new FileInfo(_configFilePath).Length == 0)
+			{
+				File.WriteAllText(_configFilePath, ResourceManager.ReadResourceFile("default.json"));
+			}
+			string jsonContent = File.ReadAllText(_configFilePath);
+			ConfigValues = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonContent);
+		}
 
-            _configFilePath = Path.Combine(_configDirectory, "config.json");
-            _savedBackupJobPath = Path.Combine(_configDirectory, "backups.json");
-            if (!File.Exists(_configFilePath) || new FileInfo(_configFilePath).Length == 0)
-            {
-                File.WriteAllText(_configFilePath, ResourceManager.ReadResourceFile("default.json"));
-            }
-            string jsonContent = File.ReadAllText(_configFilePath);
-            ConfigValues = JsonConvert.DeserializeObject(jsonContent);
-        }
-
-        /// <summary>
-        /// Loads all saved backup jobs from persistent storage.
-        /// </summary>
-        /// <remarks>If the backup jobs file does not exist or cannot be read, the method returns an empty list. The
-        /// method does not throw exceptions for missing or invalid files.</remarks>
-        /// <returns>A list of <see cref="BackupJob"/> objects representing the saved backup jobs. Returns an empty list if no backup
-        /// jobs are found or if an error occurs while loading.</returns>
-        public List<BackupJob> LoadBackupJobs()
+		/// <summary>
+		/// Loads all saved backup jobs from persistent storage.
+		/// </summary>
+		/// <remarks>If the backup jobs file does not exist or cannot be read, the method returns an empty list. The
+		/// method does not throw exceptions for missing or invalid files.</remarks>
+		/// <returns>A list of <see cref="BackupJob"/> objects representing the saved backup jobs. Returns an empty list if no backup
+		/// jobs are found or if an error occurs while loading.</returns>
+		public List<BackupJob> LoadBackupJobs()
 		{
 			if (!File.Exists(_savedBackupJobPath))
 			{
@@ -72,7 +73,7 @@ namespace EasySave.Utils
 			try
 			{
 				string jsonContent = File.ReadAllText(_savedBackupJobPath);
-				var jobs = System.Text.Json.JsonSerializer.Deserialize<List<BackupJob>>(jsonContent);
+				var jobs = JsonSerializer.Deserialize<List<BackupJob>>(jsonContent);
 				return jobs ?? [];
 			}
 			catch (Exception e)
@@ -92,7 +93,7 @@ namespace EasySave.Utils
 			try
 			{
 				//JSON_OPTIONS
-				string jsonContent = System.Text.Json.JsonSerializer.Serialize(jobs, JSON_OPTIONS);
+				string jsonContent = JsonSerializer.Serialize(jobs, JSON_OPTIONS);
 				File.WriteAllText(_savedBackupJobPath, jsonContent);
 			}
 			catch (Exception ex)

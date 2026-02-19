@@ -1,4 +1,4 @@
-﻿/// <summary>
+/// <summary>
 /// Configures the parallel execution policy for the test assembly.
 /// </summary>
 /// <remarks>

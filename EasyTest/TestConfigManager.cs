@@ -1,37 +1,37 @@
-﻿using EasySave.Backup;
+using EasySave.Backup;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace EasyTest
 {
-    /// <summary>
-    /// Test class responsible for verifying configuration management and object serialization.
-    /// </summary>
-    [TestClass]
-    public sealed class TestConfigManager
-    {
-        /// <summary>
-        /// Verifies the JSON serialization and deserialization of a <see cref="BackupJob"/> object.
-        /// </summary>
-        /// <remarks>
-        /// This test creates a sample backup job, serializes it to a formatted JSON string, 
-        /// compares the JSON output against an expected string literal, and finally deserializes 
-        /// it back to ensure the resulting object is equal to the original.
-        /// </remarks>
-        [TestMethod]
-        public void TestBackupJobSerialization()
-        {
-            var job = new BackupJob(1, "Test", @"C:\xampp\htdocs\_source", @"C:\xampp\htdocs\_target", BackupType.Complete);
+	/// <summary>
+	/// Test class responsible for verifying configuration management and object serialization.
+	/// </summary>
+	[TestClass]
+	public sealed class TestConfigManager
+	{
+		/// <summary>
+		/// Verifies the JSON serialization and deserialization of a <see cref="BackupJob"/> object.
+		/// </summary>
+		/// <remarks>
+		/// This test creates a sample backup job, serializes it to a formatted JSON string, 
+		/// compares the JSON output against an expected string literal, and finally deserializes 
+		/// it back to ensure the resulting object is equal to the original.
+		/// </remarks>
+		[TestMethod]
+		public void TestBackupJobSerialization()
+		{
+			var job = new BackupJob(1, "Test", @"C:\xampp\htdocs\_source", @"C:\xampp\htdocs\_target", BackupType.Complete);
 
-            string json = JsonSerializer.Serialize(job, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                Converters = { new JsonStringEnumConverter() },
-                IncludeFields = true
-            });
+			string json = JsonSerializer.Serialize(job, new JsonSerializerOptions
+			{
+				WriteIndented = true,
+				Converters = { new JsonStringEnumConverter() },
+				IncludeFields = true
+			});
 
-            Assert.AreEqual(json,
+			Assert.AreEqual(json,
 """
 {
   "Id": 1,
@@ -44,9 +44,9 @@ namespace EasyTest
 }
 """);
 
-            var job2 = JsonSerializer.Deserialize<BackupJob>(json);
+			var job2 = JsonSerializer.Deserialize<BackupJob>(json);
 
-            Assert.AreEqual(job, job2);
-        }
-    }
+			Assert.AreEqual(job, job2);
+		}
+	}
 }

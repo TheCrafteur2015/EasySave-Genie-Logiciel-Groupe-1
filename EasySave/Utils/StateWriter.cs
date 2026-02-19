@@ -48,9 +48,8 @@ namespace EasySave.Utils
 		{
 			lock (_lockObject)
 			{
-				if (_currentStates.ContainsKey(backupName))
+				if (_currentStates.Remove(backupName))
 				{
-					_currentStates.Remove(backupName);
 					WriteStatesToFile();
 				}
 			}

@@ -36,7 +36,7 @@ namespace EasySave.Utils
 				string drive = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
 				// Replace the colon with a dollar sign for administrative share (e.g., "C$")
-				if (drive.EndsWith(":"))
+				if (drive.EndsWith(':'))
 				{
 					drive = drive[..^1] + "$";
 				}

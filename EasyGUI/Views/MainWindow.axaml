@@ -348,6 +348,16 @@
                             </StackPanel>
 
                             <StackPanel Spacing="10">
+                                <TextBlock Text="{Binding SettingsLogs}" FontWeight="SemiBold" FontSize="16" Foreground="#F6E05E"/>
+
+                                <TextBlock Text="{Binding SettingsLogMode}"/>
+                                <ComboBox SelectedIndex="{Binding SelectedLogMode}" ItemsSource="{Binding LogModes}" HorizontalAlignment="Stretch"/>
+
+                                <TextBlock Text="{Binding SettingsLogServerUrl}"/>
+                                <TextBox Text="{Binding ConfigLogServerUrl}" Watermark="http://localhost:5000"/>
+                            </StackPanel>
+
+                            <StackPanel Spacing="10">
                                 <TextBlock Text="{Binding SettingsCrypto}" FontWeight="SemiBold" FontSize="16" Foreground="#F6E05E"/>
 
                                 <TextBlock Text="{Binding SettingsCryptoPath}"/>

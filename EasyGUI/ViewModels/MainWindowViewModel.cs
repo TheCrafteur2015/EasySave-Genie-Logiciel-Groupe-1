@@ -231,7 +231,20 @@ namespace EasyGUI.ViewModels
         /// </summary>
         public int SelectedLogFormat { get => _selectedLogFormat; set => SetProperty(ref _selectedLogFormat, value); }
 
+        private int _selectedLogMode = 0;
+        /// <summary>
+        /// Gets or sets the log mode (0 for Local, 1 for Remote, 2 for Both).
+        /// </summary>
+        public int SelectedLogMode { get => _selectedLogMode; set => SetProperty(ref _selectedLogMode, value); }
+
+        private string _configLogServerUrl = "http://localhost:5000";
+        /// <summary>
+        /// Gets or sets the URL of the centralized log server (Docker).
+        /// </summary>
+        public string ConfigLogServerUrl { get => _configLogServerUrl; set => SetProperty(ref _configLogServerUrl, value); }
+
         public ObservableCollection<string> LogFormats { get; } = new() { "JSON", "XML" };
+        public ObservableCollection<string> LogModes { get; } = new() { "Local", "Remote", "Both" };
         
         /// <summary>Gets the list of available backup types for selection.</summary>
         public ObservableCollection<string> BackupTypes { get; private set; }
@@ -337,6 +350,9 @@ namespace EasyGUI.ViewModels
         public string SettingsGeneral => _i18n.GetString("settings_general");
         public string SettingsBusinessSoft => _i18n.GetString("settings_business_soft");
         public string SettingsLogFormat => _i18n.GetString("settings_log_format");
+        public string SettingsLogs => _i18n.GetString("settings_logs");
+        public string SettingsLogMode => _i18n.GetString("settings_log_mode");
+        public string SettingsLogServerUrl => _i18n.GetString("settings_log_server_url");
         public string SettingsCrypto => _i18n.GetString("settings_crypto");
         public string SettingsCryptoPath => _i18n.GetString("settings_crypto_path");
         public string SettingsCryptoKey => _i18n.GetString("settings_crypto_key");
@@ -692,8 +708,6 @@ namespace EasyGUI.ViewModels
             StatusMessage = "";
         }
 
-        private bool _allPaused = false;
-
         /// <summary>
         /// Starts the asynchronous execution of all backup jobs.
         /// Updates individual JobProgressItem objects in real-time and calculates byte-based progress.
@@ -702,7 +716,6 @@ namespace EasyGUI.ViewModels
         {
             IsExecuting = true;
             StatusMessage = "";
-            _allPaused = false;
 
             await Task.Run(() =>
             {
@@ -829,6 +842,16 @@ namespace EasyGUI.ViewModels
             string logFormat = config.GetConfig<string>("LoggerFormat") ?? "json";
             SelectedLogFormat = logFormat.ToLower() == "xml" ? 1 : 0;
 
+            string logMode = config.GetConfig<string>("LogMode") ?? "Local";
+            SelectedLogMode = logMode.ToLower() switch
+            {
+                "remote" => 1,
+                "both" => 2,
+                _ => 0
+            };
+
+            ConfigLogServerUrl = config.GetConfig<string>("LogServerUrl") ?? "http://localhost:5000";
+
             SelectedLanguage = I18n.Instance.Language == "fr_fr" ? 1 : 0;
 
             // Load Window Mode (V3 Logic)
@@ -877,6 +900,15 @@ namespace EasyGUI.ViewModels
                 config.SetConfig("CryptoKey", ConfigCryptoKey);
                 config.SetConfig("MaxParallelTransferSize", ConfigMaxSize);
                 config.SetConfig("LoggerFormat", SelectedLogFormat == 1 ? "xml" : "json");
+
+                string logModeValue = SelectedLogMode switch
+                {
+                    1 => "Remote",
+                    2 => "Both",
+                    _ => "Local"
+                };
+                config.SetConfig("LogMode", logModeValue);
+                config.SetConfig("LogServerUrl", ConfigLogServerUrl);
 
                 var extList = ConfigPriorityExtensions.Split(',').Select(e => e.Trim()).Where(e => !string.IsNullOrEmpty(e)).ToList();
                 config.SetConfig("PriorityExtensions", extList);
@@ -940,6 +972,9 @@ namespace EasyGUI.ViewModels
             OnPropertyChanged(nameof(SettingsGeneral));
             OnPropertyChanged(nameof(SettingsBusinessSoft));
             OnPropertyChanged(nameof(SettingsLogFormat));
+            OnPropertyChanged(nameof(SettingsLogs));
+            OnPropertyChanged(nameof(SettingsLogMode));
+            OnPropertyChanged(nameof(SettingsLogServerUrl));
             OnPropertyChanged(nameof(SettingsCrypto));
             OnPropertyChanged(nameof(SettingsCryptoPath));
             OnPropertyChanged(nameof(SettingsCryptoKey));

@@ -78,7 +78,8 @@ namespace EasyConsole.View
 				Console.WriteLine($"\n{I18n.Instance.GetString("press_enter")}");
 				_ = Console.ReadLine();
 
-				if (BackupManager.GetBM().LatestSignal == Signal.Exit) break;
+				if (BackupManager.GetBM().LatestSignal == Signal.Exit)
+					break;
 			}
 		}
 

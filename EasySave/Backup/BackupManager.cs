@@ -48,8 +48,10 @@ namespace EasySave.Backup
 		/// </summary>
 		private BackupManager()
 		{
+			
 			AppDomain.CurrentDomain.ProcessExit += (sender, args) => {
 				ConfigManager?.SaveConfiguration();
+				GetLogger().Log(new() { Level = Level.Info, Message = "Exiting application" });
 			};
 
 			// Initialize paths

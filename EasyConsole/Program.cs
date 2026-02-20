@@ -17,6 +17,7 @@ namespace EasyConsole
 		{
 			try
 			{
+				BackupManager.GetLogger().Log(new() { Level = EasyLog.Logging.Level.Info, Message = "Starting CLI EasySave software. . ." });
 				ConsoleView.Run(args);
 			}
 			catch (Exception e)

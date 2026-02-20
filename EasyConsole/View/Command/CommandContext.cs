@@ -1,4 +1,6 @@
 using EasyConsole.View.Commands;
+using EasyLog.Logging;
+using EasySave.Backup;
 using EasySave.View.Localization;
 
 namespace EasyConsole.View.Command
@@ -53,7 +55,10 @@ namespace EasyConsole.View.Command
 			];
 
 			foreach (var command in commands)
+			{
 				this.commandList[command.GetID()] = command;
+				BackupManager.GetLogger().Log(new() { Level = Level.Debug, Message = $"Init command {command.GetID()} `{command.GetType().Name}`" });
+			}
 		}
 
 		/// <summary>
@@ -68,6 +73,7 @@ namespace EasyConsole.View.Command
 				if (command == null)
 					return false;
 				command.Execute();
+				BackupManager.GetLogger().Log(new() { Level = Level.Debug, Message = $"Execute command ID: {id}" });
 				return true;
 			}
 			return false;
@@ -78,10 +84,12 @@ namespace EasyConsole.View.Command
 		/// </summary>
 		public void DisplayCommands()
 		{
+			BackupManager.GetLogger().Log(new() { Level = Level.Debug, Message = "Clearing console" });
 			Console.Clear();
 			Console.WriteLine("=== {0} ===", I18n.Instance.GetString("menu_title"));
 			Console.WriteLine();
 
+			BackupManager.GetLogger().Log(new() { Level = Level.Info, Message = "Displaying commands" });
 			foreach (var command in this.commandList)
 				Console.WriteLine("{0}. {1}", command.Key, I18n.Instance.GetString(command.Value.GetI18nKey()));
 

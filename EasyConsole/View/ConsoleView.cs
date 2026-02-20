@@ -2,6 +2,7 @@ using EasySave.Backup;
 using EasySave.Extensions;
 using EasyConsole.View.Command;
 using EasySave.View.Localization;
+using EasyLog.Logging;
 
 namespace EasyConsole.View
 {
@@ -45,6 +46,7 @@ namespace EasyConsole.View
 		{
 			if (args.Length > 0)
 			{
+				BackupManager.GetLogger().Log(new() { Level = Level.Info, Message = "Using command line arguments" });
 				ProcessCommandLine(args);
 				return;
 			}
@@ -60,9 +62,10 @@ namespace EasyConsole.View
 				{
 					choice = ConsoleExt.ReadDec();
 				}
-				catch (FormatException)
+				catch (FormatException e)
 				{
 					Console.WriteLine(I18n.Instance.GetString("invalid_choice"));
+					BackupManager.GetLogger().LogError(e);
 					continue;
 				}
 
@@ -107,8 +110,12 @@ namespace EasyConsole.View
 				}
 				else if (argument.Contains(';'))
 				{
-					var ids = argument.Split(';').Select(p => int.TryParse(p, out int id) ? id : -1).Where(id => id != -1).ToArray();
-					if (ids.Length > 0) bm.ExecuteJobList(ids, DisplayProgress);
+					var ids = argument.Split(';')
+						.Select(p => int.TryParse(p, out int id) ? id : -1)
+						.Where(id => id != -1)
+						.ToArray();
+					if (ids.Length > 0)
+						bm.ExecuteJobList(ids, DisplayProgress);
 				}
 				else if (int.TryParse(argument, out int singleId))
 				{
@@ -134,6 +141,7 @@ namespace EasyConsole.View
 		{
 			lock (_consoleLock)
 			{
+				BackupManager.GetLogger().Log(new() { Level = Level.Info, Message = "Preparing console for monitoring" });
 				Console.Clear();
 				Console.CursorVisible = false;
 				Console.WriteLine("=== EasySave Active Dashboard ===");
@@ -155,6 +163,7 @@ namespace EasyConsole.View
 		{
 			lock (_consoleLock)
 			{
+				BackupManager.GetLogger().Log(new() { Level = Level.Info, Message = "Stopping console monitoring" });
 				int lastLine = _baseLineIndex + _jobLines.Count;
 				if (lastLine < Console.BufferHeight) Console.SetCursorPosition(0, lastLine + 2);
 				Console.CursorVisible = true;
@@ -181,13 +190,15 @@ namespace EasyConsole.View
 
 				int barSize = 15;
 				double percent = Math.Clamp(state.ProgressPercentage, 0, 100);
-				int filled = (int)((percent / 100.0) * barSize);
+				int filled = (int)(percent / 100.0 * barSize);
+				BackupManager.GetLogger().Log(new() { Level = Level.Info, Message = $"Progress: {filled}/{(int) percent}" });
 				string bar = "[" + new string('=', filled) + new string(' ', barSize - filled) + "]";
 
 				string name = (state.BackupName.Length > 18) ? state.BackupName[..15] + "..." : state.BackupName;
 				string status = state.State.ToString();
 				string file = Path.GetFileName(state.CurrentSourceFile) ?? "";
-				if (file.Length > 30) file = "..." + file[^27..];
+				if (file.Length > 30)
+					file = "..." + file[^27..];
 
 				string line = $"{name,-20} | {bar} {percent,5:F1}% | {status,-10} | {file}";
 

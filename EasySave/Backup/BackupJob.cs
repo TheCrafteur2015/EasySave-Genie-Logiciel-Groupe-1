@@ -27,7 +27,7 @@ namespace EasySave.Backup
 		public BackupType Type { get; set; } = Type;
 
 		[JsonIgnore]
-		public IBackupStrategy Strategy { get; } = BackupStrategyFactory.CreateStrategy(Type);
+		public BackupStrategy Strategy { get; } = BackupStrategyFactory.CreateStrategy(Type);
 
 		public DateTime LastExecution { get; set; }
 

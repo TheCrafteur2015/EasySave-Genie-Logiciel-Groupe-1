@@ -13,6 +13,7 @@ namespace LogServer.Controllers
     {
         private readonly string _logDirectory;
         private static readonly object _fileLock = new();
+        private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
         private readonly ILogger<LogsController> _logger;
 
         public LogsController(ILogger<LogsController> logger, IConfiguration configuration)
@@ -43,24 +44,23 @@ namespace LogServer.Controllers
 
                 lock (_fileLock)
                 {
-                    List<LogEntry> logs = new();
+                    List<LogEntry> logs = [];
                     
                     if (System.IO.File.Exists(logFile))
                     {
                         string existingContent = System.IO.File.ReadAllText(logFile);
                         if (!string.IsNullOrWhiteSpace(existingContent))
                         {
-                            logs = JsonSerializer.Deserialize<List<LogEntry>>(existingContent) ?? new();
+                            logs = JsonSerializer.Deserialize<List<LogEntry>>(existingContent) ?? [];
                         }
                     }
 
                     logs.Add(entry);
 
-                    var options = new JsonSerializerOptions { WriteIndented = true };
-                    System.IO.File.WriteAllText(logFile, JsonSerializer.Serialize(logs, options));
+                    System.IO.File.WriteAllText(logFile, JsonSerializer.Serialize(logs, _jsonOptions));
                 }
 
-                _logger.LogInformation($"Log received from {entry.MachineName}\\{entry.UserName}");
+                _logger.LogInformation("Log received from {MachineName}\\{UserName}", entry.MachineName, entry.UserName);
                 return Ok(new { success = true, message = "Log entry stored successfully" });
             }
             catch (Exception ex)

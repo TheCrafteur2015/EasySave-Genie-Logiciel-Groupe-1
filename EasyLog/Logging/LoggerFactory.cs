@@ -14,6 +14,15 @@ namespace EasyLog.Logging
 			{ "xml",  typeof(XmlLogger)    },
 		};
 
+		public static void RegisterLogger(string type, Type logger)
+		{
+			if (!logger.IsAssignableFrom(typeof(ILogger)))
+				throw new ArgumentException("Class type does not implement ILogger!");
+			if (_loggers.ContainsKey(type))
+				throw new Exception("This logger type is already registered!");
+			_loggers[type] = logger;
+		}
+
 		/// <summary>
 		/// Creates and returns an instance of a logger based on the specified type and mode.
 		/// </summary>

@@ -88,7 +88,9 @@ namespace EasyGUI.ViewModels
         /// Gets the singleton instance of the localization manager (I18n).
         /// Used for dynamic translation in the XAML view.
         /// </summary>
+#pragma warning disable CA1822 // Mark members as static
         public I18n L => I18n.Instance;
+#pragma warning restore CA1822 // Mark members as static
 
         /// <summary>
         /// Private reference to the core Backup Manager logic.
@@ -257,7 +259,7 @@ namespace EasyGUI.ViewModels
         /// <summary>
         /// Private instance of the localization service used to retrieve translated strings.
         /// </summary>
-        private I18n _i18n = I18n.Instance;
+        private readonly I18n _i18n = I18n.Instance;
 
         public string AppTitle => _i18n.GetString("app_title");
         /// <summary>Localized string for the main menu title.</summary>
@@ -530,7 +532,7 @@ namespace EasyGUI.ViewModels
             }
         }
 
-        private async Task ApplyWindowModeLogic(int mode)
+        private static async Task ApplyWindowModeLogic(int mode)
         {
             if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
             {
@@ -840,15 +842,15 @@ namespace EasyGUI.ViewModels
             ConfigPriorityExtensions = string.Join(", ", extensions);
 
             string logFormat = config.GetConfig<string>("LoggerFormat") ?? "json";
-            SelectedLogFormat = logFormat.ToLower() == "xml" ? 1 : 0;
+            SelectedLogFormat = logFormat.Equals("xml", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
 
             string logMode = config.GetConfig<string>("LogMode") ?? "Local";
-            SelectedLogMode = logMode.ToLower() switch
-            {
-                "remote" => 1,
-                "both" => 2,
-                _ => 0
-            };
+            if (logMode.Equals("remote", StringComparison.OrdinalIgnoreCase))
+                SelectedLogMode = 1;
+            else if (logMode.Equals("both", StringComparison.OrdinalIgnoreCase))
+                SelectedLogMode = 2;
+            else
+                SelectedLogMode = 0;
 
             ConfigLogServerUrl = config.GetConfig<string>("LogServerUrl") ?? "http://localhost:5000";
 
@@ -988,13 +990,21 @@ namespace EasyGUI.ViewModels
 
             // Listes
             BackupTypes.Clear();
-            BackupTypes.Add(_i18n.GetString("type_complete"));
-            BackupTypes.Add(_i18n.GetString("type_differential"));
+            foreach (var item in new[] { _i18n.GetString("type_complete"), _i18n.GetString("type_differential") })
+            {
+                BackupTypes.Add(item);
+            }
 
             WindowModes.Clear();
-            WindowModes.Add(_i18n.GetString("settings_window_windowed"));
-            WindowModes.Add(_i18n.GetString("settings_window_maximized"));
-            WindowModes.Add(_i18n.GetString("settings_window_fullscreen"));
+            foreach (var item in new[]
+            {
+                _i18n.GetString("settings_window_windowed"),
+                _i18n.GetString("settings_window_maximized"),
+                _i18n.GetString("settings_window_fullscreen")
+            })
+            {
+                WindowModes.Add(item);
+            }
         }
 
         /// <summary>
@@ -1061,14 +1071,14 @@ namespace EasyGUI.ViewModels
         /// </summary>
         /// <param name="bytes">The number of bytes.</param>
         /// <returns>A formatted string with two decimal places and the appropriate suffix.</returns>
-        private string FormatBytes(long bytes)
+        private static string FormatBytes(long bytes)
         {
             string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
             int counter = 0;
             decimal number = (decimal)bytes;
             while (Math.Round(number / 1024) >= 1)
             {
-                number = number / 1024;
+                number /= 1024;
                 counter++;
             }
             return string.Format("{0:n2} {1}", number, suffixes[counter]);

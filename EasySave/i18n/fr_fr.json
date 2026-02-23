@@ -74,6 +74,23 @@
 	"settings_window_maximized": "Plein écran (Maximisé)",
 	"settings_window_fullscreen": "Plein écran (Sans bordure)",
 	"settings_applied": "Paramètres appliqués avec succès !",
+
+	"settings_general": "Général",
+	"settings_business_soft": "Logiciel Métier (Nom du processus) :",
+	"settings_log_format": "Format des Logs :",
+	"settings_logs": "Centralisation des Logs",
+	"settings_log_mode": "Mode de Logs :",
+	"settings_log_server_url": "URL du Serveur de Logs :",
+	"settings_log_mode_local": "Local",
+	"settings_log_mode_remote": "Distant (Docker)",
+	"settings_log_mode_both": "Les Deux (Local + Distant)",
+	"settings_crypto": "Cryptage (CryptoSoft)",
+	"settings_crypto_path": "Chemin vers CryptoSoft :",
+	"settings_crypto_key": "Clé de chiffrement :",
+	"settings_performance": "Performance & Priorité",
+	"settings_max_size": "Taille max transfert simultané (Ko) :",
+	"settings_priority_ext": "Extensions prioritaires (séparées par des virgules) :",
+
 	"language_title": "Changer de langue",
 	"language_select": "Sélectionnez la langue :",
 	"language_apply": "Appliquer",
@@ -87,6 +104,17 @@
 	"btn_start_all": "Tout Démarrer",
 	"button_cancel": "Annuler",
 	"button_back": "Retour au menu",
+
+	"config_list": "Liste des options ",
+	"config_list_desc": "Liste les paramètres disponibles",
+	"config_get_desc": "Renvoye la valeur du paramètre",
+	"config_set_desc": "Définit la valeur du paramètre fourni",
+	"config_open_desc": "Ouvre le fichier de configuration",
+	"config_open_msg": "Ouverture du fichier. . .",
+	"config_open_fail": "Échec de l'ouverture du fichier de configuration",
+	"config_exit_desc": "Sortir de la commande de configuration",
+	"config_param": "paramètre",
+	"config_value": "valeur",
 
 	"progress_active": "État : Actif",
 	"progress_files": "Fichiers : {0}/{1}",
@@ -103,5 +131,13 @@
 	"state_inactive": "Inactif",
 	"state_completed": "Terminé",
 	"state_error": "Erreur",
-	"never": "Jamais"
+	"never": "Jamais",
+
+	"create_error_duplicate": "Erreur : Un travail portant ce nom existe déjà.",
+	"status_paused_user": "⏸️ Pause utilisateur",
+	"status_paused_all": "⏸️ Tout en pause",
+	"status_running": "En cours...",
+	"btn_pause": "Pause",
+	"btn_resume": "Reprendre",
+	"btn_stop": "Arrêter"
 }

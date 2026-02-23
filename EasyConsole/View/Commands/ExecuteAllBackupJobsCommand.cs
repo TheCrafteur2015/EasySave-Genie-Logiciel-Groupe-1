@@ -1,4 +1,4 @@
-﻿using EasySave.Backup;
+using EasySave.Backup;
 using EasyConsole.View.Command;
 using EasySave.View.Localization;
 
@@ -11,16 +11,18 @@ namespace EasyConsole.View.Commands
 
         public void Execute()
         {
-            // Note: Le Console.Clear() est maintenant fait par ConsoleView.PrepareConsoleForMonitoring()
-            // appelé dans le Run() principal. On ne le fait pas ici pour éviter de tout effacer.
+            // Note: Le Console.Clear() est géré par ConsoleView.PrepareConsoleForMonitoring()
+            // dans le Run() principal avant d'arriver ici.
 
             try
             {
-                // On lance les sauvegardes. L'affichage se fait via le callback DisplayProgress
-                BackupManager.GetBM().ExecuteAllJobs(ConsoleView.DisplayProgress);
+                // 1. On lance en asynchrone pour pouvoir interagir (Feature: interactions_temps_reel)
+                var tasks = BackupManager.GetBM().ExecuteAllJobsAsync(ConsoleView.DisplayProgress);
 
-                // IMPORTANT : On dit à la vue de placer le curseur SOUS le tableau
-                // avant d'écrire le message de succès.
+                // 2. On lance le moniteur interactif (P/R/S) qui attend la fin des tâches (Feature)
+                ConsoleView.MonitorJobs(tasks);
+
+                // 3. Une fois les tâches terminées ou stoppées, on replace le curseur en bas (v3.0)
                 ConsoleView.StopMonitoring();
 
                 Console.ForegroundColor = ConsoleColor.Green;
@@ -29,8 +31,11 @@ namespace EasyConsole.View.Commands
             }
             catch (Exception e)
             {
+                // On s'assure de libérer le curseur même en cas de crash
                 ConsoleView.StopMonitoring();
-                Console.WriteLine(I18n.Instance.GetString("execute_failure") + e.Message);
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{I18n.Instance.GetString("execute_failure")}: {e.Message}");
+                Console.ResetColor();
             }
         }
     }

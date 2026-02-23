@@ -69,6 +69,16 @@ namespace EasyLog.Data
         public int EncryptionTime { get; set; } = 0;
 
         /// <summary>
+        /// Gets the name of the machine where the log entry was created.
+        /// </summary>
+        public string MachineName { get; set; } = Environment.MachineName;
+
+        /// <summary>
+        /// Gets the name of the user who generated the log entry.
+        /// </summary>
+        public string UserName { get; set; } = Environment.UserName;
+
+        /// <summary>
         /// Formats the backup-specific properties into a structured string.
         /// </summary>
         /// <returns>A string containing the name, source, destination, size, elapsed time, and encryption time.</returns>
@@ -91,7 +101,7 @@ namespace EasyLog.Data
         /// <returns>The formatted log string prefixed with the timestamp and level.</returns>
         public override string ToString()
         {
-            string body = string.Empty;
+            string body;
             if (Name != null && SourceFile != null && TargetFile != null && FileSize != null && ElapsedTime != null)
                 body = ToBackupString();
             else if (Message != null && Stacktrace != null)

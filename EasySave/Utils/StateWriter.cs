@@ -3,40 +3,40 @@ using Newtonsoft.Json;
 
 namespace EasySave.Utils
 {
-    /// <summary>
-    /// Writes real-time state information to a JSON file
-    /// </summary>
-    public class StateWriter
-    {
-        private readonly string _stateFilePath;
-        private readonly object _lockObject = new();
-        private Dictionary<string, ProgressState> _currentStates = [];
+	/// <summary>
+	/// Writes real-time state information to a JSON file
+	/// </summary>
+	public class StateWriter
+	{
+		private readonly string _stateFilePath;
+		private readonly object _lockObject = new();
+		private readonly Dictionary<string, ProgressState> _currentStates = [];
 
-        public StateWriter(string stateDirectory)
-        {
-            if (!Directory.Exists(stateDirectory))
-            {
-                Directory.CreateDirectory(stateDirectory);
-            }
+		public StateWriter(string stateDirectory)
+		{
+			if (!Directory.Exists(stateDirectory))
+			{
+				Directory.CreateDirectory(stateDirectory);
+			}
 
-            _stateFilePath = Path.Combine(stateDirectory, "state.json");
-        }
+			_stateFilePath = Path.Combine(stateDirectory, "state.json");
+		}
 
-        /// <summary>
-        /// Updates the progress state for a specific backup operation.
-        /// </summary>
-        /// <remarks>This method is thread-safe. The updated state is persisted to storage after the
-        /// operation completes.</remarks>
-        /// <param name="state">The new progress state to associate with the backup. Cannot be null. The <see
-        /// cref="ProgressState.BackupName"/> property is used to identify which backup's state to update.</param>
-        public void UpdateState(ProgressState state)
-        {
-            lock (_lockObject)
-            {
-                _currentStates[state.BackupName] = state;
-                WriteStatesToFile();
-            }
-        }
+		/// <summary>
+		/// Updates the progress state for a specific backup operation.
+		/// </summary>
+		/// <remarks>This method is thread-safe. The updated state is persisted to storage after the
+		/// operation completes.</remarks>
+		/// <param name="state">The new progress state to associate with the backup. Cannot be null. The <see
+		/// cref="ProgressState.BackupName"/> property is used to identify which backup's state to update.</param>
+		public void UpdateState(ProgressState state)
+		{
+			lock (_lockObject)
+			{
+				_currentStates[state.BackupName] = state;
+				WriteStatesToFile();
+			}
+		}
 
         /// <summary>
         /// Removes the backup state associated with the specified backup name.
@@ -48,9 +48,9 @@ namespace EasySave.Utils
         {
             lock (_lockObject)
             {
-                if (_currentStates.ContainsKey(backupName))
+                // Remove fait la vérification et la suppression en une seule étape !
+                if (_currentStates.Remove(backupName))
                 {
-                    _currentStates.Remove(backupName);
                     WriteStatesToFile();
                 }
             }
@@ -63,10 +63,10 @@ namespace EasySave.Utils
         /// progress state data. The file path and the collection of states must be properly initialized before calling
         /// this method.</remarks>
         private void WriteStatesToFile()
-        {
-            var statesList = new List<ProgressState>(_currentStates.Values);
-            string jsonContent = JsonConvert.SerializeObject(statesList, Formatting.Indented);
-            File.WriteAllText(_stateFilePath, jsonContent);
-        }
-    }
+		{
+			var statesList = new List<ProgressState>(_currentStates.Values);
+			string jsonContent = JsonConvert.SerializeObject(statesList, Formatting.Indented);
+			File.WriteAllText(_stateFilePath, jsonContent);
+		}
+	}
 }

@@ -48,7 +48,8 @@ namespace EasyConsole.View.Command
                 new ListBackupJobsCommand(),
                 new DeleteBackupJobCommand(),
                 new ChangeLanguageCommand(),
-                new ExitCommand(),
+				new ConfigurationCommand(),
+				new ExitCommand(),
             ];
 
             foreach (var command in commands)

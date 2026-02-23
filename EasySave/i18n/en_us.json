@@ -74,6 +74,23 @@
 	"settings_window_maximized": "Fullscreen (Maximized)",
 	"settings_window_fullscreen": "Fullscreen (Borderless)",
 	"settings_applied": "Settings applied successfully!",
+
+	"settings_general": "General",
+	"settings_business_soft": "Business Software (Process):",
+	"settings_log_format": "Log Format:",
+	"settings_logs": "Logs Centralization",
+	"settings_log_mode": "Log Mode:",
+	"settings_log_server_url": "Log Server URL:",
+	"settings_log_mode_local": "Local",
+	"settings_log_mode_remote": "Remote (Docker)",
+	"settings_log_mode_both": "Both (Local + Remote)",
+	"settings_crypto": "Encryption (CryptoSoft)",
+	"settings_crypto_path": "Path to CryptoSoft:",
+	"settings_crypto_key": "Encryption Key:",
+	"settings_performance": "Performance & Priority",
+	"settings_max_size": "Max parallel transfer size (KB):",
+	"settings_priority_ext": "Priority Extensions (comma separated):",
+
 	"language_title": "Change Language",
 	"language_select": "Select language:",
 	"language_apply": "Apply",
@@ -87,6 +104,17 @@
 	"btn_start_all": "Start All Backups",
 	"button_cancel": "Cancel",
 	"button_back": "Back to Menu",
+
+	"config_list": "List of options",
+	"config_list_desc": "List the available parameters",
+	"config_get_desc": "Return the parameter's value",
+	"config_set_desc": "Set the provided parameter's value",
+	"config_open_desc": "Open the configuration file",
+	"config_open_msg": "File opening. . .",
+	"config_open_fail": "Failed to open config file",
+	"config_exit_desc": "Exit the configuration command",
+	"config_param": "param",
+	"config_value": "value",
 
 	"progress_active": "Status: Active",
 	"progress_files": "Files: {0}/{1}",
@@ -103,5 +131,14 @@
 	"state_inactive": "Inactive",
 	"state_completed": "Completed",
 	"state_error": "Error",
-	"never": "Never"
+	"never": "Never",
+
+	"create_error_duplicate": "Error: A job with this name already exists.",
+	"status_paused_user": "⏸️ Paused by user",
+	"status_paused_all": "⏸️ All Paused",
+	"status_running": "Running...",
+	"btn_pause": "Pause",
+	"btn_resume": "Resume",
+	"btn_stop": "Stop"
+
 }

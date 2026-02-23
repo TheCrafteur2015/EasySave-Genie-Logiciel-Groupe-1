@@ -1,33 +1,47 @@
 using EasyLog.Logging;
 using EasySave.Utils;
-using Newtonsoft.Json.Linq;
 
 namespace EasySave.Backup
 {
     /// <summary>
-    /// Backup Manager - Orchestrateur central des opérations de sauvegarde.
-    /// Implémente le pattern Singleton et sert de ViewModel dans l'architecture MVVM.
+    /// Central orchestrator for backup operations.
+    /// Implements the Singleton pattern and serves as the core engine for the application.
     /// </summary>
     public class BackupManager
     {
-        // --- SYNCHRONISATION GLOBALE ---
+        // --- GLOBAL SYNCHRONIZATION ---
 
         /// <summary>
-        /// Mutex global pour garantir que CryptoSoft est une instance unique sur tout le système.
+        /// Global mutex used to ensure that the CryptoSoft application remains a single instance across the entire system.
         /// </summary>
-        public static readonly Mutex CryptoSoftMutex = new Mutex(false, @"Global\EasySave_CryptoSoft_Lock");
+        private static readonly Mutex _cryptoSoftMutex = new(false, @"Global\EasySave_CryptoSoft_Lock");
 
         /// <summary>
-        /// Compteur volatile pour suivre le nombre de fichiers prioritaires en attente dans tous les jobs.
+        /// Volatile counter to track the number of priority files currently pending across all active backup jobs.
         /// </summary>
-        public static volatile int GlobalPriorityFilesPending = 0;
+        private static volatile int _globalPriorityFilesPending = 0;
 
         /// <summary>
-        /// Sémaphore pour limiter le transfert simultané de gros fichiers (évite la saturation bande passante).
+        /// Gets or sets the number of priority files currently pending across all active backup jobs.
         /// </summary>
-        public static SemaphoreSlim BigFileSemaphore = new(1, 1);
+        public static ref int GlobalPriorityFilesPending => ref _globalPriorityFilesPending;
 
-        // --- SINGLETON & ETAT ---
+        /// <summary>
+        /// Semaphore used to limit the simultaneous transfer of large files to prevent bandwidth saturation.
+        /// </summary>
+        private static readonly SemaphoreSlim _bigFileSemaphore = new(1, 1);
+
+        /// <summary>
+        /// Gets the global CryptoSoft mutex.
+        /// </summary>
+        public static Mutex CryptoSoftMutex => _cryptoSoftMutex;
+
+        /// <summary>
+        /// Gets the big file semaphore.
+        /// </summary>
+        public static SemaphoreSlim BigFileSemaphore => _bigFileSemaphore;
+
+        // --- SINGLETON & STATE ---
         private static BackupManager? _instance;
         private static ILogger? _logger;
         private static readonly object _lock = new();
@@ -38,61 +52,98 @@ namespace EasySave.Backup
         public readonly int MaxBackupJobs;
         private readonly string appData;
 
+        /// <summary>
+        /// Gets the latest signal received by the manager.
+        /// </summary>
         public Signal LatestSignal { get; private set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BackupManager"/> class.
+        /// Sets up application paths, initializes managers, and loads existing backup jobs.
+        /// </summary>
         private BackupManager()
         {
-            // Initialisation des chemins
-            appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave");
+            AppDomain.CurrentDomain.ProcessExit += (sender, args) => {
+                ConfigManager?.SaveConfiguration();
+            };
 
-            // Initialisation des composants
+            // Initialize paths
+            appData = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "EasySave"
+            );
+
+            // Component initialization
             _stateWriter = new StateWriter(Path.Combine(appData, "State"));
             ConfigManager = new ConfigurationManager(Path.Combine(appData, "Config"));
 
-            // Gestion de la limite de jobs
-            MaxBackupJobs = ConfigManager.GetConfig("MaxBackupJobs");
-            var useBackupJobLimit = ConfigManager.GetConfig("UseBackupJobLimit") as JValue;
-            if (useBackupJobLimit?.Value is bool val && val == false) MaxBackupJobs = -1;
+            MaxBackupJobs = ConfigManager.GetConfig<int>("MaxBackupJobs");
+            var useBackupJobLimit = ConfigManager.GetConfig<bool>("UseBackupJobLimit");
+            if (!useBackupJobLimit)
+                MaxBackupJobs = -1;
 
-            // Chargement des travaux
+            // Load backup jobs
             _backupJobs = ConfigManager.LoadBackupJobs();
             LatestSignal = Signal.None;
         }
 
+        /// <summary>
+        /// Returns the singleton instance of the <see cref="BackupManager"/>.
+        /// </summary>
+        /// <returns>The unique instance of the manager.</returns>
         public static BackupManager GetBM()
         {
             if (_instance == null)
             {
                 lock (_lock)
                 {
-                    _instance ??= new BackupManager();
+                    _instance = new BackupManager();
                 }
             }
             return _instance;
         }
 
+        /// <summary>
+        /// Returns the singleton instance of the logger, initialized with the format from configuration.
+        /// </summary>
+        /// <returns>An implementation of the <see cref="ILogger"/> interface.</returns>
         public static ILogger GetLogger()
         {
             if (_logger == null)
             {
                 var BM = GetBM();
-                var format = BM.ConfigManager.GetConfig("LoggerFormat");
+                var format = BM.ConfigManager.GetConfig<string>("LoggerFormat");
+                var logMode = BM.ConfigManager.GetConfig<string>("LogMode");
+                var logServerUrl = BM.ConfigManager.GetConfig<string>("LogServerUrl");
                 lock (_lock)
                 {
-                    _logger = LoggerFactory.CreateLogger(format?.Value as string ?? "text", Path.Combine(BM.appData, "Logs"));
+                    _logger = LoggerFactory.CreateLogger(format ?? "text", Path.Combine(BM.appData, "Logs"), logMode, logServerUrl);
                 }
             }
             return _logger;
         }
 
-        // --- GESTION DES JOBS (CRUD) ---
+        // --- JOB MANAGEMENT (CRUD) ---
 
+        /// <summary>
+        /// Retrieves a copy of all configured backup jobs.
+        /// </summary>
+        /// <returns>A list of backup jobs.</returns>
         public List<BackupJob> GetAllJobs() => [.. _backupJobs];
 
+        /// <summary>
+        /// Adds a new backup job to the list and saves the updated configuration.
+        /// </summary>
+        /// <param name="name">The display name of the job.</param>
+        /// <param name="sourceDir">The source directory path.</param>
+        /// <param name="targetDir">The destination directory path.</param>
+        /// <param name="type">The type of backup (Full or Differential).</param>
+        /// <returns>True if the job was successfully added, otherwise false.</returns>
         public bool AddJob(string? name, string? sourceDir, string? targetDir, BackupType type)
         {
             if (_backupJobs.Count >= MaxBackupJobs && MaxBackupJobs != -1) return false;
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(sourceDir) || string.IsNullOrWhiteSpace(targetDir)) return false;
+            if (_backupJobs.Any(j => j.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) return false;
 
             int newId = _backupJobs.Count != 0 ? _backupJobs.Max(j => j.Id) + 1 : 1;
             var job = new BackupJob(newId, name, sourceDir, targetDir, type);
@@ -101,54 +152,83 @@ namespace EasySave.Backup
             return true;
         }
 
+        /// <summary>
+        /// Deletes a backup job by its ID and re-indexes the remaining jobs.
+        /// </summary>
+        /// <param name="id">The unique identifier of the job to delete.</param>
+        /// <returns>True if the job was found and deleted, otherwise false.</returns>
         public bool DeleteJob(int id)
         {
             var job = _backupJobs.FirstOrDefault(j => j.Id == id);
             if (job == null) return false;
             _backupJobs.Remove(job);
+            for (int i = 0; i < _backupJobs.Count; i++)
+            {
+                _backupJobs[i].Id = i + 1;
+            }
             ConfigManager.SaveBackupJobs(_backupJobs);
             return true;
         }
 
-        // --- EXÉCUTION & CONTRÔLE (ASYNCHRONE) ---
+        // --- EXECUTION & CONTROL (ASYNCHRONOUS) ---
 
         /// <summary>
-        /// Exécute un job unique de manière asynchrone (utile pour le monitoring).
+        /// Executes a single backup job asynchronously.
         /// </summary>
+        /// <param name="id">The ID of the job to execute.</param>
+        /// <param name="progressCallback">Optional action to handle real-time progress updates.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public Task ExecuteJobAsync(int id, Action<ProgressState>? progressCallback = null)
         {
-            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
-            if (job == null) throw new ArgumentException($"Job {id} not found.");
-            
-            job.ResetControls(); // Reset Pause/Stop tokens
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id) ?? throw new ArgumentException($"Job {id} not found.");
+
+            job.ResetControls();
             return Task.Run(() => ExecuteSingleJob(job, progressCallback));
         }
 
+        /// <summary>
+        /// Executes a single backup job and waits for its completion.
+        /// </summary>
+        /// <param name="id">The ID of the job to execute.</param>
+        /// <param name="progressCallback">Optional progress update handler.</param>
         public void ExecuteJob(int id, Action<ProgressState>? progressCallback = null)
         {
             ExecuteJobAsync(id, progressCallback).Wait();
         }
 
+        /// <summary>
+        /// Executes a range of backup jobs simultaneously based on their IDs.
+        /// </summary>
+        /// <param name="startId">The starting ID of the range.</param>
+        /// <param name="endId">The ending ID of the range.</param>
+        /// <param name="progressCallback">Optional progress update handler.</param>
         public void ExecuteJobRange(int startId, int endId, Action<ProgressState>? progressCallback = null)
         {
             var tasks = _backupJobs.Where(j => j.Id >= startId && j.Id <= endId)
                                    .Select(j => { j.ResetControls(); return Task.Run(() => ExecuteSingleJob(j, progressCallback)); });
-            Task.WaitAll(tasks.ToArray());
+            Task.WaitAll([.. tasks]);
         }
 
+        /// <summary>
+        /// Executes a specific list of backup jobs based on the provided IDs.
+        /// </summary>
+        /// <param name="ids">An array of job IDs to execute.</param>
+        /// <param name="progressCallback">Optional progress update handler.</param>
         public void ExecuteJobList(int[] ids, Action<ProgressState>? progressCallback = null)
         {
             var tasks = _backupJobs.Where(j => ids.Contains(j.Id))
                                    .Select(j => { j.ResetControls(); return Task.Run(() => ExecuteSingleJob(j, progressCallback)); });
-            Task.WaitAll(tasks.ToArray());
+            Task.WaitAll([.. tasks]);
         }
 
         /// <summary>
-        /// Déclenche l'exécution de tous les jobs et retourne la liste des tâches pour le moniteur.
+        /// Initiates the asynchronous execution of all configured backup jobs.
         /// </summary>
+        /// <param name="progressCallback">Optional progress update handler.</param>
+        /// <returns>A list of tasks representing the running backup operations.</returns>
         public List<Task> ExecuteAllJobsAsync(Action<ProgressState>? progressCallback = null)
         {
-            List<Task> tasks = new();
+            List<Task> tasks = [];
             foreach (var job in _backupJobs)
             {
                 job.ResetControls();
@@ -157,23 +237,100 @@ namespace EasySave.Backup
             return tasks;
         }
 
+        /// <summary>
+        /// Executes all configured backup jobs and waits for all of them to complete.
+        /// </summary>
+        /// <param name="progressCallback">Optional progress update handler.</param>
         public void ExecuteAllJobs(Action<ProgressState>? progressCallback = null)
         {
-            Task.WaitAll(ExecuteAllJobsAsync(progressCallback).ToArray());
+            Task.WaitAll([.. ExecuteAllJobsAsync(progressCallback)]);
         }
 
-        // --- MÉTHODES DE PILOTAGE ---
+        // --- STEERING METHODS ---
 
-        public void PauseJob(int id) => _backupJobs.FirstOrDefault(j => j.Id == id)?.PauseWaitHandle.Reset();
-        public void ResumeJob(int id) => _backupJobs.FirstOrDefault(j => j.Id == id)?.PauseWaitHandle.Set();
-        public void StopJob(int id) => _backupJobs.FirstOrDefault(j => j.Id == id)?.Cts.Cancel();
+        /// <summary>
+        /// Stops a specific running job by canceling its token and releasing its wait handle.
+        /// </summary>
+        /// <param name="id">The ID of the job to stop.</param>
+        public void StopJob(int id)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            if (job != null)
+            {
+                job.Cts.Cancel();
+                job.PauseWaitHandle.Set(); // Resume thread if it was paused to allow immediate exit
+            }
+        }
 
-        public void PauseAllJobs() => _backupJobs.ForEach(j => j.PauseWaitHandle.Reset());
-        public void ResumeAllJobs() => _backupJobs.ForEach(j => j.PauseWaitHandle.Set());
-        public void StopAllJobs() => _backupJobs.ForEach(j => j.Cts.Cancel());
+        /// <summary>
+        /// Stops all currently running backup jobs.
+        /// </summary>
+        public void StopAllJobs()
+        {
+            foreach (var job in _backupJobs)
+            {
+                job.Cts.Cancel();
+                job.PauseWaitHandle.Set();
+            }
+        }
 
-        // --- LOGIQUE INTERNE ---
+        /// <summary>
+        /// Pauses a specific running job by resetting its wait handle.
+        /// </summary>
+        /// <param name="id">The ID of the job to pause.</param>
+        public void PauseJob(int id)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            if (job != null)
+            {
+                job.State = State.Paused;
+                job.PauseWaitHandle.Reset();
+            }
+        }
 
+        /// <summary>
+        /// Resumes a specific paused job by signaling its wait handle.
+        /// </summary>
+        /// <param name="id">The ID of the job to resume.</param>
+        public void ResumeJob(int id)
+        {
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
+            if (job != null)
+            {
+                job.State = State.Active;
+                job.PauseWaitHandle.Set();
+            }
+        }
+
+        /// <summary>
+        /// Pauses all currently running backup jobs.
+        /// </summary>
+        public void PauseAllJobs()
+        {
+            foreach (var job in _backupJobs)
+            {
+                job.State = State.Paused;
+                job.PauseWaitHandle.Reset();
+            }
+        }
+
+        /// <summary>
+        /// Resumes all currently paused backup jobs.
+        /// </summary>
+        public void ResumeAllJobs()
+        {
+            foreach (var job in _backupJobs)
+            {
+                job.State = State.Active;
+                job.PauseWaitHandle.Set();
+            }
+        }
+
+        // --- INTERNAL LOGIC ---
+
+        /// <summary>
+        /// Internal method to handle the execution flow of a single job, including state persistence and logging.
+        /// </summary>
         private void ExecuteSingleJob(BackupJob job, Action<ProgressState>? progressCallback)
         {
             try
@@ -197,6 +354,10 @@ namespace EasySave.Backup
             }
         }
 
+        /// <summary>
+        /// Updates the latest signal stored in the manager.
+        /// </summary>
+        /// <param name="signal">The signal to transmit.</param>
         public void TransmitSignal(Signal signal) => LatestSignal = signal;
     }
 }

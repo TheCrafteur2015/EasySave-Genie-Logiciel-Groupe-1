@@ -21,7 +21,7 @@ namespace EasySave.View.Localization
 
 		private Dictionary<string, string> translations;
 
-		private Dictionary<string, Dictionary<string, string>> properties;
+		private readonly Dictionary<string, Dictionary<string, string>> properties;
 
 		public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -87,11 +87,11 @@ namespace EasySave.View.Localization
 		/// <exception cref="ArgumentException">Thrown if the specified language name does not exist in the available languages.</exception>
 		public void SetLanguage(string languageName)
 		{
-			if (!availableLanguages.ContainsKey(languageName))
+			if (!availableLanguages.TryGetValue(languageName, out string? resourceName))
 				throw new ArgumentException("This language does not exists!");
 			Language = languageName;
-			string jsonContent = ResourceManager.ReadResourceFile(availableLanguages[languageName]);
-			translations = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent) ?? new Dictionary<string, string>();
+			string jsonContent = ResourceManager.ReadResourceFile(resourceName);
+			translations = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent) ?? [];
 
 			// Notifier que toute l'instance a changé
 			OnPropertyChanged(string.Empty); // Notifie TOUTES les propriétés
@@ -124,14 +124,14 @@ namespace EasySave.View.Localization
 				{
 					properties[pair.Key] = JsonConvert
 						.DeserializeObject<Dictionary<string, string>>(ResourceManager.ReadResourceFile(pair.Value))
-						.Where(p => p.Key.StartsWith("@"))
-						.ToDictionary<string, string>();
+						?.Where(p => p.Key.StartsWith('@'))
+						?.ToDictionary<string, string>() ?? [];
 				}
 			}
 			return properties;
 		}
 
 		[GeneratedRegex(@".*(\w{2}_\w{2}\.json?)")]
-        private static partial Regex LocaleRegex();
-    }
+		private static partial Regex LocaleRegex();
+	}
 }

@@ -101,7 +101,7 @@ namespace EasyLog.Data
         /// <returns>The formatted log string prefixed with the timestamp and level.</returns>
         public override string ToString()
         {
-            string body = string.Empty;
+            string body;
             if (Name != null && SourceFile != null && TargetFile != null && FileSize != null && ElapsedTime != null)
                 body = ToBackupString();
             else if (Message != null && Stacktrace != null)

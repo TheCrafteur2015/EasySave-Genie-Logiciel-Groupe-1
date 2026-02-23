@@ -68,11 +68,11 @@ namespace EasyTest
         /// Robustly locates the solution root directory by searching for the .sln file.
         /// </summary>
         /// <returns>The full path to the solution directory.</returns>
-        private string GetSolutionDirectory()
+        private static string GetSolutionDirectory()
         {
             var currentDirectory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
             // Traverse up the directory tree until a .sln file is found
-            while (currentDirectory != null && !currentDirectory.GetFiles("*.sln").Any())
+            while (currentDirectory != null && currentDirectory.GetFiles("*.sln").Length == 0)
             {
                 currentDirectory = currentDirectory.Parent;
             }
@@ -114,7 +114,7 @@ namespace EasyTest
             {
                 Version = "1.0.0",
                 MaxBackupJobs = 5,
-                PriorityExtensions = new[] { ".txt" },
+                PriorityExtensions = new string[] { ".txt" },
                 CryptoKey = "MaCleSecrete",
                 CryptoSoftPath = cryptoPath
             };
@@ -204,7 +204,7 @@ namespace EasyTest
             {
                 Version = "1.1.0",
                 MaxBackupJobs = 5,
-                PriorityExtensions = new string[] { },
+                PriorityExtensions = Array.Empty<string>(),
                 MaxParallelTransferSize = 1,
                 CryptoKey = "1234",
                 CryptoSoftPath = ""
@@ -276,7 +276,7 @@ namespace EasyTest
             {
                 Version = "1.1.0",
                 MaxBackupJobs = 5,
-                PriorityExtensions = new string[] { },
+                PriorityExtensions = (string[])[],
                 MaxParallelTransferSize = 100000,
                 CryptoKey = "1234",
                 CryptoSoftPath = ""
@@ -357,7 +357,7 @@ namespace EasyTest
                 Version = "1.1.0",
                 MaxBackupJobs = 5,
                 BusinessSoftware = "notepad",
-                PriorityExtensions = new string[] { },
+                PriorityExtensions = Array.Empty<string>(),
                 CryptoKey = "1234",
                 CryptoSoftPath = ""
             };
@@ -408,7 +408,7 @@ namespace EasyTest
         /// <summary>
         /// Forcefully terminates known test-related processes to ensure a clean state.
         /// </summary>
-        private void KillProcesses()
+        private static void KillProcesses()
         {
             var names = new[] { "CalculatorApp", "calc", "Calculator", "win32calc", "notepad" };
             foreach (var name in names)
@@ -424,7 +424,7 @@ namespace EasyTest
         /// Robustly deletes a directory and its contents, handling potential file locks.
         /// </summary>
         /// <param name="path">The directory path to delete.</param>
-        private void DeleteDirectorySafe(string path)
+        private static void DeleteDirectorySafe(string path)
         {
             if (Directory.Exists(path))
             {
@@ -433,7 +433,7 @@ namespace EasyTest
                 {
                     try
                     {
-                        DirectoryInfo di = new DirectoryInfo(path);
+                        DirectoryInfo di = new(path);
                         foreach (FileInfo file in di.GetFiles()) { try { file.Delete(); } catch { } }
                         foreach (DirectoryInfo dir in di.GetDirectories()) { try { dir.Delete(true); } catch { } }
                     }
@@ -445,6 +445,6 @@ namespace EasyTest
         /// <summary>
         /// Utility method to kill calculator processes, kept for backward compatibility.
         /// </summary>
-        private void KillCalculator() => KillProcesses();
+        private static void KillCalculator() => KillProcesses();
     }
 }

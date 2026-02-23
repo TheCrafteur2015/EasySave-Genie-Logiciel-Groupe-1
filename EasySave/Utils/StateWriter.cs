@@ -38,31 +38,31 @@ namespace EasySave.Utils
 			}
 		}
 
-		/// <summary>
-		/// Removes the backup state associated with the specified backup name.
-		/// </summary>
-		/// <remarks>If the specified backup name does not exist, no action is taken. This method is
-		/// thread-safe.</remarks>
-		/// <param name="backupName">The name of the backup whose state should be removed. Cannot be null.</param>
-		public void RemoveState(string backupName)
-		{
-			lock (_lockObject)
-			{
-				if (_currentStates.ContainsKey(backupName))
-				{
-					_currentStates.Remove(backupName);
-					WriteStatesToFile();
-				}
-			}
-		}
+        /// <summary>
+        /// Removes the backup state associated with the specified backup name.
+        /// </summary>
+        /// <remarks>If the specified backup name does not exist, no action is taken. This method is
+        /// thread-safe.</remarks>
+        /// <param name="backupName">The name of the backup whose state should be removed. Cannot be null.</param>
+        public void RemoveState(string backupName)
+        {
+            lock (_lockObject)
+            {
+                // Remove fait la vérification et la suppression en une seule étape !
+                if (_currentStates.Remove(backupName))
+                {
+                    WriteStatesToFile();
+                }
+            }
+        }
 
-		/// <summary>
-		/// Writes the current collection of progress states to a file in JSON format.
-		/// </summary>
-		/// <remarks>This method overwrites the existing file at the specified path with the latest
-		/// progress state data. The file path and the collection of states must be properly initialized before calling
-		/// this method.</remarks>
-		private void WriteStatesToFile()
+        /// <summary>
+        /// Writes the current collection of progress states to a file in JSON format.
+        /// </summary>
+        /// <remarks>This method overwrites the existing file at the specified path with the latest
+        /// progress state data. The file path and the collection of states must be properly initialized before calling
+        /// this method.</remarks>
+        private void WriteStatesToFile()
 		{
 			var statesList = new List<ProgressState>(_currentStates.Values);
 			string jsonContent = JsonConvert.SerializeObject(statesList, Formatting.Indented);

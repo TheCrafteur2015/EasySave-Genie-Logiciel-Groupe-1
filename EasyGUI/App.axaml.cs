@@ -44,7 +44,7 @@ namespace EasyGUI
         /// Disables Avalonia's built-in data annotation validation.
         /// This is often necessary to prevent conflicts with custom validation logic or duplicates.
         /// </summary>
-        private void DisableAvaloniaDataAnnotationValidation()
+        private static void DisableAvaloniaDataAnnotationValidation()
         {
             // Get an array of plugins to remove
             var dataValidationPluginsToRemove = BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();

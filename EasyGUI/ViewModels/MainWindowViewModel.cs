@@ -245,9 +245,9 @@ namespace EasyGUI.ViewModels
         /// </summary>
         public string ConfigLogServerUrl { get => _configLogServerUrl; set => SetProperty(ref _configLogServerUrl, value); }
 
-        public ObservableCollection<string> LogFormats { get; } = new() { "JSON", "XML" };
-        public ObservableCollection<string> LogModes { get; } = new() { "Local", "Remote", "Both" };
-        
+        public ObservableCollection<string> LogFormats { get; } = ["JSON", "XML"];
+        public ObservableCollection<string> LogModes { get; } = ["Local", "Remote", "Both"];
+
         /// <summary>Gets the list of available backup types for selection.</summary>
         public ObservableCollection<string> BackupTypes { get; private set; }
         
@@ -434,17 +434,16 @@ namespace EasyGUI.ViewModels
             _backupManager = BackupManager.GetBM();
 
             var jobsFromManager = _backupManager.GetAllJobs();
-            BackupJobs = new ObservableCollection<BackupJob>(jobsFromManager);
-            JobsProgress = new ObservableCollection<JobProgressItem>();
+            BackupJobs = new(jobsFromManager);
+            JobsProgress = [];
 
             // Initialize Collections
-            BackupTypes = new ObservableCollection<string> { TypeComplete, TypeDifferential };
-            WindowModes = new ObservableCollection<string>
-            {
+            BackupTypes = [TypeComplete, TypeDifferential];
+            WindowModes = [
                 _i18n.GetString("settings_window_windowed"),
                 _i18n.GetString("settings_window_maximized"),
                 _i18n.GetString("settings_window_fullscreen")
-            };
+            ];
 
             // Standard Commands
             SwitchThemeCommand = new RelayCommand<string>(SwitchTheme);
@@ -838,7 +837,7 @@ namespace EasyGUI.ViewModels
             ConfigCryptoKey = config.GetConfig<string>("CryptoKey") ?? "";
             ConfigMaxSize = config.GetConfig<long?>("MaxParallelTransferSize") ?? 1000;
 
-            var extensions = config.GetConfig<List<string>>("PriorityExtensions") ?? new List<string>();
+            var extensions = config.GetConfig<List<string>>("PriorityExtensions") ?? [];
             ConfigPriorityExtensions = string.Join(", ", extensions);
 
             string logFormat = config.GetConfig<string>("LoggerFormat") ?? "json";
@@ -1073,7 +1072,7 @@ namespace EasyGUI.ViewModels
         /// <returns>A formatted string with two decimal places and the appropriate suffix.</returns>
         private static string FormatBytes(long bytes)
         {
-            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            string[] suffixes = [ "B", "KB", "MB", "GB", "TB" ];
             int counter = 0;
             decimal number = (decimal)bytes;
             while (Math.Round(number / 1024) >= 1)

@@ -14,6 +14,7 @@ namespace EasyLog.Logging
     public class JsonLogger(string path) : AbstractLogger(path)
     {
         private readonly object _lock = new();
+        private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
         /// <summary>
         /// Gets the file extension for JSON log files.
@@ -31,19 +32,19 @@ namespace EasyLog.Logging
         /// <param name="message">The log entry object to be serialized and written.</param>
         public override void Log(LogEntry message)
         {
-            List<LogEntry> logs = new List<LogEntry>();
+            List<LogEntry> logs = [];
             if (File.Exists(LogFile))
             {
                 string existingContent = File.ReadAllText(LogFile);
                 if (!string.IsNullOrWhiteSpace(existingContent))
                 {
-                    logs = JsonSerializer.Deserialize<List<LogEntry>>(existingContent) ?? new List<LogEntry>();
+                    logs = JsonSerializer.Deserialize<List<LogEntry>>(existingContent) ?? [];
                 }
             }
             logs.Add(message);
             lock (_lock)
             {
-                File.WriteAllText(LogFile, JsonSerializer.Serialize(logs, new JsonSerializerOptions { WriteIndented = true }));
+                File.WriteAllText(LogFile, JsonSerializer.Serialize(logs, _jsonOptions));
             }
         }
     }

@@ -14,17 +14,32 @@ namespace EasySave.Backup
         /// <summary>
         /// Global mutex used to ensure that the CryptoSoft application remains a single instance across the entire system.
         /// </summary>
-        public static readonly Mutex CryptoSoftMutex = new Mutex(false, @"Global\EasySave_CryptoSoft_Lock");
+        private static readonly Mutex _cryptoSoftMutex = new(false, @"Global\EasySave_CryptoSoft_Lock");
 
         /// <summary>
         /// Volatile counter to track the number of priority files currently pending across all active backup jobs.
         /// </summary>
-        public static volatile int GlobalPriorityFilesPending = 0;
+        private static volatile int _globalPriorityFilesPending = 0;
+
+        /// <summary>
+        /// Gets or sets the number of priority files currently pending across all active backup jobs.
+        /// </summary>
+        public static ref int GlobalPriorityFilesPending => ref _globalPriorityFilesPending;
 
         /// <summary>
         /// Semaphore used to limit the simultaneous transfer of large files to prevent bandwidth saturation.
         /// </summary>
-        public static SemaphoreSlim BigFileSemaphore = new(1, 1);
+        private static readonly SemaphoreSlim _bigFileSemaphore = new(1, 1);
+
+        /// <summary>
+        /// Gets the global CryptoSoft mutex.
+        /// </summary>
+        public static Mutex CryptoSoftMutex => _cryptoSoftMutex;
+
+        /// <summary>
+        /// Gets the big file semaphore.
+        /// </summary>
+        public static SemaphoreSlim BigFileSemaphore => _bigFileSemaphore;
 
         // --- SINGLETON & STATE ---
         private static BackupManager? _instance;
@@ -165,10 +180,9 @@ namespace EasySave.Backup
         /// <returns>A task representing the asynchronous operation.</returns>
         public Task ExecuteJobAsync(int id, Action<ProgressState>? progressCallback = null)
         {
-            var job = _backupJobs.FirstOrDefault(j => j.Id == id);
-            if (job == null) throw new ArgumentException($"Job {id} not found.");
+            var job = _backupJobs.FirstOrDefault(j => j.Id == id) ?? throw new ArgumentException($"Job {id} not found.");
 
-            job.ResetControls(); // Reset Pause/Stop tokens
+            job.ResetControls();
             return Task.Run(() => ExecuteSingleJob(job, progressCallback));
         }
 
@@ -192,7 +206,7 @@ namespace EasySave.Backup
         {
             var tasks = _backupJobs.Where(j => j.Id >= startId && j.Id <= endId)
                                    .Select(j => { j.ResetControls(); return Task.Run(() => ExecuteSingleJob(j, progressCallback)); });
-            Task.WaitAll(tasks.ToArray());
+            Task.WaitAll([.. tasks]);
         }
 
         /// <summary>
@@ -204,7 +218,7 @@ namespace EasySave.Backup
         {
             var tasks = _backupJobs.Where(j => ids.Contains(j.Id))
                                    .Select(j => { j.ResetControls(); return Task.Run(() => ExecuteSingleJob(j, progressCallback)); });
-            Task.WaitAll(tasks.ToArray());
+            Task.WaitAll([.. tasks]);
         }
 
         /// <summary>
@@ -214,7 +228,7 @@ namespace EasySave.Backup
         /// <returns>A list of tasks representing the running backup operations.</returns>
         public List<Task> ExecuteAllJobsAsync(Action<ProgressState>? progressCallback = null)
         {
-            List<Task> tasks = new();
+            List<Task> tasks = [];
             foreach (var job in _backupJobs)
             {
                 job.ResetControls();
@@ -229,7 +243,7 @@ namespace EasySave.Backup
         /// <param name="progressCallback">Optional progress update handler.</param>
         public void ExecuteAllJobs(Action<ProgressState>? progressCallback = null)
         {
-            Task.WaitAll(ExecuteAllJobsAsync(progressCallback).ToArray());
+            Task.WaitAll([.. ExecuteAllJobsAsync(progressCallback)]);
         }
 
         // --- STEERING METHODS ---

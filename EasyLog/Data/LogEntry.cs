@@ -69,6 +69,16 @@ namespace EasyLog.Data
 		public int EncryptionTime { get; set; } = 0;
 
 		/// <summary>
+		/// Gets the name of the machine where the log entry was created.
+		/// </summary>
+		public string MachineName { get; set; } = Environment.MachineName;
+
+		/// <summary>
+		/// Gets the name of the user who generated the log entry.
+		/// </summary>
+		public string UserName { get; set; } = Environment.UserName;
+
+		/// <summary>
 		/// Formats the backup-specific properties into a structured string.
 		/// </summary>
 		/// <returns>A string containing the name, source, destination, size, elapsed time, and encryption time.</returns>

@@ -27,6 +27,8 @@ namespace EasyTest
 		{
 			KillProcesses();
 
+			typeof(BackupManager).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+
 			_dossierSource = Path.Combine(Path.GetTempPath(), "EasySave_Source_Test");
 			_dossierCible = Path.Combine(Path.GetTempPath(), "EasySave_Cible_Test");
 
@@ -35,12 +37,13 @@ namespace EasyTest
 
 			Directory.CreateDirectory(_dossierSource);
 
+			string appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasySave");
+			string configDir = Path.Combine(appData, "Config");
+			DeleteDirectorySafe(configDir);
+
 			var bm = BackupManager.GetBM();
 			var jobsIds = bm.GetAllJobs().Select(j => j.Id).ToList();
 			foreach (var id in jobsIds) bm.DeleteJob(id);
-
-			// Reflection used to reset the singleton instance for a clean state
-			typeof(BackupManager).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
 		}
 
 		/// <summary>
@@ -101,7 +104,7 @@ namespace EasyTest
 			// Create a specific configuration for the encryption test
 			var configSpeciale = new
 			{
-				Version = "3.0.0",
+				Version = "1.0.0",
 				MaxBackupJobs = 5,
 				PriorityExtensions = new[] { ".txt" },
 				CryptoKey = "MaCleSecrete",

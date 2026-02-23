@@ -24,7 +24,7 @@ namespace EasySave.Backup
             // --- 1. Basic Validations ---
             if (!Directory.Exists(job.SourceDirectory))
             {
-                BackupManager.GetLogger().Log(new LogEntry { Level = Level.Warning, Message = $"{job.Name} - Source directory does not exist: {job.SourceDirectory}" });
+                BackupManager.GetLogger().Log(new() { Level = Level.Warning, Message = $"{job.Name} - Source directory does not exist: {job.SourceDirectory}" });
                 throw new DirectoryNotFoundException($"Source directory not found: {job.SourceDirectory}");
             }
 
@@ -70,7 +70,7 @@ namespace EasySave.Backup
                     logSentStart = true;
                 }
 
-                progressCallback?.Invoke(new ProgressState
+                progressCallback?.Invoke(new()
                 {
                     BackupName = job.Name,
                     State = State.Paused,
@@ -109,7 +109,7 @@ namespace EasySave.Backup
                 // Re-check Business Software during the loop (between files)
                 while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
                 {
-                    progressCallback?.Invoke(new ProgressState
+                    progressCallback?.Invoke(new()
                     {
                         BackupName = job.Name,
                         State = State.Paused,
@@ -143,7 +143,7 @@ namespace EasySave.Backup
                 var fileSize = new FileInfo(sourceFile).Length;
 
                 // Initial progress update before copy
-                progressCallback?.Invoke(new ProgressState
+                progressCallback?.Invoke(new()
                 {
                     BackupName = job.Name,
                     State = State.Active,
@@ -175,8 +175,8 @@ namespace EasySave.Backup
                     int bytesRead;
                     long lastUpdateTick = 0;
 
-                    using (FileStream fsSource = new FileStream(sourceFile, FileMode.Open, FileAccess.Read))
-                    using (FileStream fsDest = new FileStream(targetFile, FileMode.Create, FileAccess.Write))
+                    using (FileStream fsSource = new(sourceFile, FileMode.Open, FileAccess.Read))
+                    using (FileStream fsDest = new(targetFile, FileMode.Create, FileAccess.Write))
                     {
                         while ((bytesRead = fsSource.Read(buffer, 0, buffer.Length)) > 0)
                         {
@@ -187,7 +187,7 @@ namespace EasySave.Backup
                             // Re-check Business Software (DURING the transfer)
                             while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
                             {
-                                progressCallback?.Invoke(new ProgressState
+                                progressCallback?.Invoke(new()
                                 {
                                     BackupName = job.Name,
                                     State = State.Paused,
@@ -210,7 +210,7 @@ namespace EasySave.Backup
                             long currentTick = DateTime.Now.Ticks;
                             if (currentTick - lastUpdateTick > 1000000 || currentFileCopied == fileSize)
                             {
-                                progressCallback?.Invoke(new ProgressState
+                                progressCallback?.Invoke(new()
                                 {
                                     BackupName = job.Name,
                                     State = State.Active,
@@ -250,7 +250,7 @@ namespace EasySave.Backup
                     }
 
                     stopwatch.Stop();
-                    BackupManager.GetLogger().Log(new LogEntry
+                    BackupManager.GetLogger().Log(new()
                     {
                         Name = job.Name,
                         SourceFile = PathUtils.ToUnc(sourceFile),
@@ -263,7 +263,7 @@ namespace EasySave.Backup
                 catch (Exception e)
                 {
                     stopwatch.Stop();
-                    BackupManager.GetLogger().Log(new LogEntry
+                    BackupManager.GetLogger().Log(new()
                     {
                         Level = Level.Error,
                         Message = $"Copy failed: {e.Message}",
@@ -284,7 +284,7 @@ namespace EasySave.Backup
             // --- 6. Final State ---
             if (job.State != State.Error)
             {
-                progressCallback?.Invoke(new ProgressState
+                progressCallback?.Invoke(new()
                 {
                     BackupName = job.Name,
                     State = State.Completed,

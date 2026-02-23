@@ -52,7 +52,7 @@
         /// <summary>
         /// Creates a remote logger instance.
         /// </summary>
-        private static ILogger CreateRemoteLogger(string? serverUrl)
+        private static RemoteLogger CreateRemoteLogger(string? serverUrl)
         {
             if (string.IsNullOrWhiteSpace(serverUrl))
                 throw new ArgumentException("LogServerUrl must be configured when using Remote or Both mode.");

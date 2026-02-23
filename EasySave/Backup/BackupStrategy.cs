@@ -1,4 +1,3 @@
-using EasyLog.Data;
 using EasyLog.Logging;
 using System.Diagnostics;
 

@@ -94,9 +94,9 @@ namespace LogServer.Controllers
 
 				return Ok(files);
 			}
-			catch (Exception ex)
+			catch (Exception e)
 			{
-				return StatusCode(500, new { success = false, message = ex.Message });
+				return StatusCode(500, new { success = false, message = e.Message });
 			}
 		}
 	}

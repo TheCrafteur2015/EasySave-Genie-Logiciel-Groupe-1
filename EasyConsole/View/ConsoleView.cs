@@ -168,12 +168,11 @@ namespace EasyConsole.View
         {
             lock (_consoleLock)
             {
-                if (!_jobLines.ContainsKey(state.BackupName))
+                if (!_jobLines.TryGetValue(state.BackupName, out int currentRow))
                 {
-                    _jobLines[state.BackupName] = _baseLineIndex + _jobLines.Count;
+                    currentRow = _baseLineIndex + _jobLines.Count;
+                    _jobLines[state.BackupName] = currentRow;
                 }
-
-                int currentRow = _jobLines[state.BackupName];
                 if (currentRow >= Console.BufferHeight - 3) return; 
 
                 Console.SetCursorPosition(0, currentRow);
@@ -211,7 +210,7 @@ namespace EasyConsole.View
         /// <param name="tasks">A list of running tasks to monitor.</param>
         public static void MonitorJobs(List<Task> tasks)
         {
-            while (!Task.WaitAll(tasks.ToArray(), 50))
+            while (!Task.WaitAll([.. tasks], 50))
             {
                 if (Console.KeyAvailable)
                 {

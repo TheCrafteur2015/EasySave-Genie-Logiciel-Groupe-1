@@ -98,9 +98,11 @@ namespace EasySave.Backup
             {
                 var BM = GetBM();
                 var format = BM.ConfigManager.GetConfig<string>("LoggerFormat");
+                var logMode = BM.ConfigManager.GetConfig<string>("LogMode");
+                var logServerUrl = BM.ConfigManager.GetConfig<string>("LogServerUrl");
                 lock (_lock)
                 {
-                    _logger = LoggerFactory.CreateLogger(format ?? "text", Path.Combine(BM.appData, "Logs"));
+                    _logger = LoggerFactory.CreateLogger(format ?? "text", Path.Combine(BM.appData, "Logs"), logMode, logServerUrl);
                 }
             }
             return _logger;

@@ -78,7 +78,7 @@ namespace EasyTest
             bm.AddJob("JobParallele_B", _source2, _target2, BackupType.Complete);
 
             var tasks = bm.ExecuteAllJobsAsync();
-            Task.WaitAll(tasks.ToArray());
+            Task.WaitAll([.. tasks]);
 
             int count1 = Directory.GetFiles(_target1).Length;
             int count2 = Directory.GetFiles(_target2).Length;

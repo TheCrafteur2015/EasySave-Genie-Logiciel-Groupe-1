@@ -180,8 +180,8 @@ namespace EasySave.Backup
                         int bytesRead;
                         long lastUpdateTick = 0;
 
-                        using (FileStream fsSource = new FileStream(sourceFile, FileMode.Open, FileAccess.Read))
-                        using (FileStream fsDest = new FileStream(targetFile, FileMode.Create, FileAccess.Write))
+                        using (FileStream fsSource = new(sourceFile, FileMode.Open, FileAccess.Read))
+                        using (FileStream fsDest = new(targetFile, FileMode.Create, FileAccess.Write))
                         {
                             while ((bytesRead = fsSource.Read(buffer, 0, buffer.Length)) > 0)
                             {
@@ -266,7 +266,7 @@ namespace EasySave.Backup
                     catch (Exception e)
                     {
                         stopwatch.Stop();
-                        BackupManager.GetLogger().Log(new LogEntry
+                        BackupManager.GetLogger().Log(new()
                         {
                             Level = Level.Error,
                             Message = $"Copy failed: {e.Message}",

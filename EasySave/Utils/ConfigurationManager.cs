@@ -190,6 +190,7 @@ namespace EasySave.Utils
 				{
 					string jsonContent = JsonSerializer.Serialize(jobs, JSON_OPTIONS);
 					File.WriteAllText(savedBackupJobPath, jsonContent);
+					BackupManager.GetLogger().Log(new() { Level = Level.Info, Message = "Saved backup jobs to: " + savedBackupJobPath });
 				}
 			}
 			catch (Exception e)

@@ -11,6 +11,13 @@ namespace EasyTest
     [TestClass]
     public sealed class TestConfigManager
     {
+        private static readonly JsonSerializerOptions s_jsonOptions = new()
+        {
+            WriteIndented = true,
+            Converters = { new JsonStringEnumConverter() },
+            IncludeFields = true
+        };
+
         /// <summary>
         /// Verifies the JSON serialization and deserialization of a <see cref="BackupJob"/> object.
         /// </summary>
@@ -24,12 +31,7 @@ namespace EasyTest
         {
             var job = new BackupJob(1, "Test", @"C:\xampp\htdocs\_source", @"C:\xampp\htdocs\_target", BackupType.Complete);
 
-            string json = JsonSerializer.Serialize(job, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                Converters = { new JsonStringEnumConverter() },
-                IncludeFields = true
-            });
+            string json = JsonSerializer.Serialize(job, s_jsonOptions);
 
             Assert.AreEqual(json,
 """

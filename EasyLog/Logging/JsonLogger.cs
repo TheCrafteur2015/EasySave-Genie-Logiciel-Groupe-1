@@ -32,18 +32,20 @@ namespace EasyLog.Logging
         /// <param name="message">The log entry object to be serialized and written.</param>
         public override void Log(LogEntry message)
         {
-            List<LogEntry> logs = [];
-            if (File.Exists(LogFile))
-            {
-                string existingContent = File.ReadAllText(LogFile);
-                if (!string.IsNullOrWhiteSpace(existingContent))
-                {
-                    logs = JsonSerializer.Deserialize<List<LogEntry>>(existingContent) ?? [];
-                }
-            }
-            logs.Add(message);
             lock (_lock)
             {
+                List<LogEntry> logs = [];
+                if (File.Exists(LogFile))
+                {
+                    string existingContent = File.ReadAllText(LogFile);
+                    if (!string.IsNullOrWhiteSpace(existingContent))
+                    {
+                        logs = JsonSerializer.Deserialize<List<LogEntry>>(existingContent) ?? [];
+                    }
+                }
+
+                logs.Add(message);
+
                 File.WriteAllText(LogFile, JsonSerializer.Serialize(logs, _jsonOptions));
             }
         }

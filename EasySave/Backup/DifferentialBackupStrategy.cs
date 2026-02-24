@@ -41,12 +41,34 @@ namespace EasySave.Backup
             List<string> priorityExtensions = config.GetConfig<List<string>>("PriorityExtensions");
 
             // --- 3. File Preparation and Priority Management ---
-            var files = Directory.GetFiles(job.SourceDirectory, "*", SearchOption.AllDirectories);
-            var totalFiles = files.Length;
-            long totalSize = files.Sum(f => new FileInfo(f).Length);
+            var allFiles = Directory.GetFiles(job.SourceDirectory, "*", SearchOption.AllDirectories);
 
-            var priorityFiles = files.Where(f => priorityExtensions.Contains(Path.GetExtension(f))).ToList();
-            var nonPriorityFiles = files.Where(f => !priorityExtensions.Contains(Path.GetExtension(f))).ToList();
+            var filesToCopy = new List<string>();
+            foreach (var file in allFiles)
+            {
+                var relativePath = Path.GetRelativePath(job.SourceDirectory, file);
+                var targetFile = Path.Combine(job.TargetDirectory, relativePath);
+                var sourceFileInfo = new FileInfo(file);
+
+                if (!File.Exists(targetFile) ||
+                    sourceFileInfo.LastWriteTime > new FileInfo(targetFile).LastWriteTime ||
+                    sourceFileInfo.Length != new FileInfo(targetFile).Length)
+                {
+                    filesToCopy.Add(file);
+                }
+            }
+
+            var totalFiles = filesToCopy.Count;
+            long totalSize = filesToCopy.Sum(f => new FileInfo(f).Length);
+
+            if (totalFiles == 0)
+            {
+                progressCallback?.Invoke(new ProgressState { BackupName = job.Name, State = State.Completed, ProgressPercentage = 100, Message = "Up to date!" });
+                return;
+            }
+
+            var priorityFiles = filesToCopy.Where(f => priorityExtensions.Contains(Path.GetExtension(f))).ToList();
+            var nonPriorityFiles = filesToCopy.Where(f => !priorityExtensions.Contains(Path.GetExtension(f))).ToList();
             var sortedFiles = priorityFiles.Concat(nonPriorityFiles).ToList();
 
             long maxFileSizeConfig = config.GetConfig<long?>("MaxParallelTransferSize") ?? 1000000L;

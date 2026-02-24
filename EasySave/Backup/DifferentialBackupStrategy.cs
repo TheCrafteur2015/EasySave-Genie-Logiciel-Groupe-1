@@ -1,6 +1,7 @@
 using EasyLog.Data;
 using EasyLog.Logging;
 using EasySave.Utils;
+using EasySave.View.Localization;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
 
@@ -295,6 +296,15 @@ namespace EasySave.Backup
                     BackupName = job.Name,
                     State = State.Completed,
                     ProgressPercentage = 100
+                });
+            }
+            else
+            {
+                progressCallback?.Invoke(new ProgressState
+                {
+                    BackupName = job.Name,
+                    State = State.Error,
+                    Message = EasySave.View.Localization.I18n.Instance.GetString("status_stopped") ?? "Stopped by user"
                 });
             }
         }

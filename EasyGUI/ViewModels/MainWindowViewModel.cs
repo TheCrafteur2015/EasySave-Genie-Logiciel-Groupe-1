@@ -747,7 +747,7 @@ namespace EasyGUI.ViewModels
                                 {
                                     item.Status = progress.Message;
                                     if (progress.State == State.Paused) item.Status = "⏸️ " + progress.Message;
-                                    else if (progress.State == State.Error) { item.HasError = true; item.Status = "✗ " + progress.Message; }
+                                    else if (progress.State == State.Error) { item.HasError = true; item.Status = progress.Message; }
                                 }
                                 else
                                 {
@@ -765,14 +765,36 @@ namespace EasyGUI.ViewModels
 
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
-                        foreach (var item in JobsProgress.Where(j => !j.IsCompleted && !j.HasError))
+                        bool hasAnyErrorOrStop = false;
+
+                        foreach (var item in JobsProgress)
                         {
-                            item.IsCompleted = true;
-                            item.ProgressPercentage = 100;
-                            item.Status = "Completed!";
+                            var realJob = _backupManager.GetAllJobs().FirstOrDefault(j => j.Id == item.JobId);
+
+                            if (realJob != null && realJob.State == State.Error)
+                            {
+                                item.HasError = true;
+                                item.Status = "Stopped"; // Plus de croix et texte propre
+                                hasAnyErrorOrStop = true;
+                            }
+                            else if (!item.IsCompleted && !item.HasError)
+                            {
+                                item.IsCompleted = true;
+                                item.ProgressPercentage = 100;
+                                item.Status = _i18n.GetString("state_completed") ?? "Completed!";
+                            }
                         }
+
                         RefreshBackupJobs();
-                        StatusMessage = "✓ All jobs completed!";
+
+                        if (hasAnyErrorOrStop || JobsProgress.Any(j => j.HasError))
+                        {
+                            StatusMessage = "Backup Closed";
+                        }
+                        else
+                        {
+                            StatusMessage = "✓ " + (_i18n.GetString("execute_all_completed") ?? "All jobs completed!");
+                        }
                     });
                 }
                 catch (Exception ex)

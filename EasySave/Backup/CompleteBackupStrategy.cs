@@ -284,11 +284,20 @@ namespace EasySave.Backup
             // --- 6. Final State ---
             if (job.State != State.Error)
             {
-                progressCallback?.Invoke(new()
+                progressCallback?.Invoke(new ProgressState
                 {
                     BackupName = job.Name,
                     State = State.Completed,
                     ProgressPercentage = 100
+                });
+            }
+            else
+            {
+                progressCallback?.Invoke(new ProgressState
+                {
+                    BackupName = job.Name,
+                    State = State.Error,
+                    Message = "Stopped"
                 });
             }
         }

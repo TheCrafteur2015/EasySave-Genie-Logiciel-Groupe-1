@@ -722,47 +722,32 @@ namespace EasyGUI.ViewModels
             {
                 try
                 {
+                    // 1. PENDANT l'exécution : On met à jour la barre de chaque job individuellement
                     _backupManager.ExecuteAllJobs(progress =>
                     {
                         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                         {
+                            // On cherche la ligne correspondant au job actuel
                             var item = JobsProgress.FirstOrDefault(j => j.JobName == progress.BackupName);
                             if (item != null)
                             {
+                                // Calcul et affichage des octets
                                 long processedBytes = progress.TotalSize - progress.SizeRemaining;
+                                item.ProgressBytes = $"{FormatBytes(processedBytes)} / {FormatBytes(progress.TotalSize)}";
 
-                                if (progress.TotalSize > 0)
-                                    item.ProgressPercentage = (double)processedBytes / progress.TotalSize * 100;
-                                else
-                                    item.ProgressPercentage = 0;
+                                // Mise à jour de la barre jaune
+                                item.ProgressPercentage = progress.ProgressPercentage;
 
-                                string processedStr = FormatBytes(processedBytes);
-                                string totalStr = FormatBytes(progress.TotalSize);
-                                item.ProgressBytes = $"{processedStr} / {totalStr}";
-
-                                if (progress.State == State.Paused) item.IsPaused = true;
-                                else if (progress.State == State.Active) item.IsPaused = false;
-
-                                if (!string.IsNullOrEmpty(progress.Message))
-                                {
-                                    item.Status = progress.Message;
-                                    if (progress.State == State.Paused) item.Status = "⏸️ " + progress.Message;
-                                    else if (progress.State == State.Error) { item.HasError = true; item.Status = progress.Message; }
-                                }
-                                else
-                                {
-                                    item.Status = $"{item.ProgressPercentage:F1}%";
-                                }
-
-                                if (item.ProgressPercentage >= 100 && progress.State == State.Completed)
-                                {
-                                    item.IsCompleted = true;
-                                    item.Status = "Completed!";
-                                }
+                                // Mise à jour du texte de statut
+                                if (progress.State == State.Paused) item.Status = "⏸️ " + progress.Message;
+                                else if (progress.State == State.Error) { item.HasError = true; item.Status = progress.Message; }
+                                else if (!string.IsNullOrEmpty(progress.Message)) item.Status = progress.Message;
+                                else item.Status = $"{item.ProgressPercentage:F1}%";
                             }
                         });
                     });
 
+                    // 2. À LA FIN de TOUTE l'exécution : On valide les statuts finaux
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
                         bool hasAnyErrorOrStop = false;
@@ -774,7 +759,7 @@ namespace EasyGUI.ViewModels
                             if (realJob != null && realJob.State == State.Error)
                             {
                                 item.HasError = true;
-                                item.Status = "Stopped"; // Plus de croix et texte propre
+                                item.Status = "Stopped";
                                 hasAnyErrorOrStop = true;
                             }
                             else if (!item.IsCompleted && !item.HasError)

@@ -91,10 +91,14 @@ namespace EasySave.Backup
                 }
             }
 
-            // --- 5. Main Copy Loop ---
+            // --- 5. Main Copy Loop (Optimized & Throttled) ---
+            int filesSinceLastProcessCheck = 0;
+            long lastUiUpdateTick = 0;
+
             foreach (var sourceFile in sortedFiles)
             {
                 bool isPriority = priorityExtensions.Contains(Path.GetExtension(sourceFile));
+                var fileSize = new FileInfo(sourceFile).Length;
 
                 if (job.Cts.IsCancellationRequested)
                 {
@@ -106,29 +110,23 @@ namespace EasySave.Backup
                 }
                 job.PauseWaitHandle.Wait();
 
-                // Re-check Business Software during the loop (between files)
-                while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
+                if (filesSinceLastProcessCheck >= 50 || fileSize > 1024 * 1024 || processedFiles == 0)
                 {
-                    progressCallback?.Invoke(new()
+                    while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
                     {
-                        BackupName = job.Name,
-                        State = State.Paused,
-                        Message = $"Business software detected. Forced pause...",
-                        TotalFiles = totalFiles,
-                        TotalSize = totalSize,
-                        FilesRemaining = totalFiles - processedFiles,
-                        SizeRemaining = totalSize - processedSize
-                    });
-                    Thread.Sleep(2000);
-                    if (job.Cts.IsCancellationRequested) break;
+                        progressCallback?.Invoke(new() { BackupName = job.Name, State = State.Paused, Message = $"Paused: {BusinessSoftware}..." });
+                        Thread.Sleep(2000);
+                        if (job.Cts.IsCancellationRequested) break;
+                    }
+                    filesSinceLastProcessCheck = 0;
                 }
+                filesSinceLastProcessCheck++;
 
-                // Handle priority file orchestration
                 if (!isPriority)
                 {
                     while (BackupManager.GlobalPriorityFilesPending > 0)
                     {
-                        Thread.Sleep(50);
+                        Thread.Sleep(100);
                         if (job.Cts.IsCancellationRequested) break;
                     }
                 }
@@ -136,81 +134,38 @@ namespace EasySave.Backup
                 var relativePath = Path.GetRelativePath(job.SourceDirectory, sourceFile);
                 var targetFile = Path.Combine(job.TargetDirectory, relativePath);
                 var targetDir = Path.GetDirectoryName(targetFile);
-
-                if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
-                    Directory.CreateDirectory(targetDir);
-
-                var fileSize = new FileInfo(sourceFile).Length;
-
-                // Initial progress update before copy
-                progressCallback?.Invoke(new()
-                {
-                    BackupName = job.Name,
-                    State = State.Active,
-                    TotalFiles = totalFiles,
-                    TotalSize = totalSize,
-                    FilesRemaining = totalFiles - processedFiles,
-                    SizeRemaining = totalSize - processedSize,
-                    CurrentSourceFile = sourceFile,
-                    CurrentTargetFile = targetFile,
-                    ProgressPercentage = 0
-                });
-
-                var stopwatch = Stopwatch.StartNew();
-                int encryptionTime = 0;
-                bool isBigFile = fileSize > maxFileSizeBytes;
-                bool semaphoreAcquired = false;
+                if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
 
                 try
                 {
-                    if (isBigFile)
+                    bool semaphoreAcquired = false;
+                    if (fileSize > maxFileSizeBytes) { BackupManager.BigFileSemaphore.Wait(); semaphoreAcquired = true; }
+
+                    // COPIE
+                    if (fileSize < 2 * 1024 * 1024)
                     {
-                        BackupManager.BigFileSemaphore.Wait();
-                        semaphoreAcquired = true;
+                        File.Copy(sourceFile, targetFile, true);
                     }
-
-                    // --- STREAM-BASED COPY (CHUNK BY CHUNK) ---
-                    long currentFileCopied = 0;
-                    byte[] buffer = new byte[4 * 1024 * 1024]; // 4MB Buffer
-                    int bytesRead;
-                    long lastUpdateTick = 0;
-
-                    using (FileStream fsSource = new(sourceFile, FileMode.Open, FileAccess.Read))
-                    using (FileStream fsDest = new(targetFile, FileMode.Create, FileAccess.Write))
+                    else
                     {
+                        using var fsSource = new FileStream(sourceFile, FileMode.Open, FileAccess.Read);
+                        using var fsDest = new FileStream(targetFile, FileMode.Create, FileAccess.Write);
+                        byte[] buffer = new byte[1024 * 1024]; // Buffer de 1Mo
+                        int bytesRead;
+                        long currentFileCopied = 0;
+
                         while ((bytesRead = fsSource.Read(buffer, 0, buffer.Length)) > 0)
                         {
-                            // Check for pause/cancel during file transfer
                             if (job.Cts.IsCancellationRequested) break;
                             job.PauseWaitHandle.Wait();
 
-                            // Re-check Business Software (DURING the transfer)
-                            while (!string.IsNullOrEmpty(BusinessSoftware) && Process.GetProcessesByName(BusinessSoftware).Length > 0)
-                            {
-                                progressCallback?.Invoke(new()
-                                {
-                                    BackupName = job.Name,
-                                    State = State.Paused,
-                                    Message = $"Paused: {BusinessSoftware}...",
-                                    TotalFiles = totalFiles,
-                                    TotalSize = totalSize,
-                                    FilesRemaining = totalFiles - processedFiles,
-                                    SizeRemaining = totalSize - (processedSize + currentFileCopied)
-                                });
-                                Thread.Sleep(2000);
-                                if (job.Cts.IsCancellationRequested) break;
-                            }
-                            if (job.Cts.IsCancellationRequested) break;
-
-                            // Writing chunk
                             fsDest.Write(buffer, 0, bytesRead);
                             currentFileCopied += bytesRead;
 
-                            // UI Throttling (~100ms) for fluidity
-                            long currentTick = DateTime.Now.Ticks;
-                            if (currentTick - lastUpdateTick > 1000000 || currentFileCopied == fileSize)
+                            long innerTick = DateTime.Now.Ticks;
+                            if (innerTick - lastUiUpdateTick > 2000000) // Toutes les ~200ms
                             {
-                                progressCallback?.Invoke(new()
+                                progressCallback?.Invoke(new ProgressState
                                 {
                                     BackupName = job.Name,
                                     State = State.Active,
@@ -218,87 +173,55 @@ namespace EasySave.Backup
                                     TotalSize = totalSize,
                                     FilesRemaining = totalFiles - processedFiles,
                                     SizeRemaining = totalSize - (processedSize + currentFileCopied),
-                                    CurrentSourceFile = sourceFile,
-                                    CurrentTargetFile = targetFile,
-                                    ProgressPercentage = 0 // Recalculated by ViewModel
+                                    // NOUVEAU : On calcule et on force le pourcentage ici pour l'interface !
+                                    ProgressPercentage = totalSize > 0 ? ((double)(processedSize + currentFileCopied) / totalSize) * 100 : 100
                                 });
-                                lastUpdateTick = currentTick;
+                                lastUiUpdateTick = innerTick;
                             }
                         }
                     }
 
-                    // Encryption via CryptoSoft after copy (if extension matches)
-                    string ext = Path.GetExtension(targetFile);
-                    if (File.Exists(cryptoPath) && priorityExtensions.Contains(ext))
+                    if (semaphoreAcquired) BackupManager.BigFileSemaphore.Release();
+
+                    // D. CHIFFREMENT
+                    int encTime = 0;
+                    if (File.Exists(cryptoPath) && priorityExtensions.Contains(Path.GetExtension(targetFile)))
                     {
                         BackupManager.CryptoSoftMutex.WaitOne();
                         try
                         {
-                            var p = new Process();
-                            p.StartInfo.FileName = cryptoPath;
-                            p.StartInfo.Arguments = $"\"{targetFile}\" \"{cryptoKey}\"";
-                            p.StartInfo.UseShellExecute = false;
-                            p.StartInfo.CreateNoWindow = true;
-                            p.Start();
-                            p.WaitForExit();
-                            encryptionTime = p.ExitCode;
+                            var p = Process.Start(new ProcessStartInfo(cryptoPath, $"\"{targetFile}\" \"{cryptoKey}\"") { CreateNoWindow = true });
+                            p?.WaitForExit();
+                            encTime = p?.ExitCode ?? -1;
                         }
-                        finally
-                        {
-                            BackupManager.CryptoSoftMutex.ReleaseMutex();
-                        }
+                        finally { BackupManager.CryptoSoftMutex.ReleaseMutex(); }
                     }
 
-                    stopwatch.Stop();
-                    BackupManager.GetLogger().Log(new()
-                    {
-                        Name = job.Name,
-                        SourceFile = PathUtils.ToUnc(sourceFile),
-                        TargetFile = PathUtils.ToUnc(targetFile),
-                        FileSize = fileSize,
-                        ElapsedTime = stopwatch.ElapsedMilliseconds,
-                        EncryptionTime = encryptionTime
-                    });
+                    // LOGGING
+                    BackupManager.GetLogger().Log(new() { Name = job.Name, SourceFile = PathUtils.ToUnc(sourceFile), TargetFile = PathUtils.ToUnc(targetFile), FileSize = fileSize, ElapsedTime = 1, EncryptionTime = encTime });
                 }
-                catch (Exception e)
-                {
-                    stopwatch.Stop();
-                    BackupManager.GetLogger().Log(new()
-                    {
-                        Level = Level.Error,
-                        Message = $"Copy failed: {e.Message}",
-                        ElapsedTime = -1
-                    });
-                    BackupManager.GetLogger().LogError(e);
-                }
-                finally
-                {
-                    if (semaphoreAcquired) BackupManager.BigFileSemaphore.Release();
-                    if (isPriority) Interlocked.Decrement(ref BackupManager.GlobalPriorityFilesPending);
-                }
+
+                catch (Exception) { /* Ignorer ou Logger erreur */ }
+                finally { if (isPriority) Interlocked.Decrement(ref BackupManager.GlobalPriorityFilesPending); }
 
                 processedFiles++;
                 processedSize += fileSize;
-            }
 
-            // --- 6. Final State ---
-            if (job.State != State.Error)
-            {
-                progressCallback?.Invoke(new ProgressState
+                long currentTick = DateTime.Now.Ticks;
+                if (currentTick - lastUiUpdateTick > 2000000 || processedFiles == totalFiles)
                 {
-                    BackupName = job.Name,
-                    State = State.Completed,
-                    ProgressPercentage = 100
-                });
-            }
-            else
-            {
-                progressCallback?.Invoke(new ProgressState
-                {
-                    BackupName = job.Name,
-                    State = State.Error,
-                    Message = "Stopped"
-                });
+                    progressCallback?.Invoke(new()
+                    {
+                        BackupName = job.Name,
+                        State = State.Active,
+                        TotalFiles = totalFiles,
+                        TotalSize = totalSize,
+                        FilesRemaining = totalFiles - processedFiles,
+                        SizeRemaining = totalSize - processedSize,
+                        ProgressPercentage = (double)processedFiles / totalFiles * 100
+                    });
+                    lastUiUpdateTick = currentTick;
+                }
             }
         }
     }

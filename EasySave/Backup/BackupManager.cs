@@ -123,6 +123,14 @@ namespace EasySave.Backup
             return _logger;
         }
 
+        public static void ResetLogger()
+        {
+            lock (_lock)
+            {
+                _logger = null;
+            }
+        }
+
         // --- JOB MANAGEMENT (CRUD) ---
 
         /// <summary>

@@ -33,12 +33,12 @@ namespace EasySave.Utils
 		/// runtime. Use dynamic member access to retrieve specific configuration values as needed.</remarks>
 		private readonly Dictionary<string, object> configValues;
 
-		private readonly List<string> readOnlyVariables = ["Version", "PriorityExtensions"];
+        private readonly List<string> readOnlyVariables = ["Version"];
 
-		/// <summary>
-		/// Indicates wether the configuration variables have been edited and are required to save.
-		/// </summary>
-		private bool isDirty = false;
+        /// <summary>
+        /// Indicates wether the configuration variables have been edited and are required to save.
+        /// </summary>
+        private bool isDirty = false;
 
 		/// <summary>
 		/// Initializes a new instance of the ConfigurationManager class using the specified configuration directory. Ensures

@@ -42,6 +42,10 @@
 		<Copy SourceFiles="..\CryptoSoft\bin\$(Configuration)\net8.0\CryptoSoft.runtimeconfig.json"
 			  DestinationFolder="$(OutDir)"
 			  SkipUnchangedFiles="true" />
+
+		<Copy SourceFiles="..\CryptoSoft\bin\$(Configuration)\net8.0\CryptoSoft.dll"
+			  DestinationFolder="$(OutDir)"
+			  SkipUnchangedFiles="true" />
 	</Target>
 
 </Project>

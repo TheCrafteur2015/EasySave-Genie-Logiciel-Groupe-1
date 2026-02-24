@@ -856,6 +856,10 @@ namespace EasyGUI.ViewModels
             // Load detailed settings (Feature Branch)
             ConfigBusinessSoftware = config.GetConfig<string>("BusinessSoftware") ?? "";
             ConfigCryptoPath = config.GetConfig<string>("CryptoSoftPath") ?? "";
+            if (string.IsNullOrWhiteSpace(ConfigCryptoPath))
+            {
+                ConfigCryptoPath = "CryptoSoft.exe";
+            }
             ConfigCryptoKey = config.GetConfig<string>("CryptoKey") ?? "";
             ConfigMaxSize = config.GetConfig<long?>("MaxParallelTransferSize") ?? 1000;
 

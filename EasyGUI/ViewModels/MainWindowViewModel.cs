@@ -621,17 +621,11 @@ namespace EasyGUI.ViewModels
                             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                             {
                                 // --- V3.0 Logic: Byte Calculation ---
-                                long processedBytes = progress.TotalSize - progress.SizeRemaining;
+                                long processedBytes = (long)((progress.ProgressPercentage / 100.0) * progress.TotalSize);
 
                                 // Safety check for division by zero
-                                if (progress.TotalSize > 0)
-                                {
-                                    CurrentProgress = (double)processedBytes / progress.TotalSize * 100;
-                                }
-                                else
-                                {
-                                    CurrentProgress = 0;
-                                }
+
+                                CurrentProgress = progress.ProgressPercentage;
 
                                 string processedStr = FormatBytes(processedBytes);
                                 string totalStr = FormatBytes(progress.TotalSize);
@@ -732,7 +726,7 @@ namespace EasyGUI.ViewModels
                             if (item != null)
                             {
                                 // Calcul et affichage des octets
-                                long processedBytes = progress.TotalSize - progress.SizeRemaining;
+                                long processedBytes = (long)((progress.ProgressPercentage / 100.0) * progress.TotalSize);
                                 item.ProgressBytes = $"{FormatBytes(processedBytes)} / {FormatBytes(progress.TotalSize)}";
 
                                 // Mise à jour de la barre jaune

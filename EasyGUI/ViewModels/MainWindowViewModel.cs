@@ -938,6 +938,8 @@ namespace EasyGUI.ViewModels
 
                 config.SaveConfiguration();
 
+                BackupManager.ResetLogger();
+
                 StatusMessage = "✓ " + i18n.GetString("settings_applied");
                 await Task.Delay(2000);
                 StatusMessage = "";

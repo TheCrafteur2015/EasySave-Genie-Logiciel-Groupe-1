@@ -357,15 +357,12 @@
                                 <TextBox Text="{Binding ConfigLogServerUrl}" Watermark="http://localhost:5000"/>
                             </StackPanel>
 
-                            <StackPanel Spacing="10">
-                                <TextBlock Text="{Binding SettingsCrypto}" FontWeight="SemiBold" FontSize="16" Foreground="#F6E05E"/>
+							<StackPanel Spacing="10">
+								<TextBlock Text="{Binding SettingsCrypto}" FontWeight="SemiBold" FontSize="16" Foreground="#F6E05E"/>
 
-                                <TextBlock Text="{Binding SettingsCryptoPath}"/>
-                                <TextBox Text="{Binding ConfigCryptoPath}"/>
-
-                                <TextBlock Text="{Binding SettingsCryptoKey}"/>
-                                <TextBox Text="{Binding ConfigCryptoKey}" PasswordChar="*"/>
-                            </StackPanel>
+								<TextBlock Text="{Binding SettingsCryptoKey}"/>
+								<TextBox Text="{Binding ConfigCryptoKey}" PasswordChar="*"/>
+							</StackPanel>
 
                             <StackPanel Spacing="10">
                                 <TextBlock Text="{Binding SettingsPerformance}" FontWeight="SemiBold" FontSize="16" Foreground="#F6E05E"/>

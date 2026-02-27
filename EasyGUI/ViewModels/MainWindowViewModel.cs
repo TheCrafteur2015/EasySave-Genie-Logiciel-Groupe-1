@@ -621,17 +621,11 @@ namespace EasyGUI.ViewModels
                             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                             {
                                 // --- V3.0 Logic: Byte Calculation ---
-                                long processedBytes = progress.TotalSize - progress.SizeRemaining;
+                                long processedBytes = (long)((progress.ProgressPercentage / 100.0) * progress.TotalSize);
 
                                 // Safety check for division by zero
-                                if (progress.TotalSize > 0)
-                                {
-                                    CurrentProgress = (double)processedBytes / progress.TotalSize * 100;
-                                }
-                                else
-                                {
-                                    CurrentProgress = 0;
-                                }
+
+                                CurrentProgress = progress.ProgressPercentage;
 
                                 string processedStr = FormatBytes(processedBytes);
                                 string totalStr = FormatBytes(progress.TotalSize);
@@ -722,57 +716,64 @@ namespace EasyGUI.ViewModels
             {
                 try
                 {
+                    // 1. PENDANT l'exécution : On met à jour la barre de chaque job individuellement
                     _backupManager.ExecuteAllJobs(progress =>
                     {
                         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                         {
+                            // On cherche la ligne correspondant au job actuel
                             var item = JobsProgress.FirstOrDefault(j => j.JobName == progress.BackupName);
                             if (item != null)
                             {
-                                long processedBytes = progress.TotalSize - progress.SizeRemaining;
+                                // Calcul et affichage des octets
+                                long processedBytes = (long)((progress.ProgressPercentage / 100.0) * progress.TotalSize);
+                                item.ProgressBytes = $"{FormatBytes(processedBytes)} / {FormatBytes(progress.TotalSize)}";
 
-                                if (progress.TotalSize > 0)
-                                    item.ProgressPercentage = (double)processedBytes / progress.TotalSize * 100;
-                                else
-                                    item.ProgressPercentage = 0;
+                                // Mise à jour de la barre jaune
+                                item.ProgressPercentage = progress.ProgressPercentage;
 
-                                string processedStr = FormatBytes(processedBytes);
-                                string totalStr = FormatBytes(progress.TotalSize);
-                                item.ProgressBytes = $"{processedStr} / {totalStr}";
-
-                                if (progress.State == State.Paused) item.IsPaused = true;
-                                else if (progress.State == State.Active) item.IsPaused = false;
-
-                                if (!string.IsNullOrEmpty(progress.Message))
-                                {
-                                    item.Status = progress.Message;
-                                    if (progress.State == State.Paused) item.Status = "⏸️ " + progress.Message;
-                                    else if (progress.State == State.Error) { item.HasError = true; item.Status = "✗ " + progress.Message; }
-                                }
-                                else
-                                {
-                                    item.Status = $"{item.ProgressPercentage:F1}%";
-                                }
-
-                                if (item.ProgressPercentage >= 100 && progress.State == State.Completed)
-                                {
-                                    item.IsCompleted = true;
-                                    item.Status = "Completed!";
-                                }
+                                // Mise à jour du texte de statut
+                                if (progress.State == State.Paused) item.Status = "⏸️ " + progress.Message;
+                                else if (progress.State == State.Error) { item.HasError = true; item.Status = progress.Message; }
+                                else if (!string.IsNullOrEmpty(progress.Message)) item.Status = progress.Message;
+                                else item.Status = $"{item.ProgressPercentage:F1}%";
                             }
                         });
                     });
 
+                    // 2. À LA FIN de TOUTE l'exécution : On valide les statuts finaux
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
-                        foreach (var item in JobsProgress.Where(j => !j.IsCompleted && !j.HasError))
+                        bool hasAnyErrorOrStop = false;
+
+                        foreach (var item in JobsProgress)
                         {
-                            item.IsCompleted = true;
-                            item.ProgressPercentage = 100;
-                            item.Status = "Completed!";
+                            var realJob = _backupManager.GetAllJobs().FirstOrDefault(j => j.Id == item.JobId);
+
+                            if (realJob != null && realJob.State == State.Error)
+                            {
+                                item.HasError = true;
+                                item.Status = "Stopped";
+                                hasAnyErrorOrStop = true;
+                            }
+                            else if (!item.IsCompleted && !item.HasError)
+                            {
+                                item.IsCompleted = true;
+                                item.ProgressPercentage = 100;
+                                item.Status = _i18n.GetString("state_completed") ?? "Completed!";
+                            }
                         }
+
                         RefreshBackupJobs();
-                        StatusMessage = "✓ All jobs completed!";
+
+                        if (hasAnyErrorOrStop || JobsProgress.Any(j => j.HasError))
+                        {
+                            StatusMessage = "Backup Closed";
+                        }
+                        else
+                        {
+                            StatusMessage = "✓ " + (_i18n.GetString("execute_all_completed") ?? "All jobs completed!");
+                        }
                     });
                 }
                 catch (Exception ex)
@@ -834,6 +835,10 @@ namespace EasyGUI.ViewModels
             // Load detailed settings (Feature Branch)
             ConfigBusinessSoftware = config.GetConfig<string>("BusinessSoftware") ?? "";
             ConfigCryptoPath = config.GetConfig<string>("CryptoSoftPath") ?? "";
+            if (string.IsNullOrWhiteSpace(ConfigCryptoPath))
+            {
+                ConfigCryptoPath = "CryptoSoft.exe";
+            }
             ConfigCryptoKey = config.GetConfig<string>("CryptoKey") ?? "";
             ConfigMaxSize = config.GetConfig<long?>("MaxParallelTransferSize") ?? 1000;
 
@@ -915,6 +920,8 @@ namespace EasyGUI.ViewModels
                 config.SetConfig("PriorityExtensions", extList);
 
                 config.SaveConfiguration();
+
+                BackupManager.ResetLogger();
 
                 StatusMessage = "✓ " + i18n.GetString("settings_applied");
                 await Task.Delay(2000);

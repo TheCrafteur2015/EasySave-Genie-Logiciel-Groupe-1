@@ -32,23 +32,24 @@ namespace EasyLog.Logging
         /// <param name="message">The log entry object to be serialized and written.</param>
         public override void Log(LogEntry message)
         {
-            List<LogEntry> logs = [];
-            if (File.Exists(LogFile))
-            {
-                string existingContent = File.ReadAllText(LogFile);
-                if (!string.IsNullOrWhiteSpace(existingContent))
-                {
-                    var serializer = new XmlSerializer(typeof(List<LogEntry>));
-                    using var reader = new StringReader(existingContent);
-                    logs = serializer.Deserialize(reader) as List<LogEntry> ?? [];
-                }
-            }
-            logs.Add(message);
             lock (_lock)
             {
-                var serializer = new XmlSerializer(typeof(List<LogEntry>));
+                List<LogEntry> logs = [];
+                if (File.Exists(LogFile))
+                {
+                    string existingContent = File.ReadAllText(LogFile);
+                    if (!string.IsNullOrWhiteSpace(existingContent))
+                    {
+                        var serializerIn = new XmlSerializer(typeof(List<LogEntry>));
+                        using var reader = new StringReader(existingContent);
+                        logs = serializerIn.Deserialize(reader) as List<LogEntry> ?? [];
+                    }
+                }
+                logs.Add(message);
+
+                var serializerOut = new XmlSerializer(typeof(List<LogEntry>));
                 using var writer = new StringWriter();
-                serializer.Serialize(writer, logs);
+                serializerOut.Serialize(writer, logs);
                 File.WriteAllText(LogFile, writer.ToString());
             }
         }

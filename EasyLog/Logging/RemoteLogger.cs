@@ -39,7 +39,7 @@ namespace EasyLog.Logging
         /// <param name="entry">The log entry to send to the remote server.</param>
         public void Log(LogEntry entry)
         {
-            Task.Run(async () =>
+            Task.Run(async () => /// FIRE ///
             {
                 try
                 {

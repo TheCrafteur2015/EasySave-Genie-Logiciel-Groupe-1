@@ -163,7 +163,7 @@ namespace EasySave.Backup
                             currentFileCopied += bytesRead;
 
                             long innerTick = DateTime.Now.Ticks;
-                            if (innerTick - lastUiUpdateTick > 2000000) // Toutes les ~200ms
+                            if (innerTick - lastUiUpdateTick > 2000000)
                             {
                                 progressCallback?.Invoke(new ProgressState
                                 {
@@ -173,7 +173,6 @@ namespace EasySave.Backup
                                     TotalSize = totalSize,
                                     FilesRemaining = totalFiles - processedFiles,
                                     SizeRemaining = totalSize - (processedSize + currentFileCopied),
-                                    // NOUVEAU : On calcule et on force le pourcentage ici pour l'interface !
                                     ProgressPercentage = totalSize > 0 ? ((double)(processedSize + currentFileCopied) / totalSize) * 100 : 100
                                 });
                                 lastUiUpdateTick = innerTick;
